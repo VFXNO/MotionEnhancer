@@ -32,6 +32,7 @@ static void printUsage(const char* progName) {
               << "Real-Time GPU Overlay Options:\n"
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
+              << "  --multiplier <2|3|4|max>      Output FPS multiplier (default: 2)\n"
               << "  --gpu-levels <1-8>       Real-time pyramid levels (default: 7)\n"
               << "  --gpu-min-refine <n>     Finest searched level, 0 to levels-1 (default: 0)\n"
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 8)\n"
@@ -200,7 +201,8 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
 static int runRealtimeGPUInterpolation(
     const std::string& windowTitle,
     const GPUInterpolationSettings& gpuSettings,
-    uint32_t sourceFps
+    uint32_t sourceFps,
+    uint32_t outputMultiplier
 ) {
     int exitCode = 0;
     std::thread renderThread([&]() {
@@ -269,7 +271,7 @@ static int runRealtimeGPUInterpolation(
     RealtimePresenter presenter;
     if (!presenter.initialize(
             d3dContext, overlay.hwnd, capture.getWidth(), capture.getHeight(),
-            sourceFps)) {
+            sourceFps, outputMultiplier)) {
         exitCode = 1;
         return;
     }
@@ -297,8 +299,9 @@ static int runRealtimeGPUInterpolation(
               << gpuSettings.smoothnessWeight << "\n"
               << "  Source Cadence: "
               << (sourceFps == 0 ? "auto (detecting)" : std::to_string(sourceFps) + " FPS") << "\n"
+              << "  FPS Multiplier: " << (outputMultiplier == 0 ? "display max" : std::to_string(outputMultiplier) + "x") << "\n"
               << "  Output Clock:   " << std::fixed << std::setprecision(2)
-              << presenter.refreshRate() << " Hz\n"
+              << presenter.outputRate() << " Hz (display " << presenter.refreshRate() << " Hz)\n"
               << "  Compute Engine: FidelityFX-style 8x8 Block SAD Optical Flow (DirectCompute)\n"
               << "  Presentation:   Paced Click-Through DWM Presenter\n"
               << "  Hotkeys:        [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
@@ -389,6 +392,7 @@ static int runRealtimeGPUInterpolation(
                       << " | Queue: " << presenter.queueDepth()
                       << " | Source: "
                       << (sourceFps > 0 ? sourceFps : capture.getDetectedSourceFps()) << " fps"
+                      << " | Target: " << std::setprecision(1) << presenter.outputRate() << " fps"
                       << " | Alpha: " << presenter.interpolationFactor()
                       << " | R/Q/P: " << presenter.renderedFrameIndex() << "/"
                       << presenter.queuedFrameIndex() << "/"
@@ -429,6 +433,7 @@ int main(int argc, char** argv) {
     std::string occOutputPath;
     std::string captureWindowQuery;
     uint32_t sourceFps = 0;
+    uint32_t outputMultiplier = 2;
     GPUInterpolationSettings gpuSettings;
 
     InterpolatorParams params;
@@ -489,6 +494,18 @@ int main(int argc, char** argv) {
             gpuSettings.refineSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
         } else if (arg == "--gpu-smoothness" && i + 1 < argc) {
             gpuSettings.smoothnessWeight = std::clamp(std::stof(argv[++i]), 0.0f, 0.1f);
+        } else if (arg == "--multiplier" && i + 1 < argc) {
+            std::string multiplier = argv[++i];
+            if (multiplier == "max") {
+                outputMultiplier = 0;
+            } else {
+                if (!multiplier.empty() && multiplier.back() == 'x') multiplier.pop_back();
+                int parsedMultiplier = std::stoi(multiplier);
+                if (parsedMultiplier < 2 || parsedMultiplier > 4) {
+                    throw std::invalid_argument("multiplier must be 2, 3, 4, or max");
+                }
+                outputMultiplier = static_cast<uint32_t>(parsedMultiplier);
+            }
         } else if (arg == "--time" && i + 1 < argc) {
             t = std::stof(argv[++i]);
         } else if (arg == "--levels" && i + 1 < argc) {
@@ -594,7 +611,7 @@ int main(int argc, char** argv) {
     if (!captureWindowQuery.empty()) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
-        return runRealtimeGPUInterpolation(captureWindowQuery, gpuSettings, sourceFps);
+        return runRealtimeGPUInterpolation(captureWindowQuery, gpuSettings, sourceFps, outputMultiplier);
     }
 
     if (runTest) {

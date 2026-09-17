@@ -15,7 +15,8 @@ public:
         HWND outputWindow,
         uint32_t width,
         uint32_t height,
-        uint32_t sourceFps
+        uint32_t sourceFps,
+        uint32_t outputMultiplier
     );
 
     ID3D11Texture2D* acquireCaptureTarget();
@@ -32,6 +33,7 @@ public:
     size_t queueDepth() const;
     float interpolationFactor() const { return m_interpolationFactor; }
     double refreshRate() const { return m_refreshRate; }
+    double outputRate() const { return m_outputRate; }
 
 private:
     enum class SlotState { Free, CopyPending, Ready };
@@ -48,6 +50,7 @@ private:
     void retireConsumedFrames(const std::vector<int>& sorted, int currentSlot);
     bool presentTexture(GPUInterpolator& interpolator, FrameSlot& slot);
     bool scheduleNextPresentation();
+    void updateOutputCadence();
     void revealOutput();
 
     std::shared_ptr<D3D11Context> m_context;
@@ -68,6 +71,9 @@ private:
     int64_t m_nominalSourceInterval100ns = 333333;
     float m_interpolationFactor = 0.0f;
     double m_refreshRate = 60.0;
+    double m_outputRate = 60.0;
+    uint32_t m_sourceFps = 30;
+    uint32_t m_outputMultiplier = 2;
 
     HANDLE m_pacingTimer = nullptr;
     int64_t m_qpcFrequency = 0;

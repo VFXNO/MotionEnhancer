@@ -25,6 +25,7 @@ constexpr int IDC_GPU_MIN_REFINE = 108;
 constexpr int IDC_GPU_COARSE_RADIUS = 109;
 constexpr int IDC_GPU_REFINE_RADIUS = 110;
 constexpr int IDC_GPU_SMOOTHNESS = 111;
+constexpr int IDC_LIVE_MULTIPLIER = 112;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -62,6 +63,7 @@ struct GuiState {
     HWND captureButton = nullptr;
     HWND liveStatus = nullptr;
     HWND liveSourceFps = nullptr;
+    HWND liveMultiplier = nullptr;
     HWND gpuLevels = nullptr;
     HWND gpuMinRefine = nullptr;
     HWND gpuCoarseRadius = nullptr;
@@ -128,6 +130,14 @@ void populateSourceRates(HWND combo) {
     const char* rates[] = { "Auto", "24", "30", "60" };
     for (const char* rate : rates) {
         SendMessageA(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(rate));
+    }
+    SendMessageA(combo, CB_SETCURSEL, 0, 0);
+}
+
+void populateMultipliers(HWND combo) {
+    const char* multipliers[] = { "2x", "3x", "4x", "Max" };
+    for (const char* multiplier : multipliers) {
+        SendMessageA(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(multiplier));
     }
     SendMessageA(combo, CB_SETCURSEL, 0, 0);
 }
@@ -314,6 +324,7 @@ void startCapture() {
     if (!launchJob({
             "--capture-window", title,
             "--source-fps", lowercaseWindowText(g_state.liveSourceFps),
+            "--multiplier", lowercaseWindowText(g_state.liveMultiplier),
             "--gpu-levels", getWindowText(g_state.gpuLevels),
             "--gpu-min-refine", getWindowText(g_state.gpuMinRefine),
             "--gpu-coarse-radius", getWindowText(g_state.gpuCoarseRadius),
@@ -413,6 +424,9 @@ void createControls() {
     HWND liveFpsLabel = addControl("STATIC", "Source FPS", SS_LEFT, 36, 126, 100, 20, 0);
     g_state.liveSourceFps = addControl("COMBOBOX", "", CBS_DROPDOWNLIST | WS_VSCROLL, 140, 122, 130, 140, IDC_LIVE_SOURCE_FPS);
     populateSourceRates(g_state.liveSourceFps);
+    HWND multiplierLabel = addControl("STATIC", "Output multiplier", SS_LEFT, 330, 126, 125, 20, 0);
+    g_state.liveMultiplier = addControl("COMBOBOX", "", CBS_DROPDOWNLIST | WS_VSCROLL, 460, 122, 130, 140, IDC_LIVE_MULTIPLIER);
+    populateMultipliers(g_state.liveMultiplier);
     HWND liveAdvanced = addControl("BUTTON", "Advanced GPU flow", BS_GROUPBOX, 36, 164, 794, 174, 0);
     HWND gpuLevelsLabel = addControl("STATIC", "Pyramid levels (1-8)", SS_LEFT, 56, 198, 160, 20, 0);
     g_state.gpuLevels = addControl("EDIT", "7", WS_BORDER | ES_NUMBER, 224, 194, 80, 24, IDC_GPU_LEVELS);
@@ -429,6 +443,7 @@ void createControls() {
     g_state.liveStatus = addControl("STATIC", "", SS_LEFT, 36, 610, 760, 26, IDC_LIVE_STATUS);
     g_state.liveControls = {
         liveHeading, g_state.windowList, g_state.refreshButton, liveFpsLabel, g_state.liveSourceFps,
+        multiplierLabel, g_state.liveMultiplier,
         liveAdvanced, gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness,

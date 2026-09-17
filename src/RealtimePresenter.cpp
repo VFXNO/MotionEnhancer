@@ -21,13 +21,16 @@ bool RealtimePresenter::initialize(
     HWND outputWindow,
     uint32_t width,
     uint32_t height,
-    uint32_t sourceFps
+    uint32_t sourceFps,
+    uint32_t outputMultiplier
 ) {
     m_context = std::move(context);
     m_outputWindow = outputWindow;
     m_width = width;
     m_height = height;
-    setSourceFps(sourceFps > 0 ? sourceFps : 30u);
+    m_outputMultiplier = outputMultiplier;
+    m_sourceFps = sourceFps > 0 ? sourceFps : 30u;
+    m_nominalSourceInterval100ns = 10000000LL / static_cast<int64_t>(m_sourceFps);
     if (!m_context || !m_context->device || !outputWindow || width == 0 || height == 0) {
         return false;
     }
@@ -40,7 +43,7 @@ bool RealtimePresenter::initialize(
         m_refreshRate = static_cast<double>(timing.rateRefresh.uiNumerator) /
                         static_cast<double>(timing.rateRefresh.uiDenominator);
     }
-    m_refreshInterval100ns = static_cast<int64_t>(10000000.0 / m_refreshRate + 0.5);
+    updateOutputCadence();
     LARGE_INTEGER frequency = {};
     LARGE_INTEGER now = {};
     QueryPerformanceFrequency(&frequency);
@@ -89,15 +92,25 @@ bool RealtimePresenter::initialize(
 
 void RealtimePresenter::setSourceFps(uint32_t sourceFps) {
     if (sourceFps > 0) {
+        m_sourceFps = sourceFps;
         m_nominalSourceInterval100ns = 10000000LL / static_cast<int64_t>(sourceFps);
+        updateOutputCadence();
     }
+}
+
+void RealtimePresenter::updateOutputCadence() {
+    m_outputRate = m_outputMultiplier == 0
+        ? m_refreshRate
+        : std::min(m_refreshRate, static_cast<double>(m_sourceFps * m_outputMultiplier));
+    m_outputRate = std::max(1.0, m_outputRate);
+    m_refreshInterval100ns = static_cast<int64_t>(10000000.0 / m_outputRate + 0.5);
 }
 
 bool RealtimePresenter::scheduleNextPresentation() {
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
     int64_t qpcStep = static_cast<int64_t>(
-        static_cast<double>(m_qpcFrequency) / m_refreshRate + 0.5);
+        static_cast<double>(m_qpcFrequency) / m_outputRate + 0.5);
     if (m_nextPresentationQpc <= now.QuadPart) {
         int64_t behind = now.QuadPart - m_nextPresentationQpc;
         m_nextPresentationQpc += (behind / qpcStep + 1) * qpcStep;
