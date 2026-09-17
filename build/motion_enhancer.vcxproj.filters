@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\Pyramid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\ZNCCMatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FrameInterpolator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D11Context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WGCCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GPUInterpolator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WindowHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GuiApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\RealtimePresenter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Pyramid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\MotionVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\ZNCCMatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FrameInterpolator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D11Context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WGCCapture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GPUInterpolator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WindowHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GuiApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\RealtimePresenter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{CF35AC31-B099-376E-ABF9-D52AACB0A087}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{22A92C55-298C-3506-8B29-5478B39F77F1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
