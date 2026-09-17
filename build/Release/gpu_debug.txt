@@ -1,0 +1,10 @@
+GPU block matching debug
+Block size: 16x16 pixels
+Matching support: 16x16 pixels
+Flow format: R32G32_FLOAT
+Flow grid: 120x68 vectors (8160)
+Directions: forward + backward
+Pyramid levels requested: 7
+Coarse search radius: 8
+Refine search radius: 8
+Capture size: 1920x1080
