@@ -18,6 +18,7 @@ set(SOURCES
     src/WindowHelper.cpp
     src/GuiApp.cpp
     src/RealtimePresenter.cpp
+    app.rc
 )
 
 # Header files
@@ -38,6 +39,12 @@ set(HEADERS
 )
 
 add_executable(motion_enhancer ${SOURCES} ${HEADERS})
+
+# The manifest is embedded manually via app.rc; disable the linker's
+# auto-generated manifest to avoid a duplicate resource.
+if(MSVC)
+    set_target_properties(motion_enhancer PROPERTIES LINK_FLAGS "/MANIFEST:NO")
+endif()
 
 target_include_directories(motion_enhancer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -80,6 +80,11 @@
     <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\app.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{CF35AC31-B099-376E-ABF9-D52AACB0A087}</UniqueIdentifier>
     </Filter>

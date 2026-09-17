@@ -104,7 +104,7 @@ The executable will be generated at `build/Release/motion_enhancer.exe`.
 
 ### Graphical Interface
 
-Launch the executable without arguments (or pass `--gui`) to open the native Windows interface:
+Launch the executable without arguments (or pass `--gui`) to open the native Windows interface. It uses a custom dark gaming-styled theme with neon accent tabs, buttons, and panels:
 
 ```powershell
 .\build\Release\motion_enhancer.exe
