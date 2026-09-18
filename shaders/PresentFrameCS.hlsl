@@ -1,5 +1,7 @@
 #include "Common.hlsli"
 
+// Pass-through copy of a source frame into the output surface (used when no
+// interpolation is needed, e.g. the interpolation factor is 0 or 1).
 Texture2D<float4> Source : register(t0);
 RWTexture2D<float4> Destination : register(u0);
 

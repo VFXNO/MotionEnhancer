@@ -1,31 +1,41 @@
 #include "Common.hlsli"
 
+// One pyramid level -> the next coarser one (LevelWidth x LevelHeight is the
+// destination size). Burt-Adelson reduce: separable [1 4 6 4 1]/16 Gaussian
+// centred on the even source pixel (2x, 2y), so coarse pixel i sits on top
+// of fine pixel 2i and a coarse flow vector scales to the fine level by an
+// exact factor of 2 for coarse-to-fine flow propagation.
+//
+// Explicit loads rather than a bilinear-tap trick: it does not depend on the
+// sampler, on the exact source/destination ratio, or on filtering support
+// for the luma format, so it cannot drift on odd-sized levels.
 Texture2D<float>   InputLevel  : register(t0);
 RWTexture2D<float> OutputLevel : register(u0);
 
+static const float kWeights[5] = { 1.0f / 16.0f, 4.0f / 16.0f, 6.0f / 16.0f, 4.0f / 16.0f, 1.0f / 16.0f };
+
 [numthreads(16, 16, 1)]
-void CSMain(uint3 DTid : SV_DispatchThreadID)
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    if (DTid.x >= LevelWidth || DTid.y >= LevelHeight)
-        return;
+    if (id.x >= LevelWidth || id.y >= LevelHeight) return;
 
-    float2 sourceDims = float2(LevelWidth * 2, LevelHeight * 2);
-    float2 center = float2(DTid.xy * 2) + 0.5f;
-    static const float offsets[3] = { -1.2f, 0.0f, 1.2f };
-    static const float weights[3] = { 5.0f / 16.0f, 6.0f / 16.0f, 5.0f / 16.0f };
+    uint sourceW, sourceH;
+    InputLevel.GetDimensions(sourceW, sourceH);
+    int2 sourceMax = int2(sourceW, sourceH) - 1;
+    int2 center = int2(id.xy) * 2;
 
-    // Bilinear filtering combines each outer Gaussian tap pair, reducing the
-    // separable 5x5 kernel from 25 explicit loads to nine samples.
     float sum = 0.0f;
     [unroll]
-    for (int y = 0; y < 3; ++y)
+    for (int ky = 0; ky < 5; ++ky)
     {
+        float rowSum = 0.0f;
         [unroll]
-        for (int x = 0; x < 3; ++x)
+        for (int kx = 0; kx < 5; ++kx)
         {
-            float2 uv = (center + float2(offsets[x], offsets[y])) / sourceDims;
-            sum += InputLevel.SampleLevel(LinearClamp, uv, 0) * weights[x] * weights[y];
+            int2 p = clamp(center + int2(kx - 2, ky - 2), int2(0, 0), sourceMax);
+            rowSum += InputLevel.Load(int3(p, 0)) * kWeights[kx];
         }
+        sum += rowSum * kWeights[ky];
     }
-    OutputLevel[DTid.xy] = sum;
+    OutputLevel[id.xy] = sum;
 }

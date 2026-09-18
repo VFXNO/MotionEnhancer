@@ -49,7 +49,9 @@ Image Image::toGrayscale() const {
                 float r = get(x, y, 0);
                 float g = get(x, y, 1);
                 float b = get(x, y, 2);
-                gray.set(x, y, 0, 0.299f * r + 0.587f * g + 0.114f * b);
+                // Match the GPU luminance shader (Rec.709) so CPU and GPU
+                // motion estimation see the same brightness structure.
+                gray.set(x, y, 0, 0.2126f * r + 0.7152f * g + 0.0722f * b);
             } else if (channels == 1) {
                 gray.set(x, y, 0, get(x, y, 0));
             } else {
