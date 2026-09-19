@@ -1,0 +1,30 @@
+^C:\USERS\VFXNO\APPDATA\LOCAL\TEMP\OPENCODE\FIDELITYFX-SDK-V1.1.4\SDK\LIBS\PIX\BIN\X64\WINPIXEVENTRUNTIME.DLL
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/bin/ffx_sdk
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/libs/pix/bin/x64/WinPixEventRuntime.dll C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/bin/ffx_sdk
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-FFX\CMAKEFILES\040A709E604E6AEE012E0FD057D00D56\COPIED_WINPIXEVENT_BIN.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\APPDATA\LOCAL\TEMP\OPENCODE\FIDELITYFX-SDK-V1.1.4\SDK\LIBS\PIX\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/libs/pix/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

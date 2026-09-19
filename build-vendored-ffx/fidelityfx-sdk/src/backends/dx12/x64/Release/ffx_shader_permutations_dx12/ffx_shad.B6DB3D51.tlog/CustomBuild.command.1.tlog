@@ -1,0 +1,466 @@
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_LUMINANCE_PYRAMID_PASS_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_luminance_pyramid_pass_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_luminance_pyramid_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_luminance_pyramid_pass_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/96857dc8e4b8ab6556ef2fdfda849907f4c0f9faf8d411172bd8df874150dd45.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_LUMINANCE_PYRAMID_PASS_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_luminance_pyramid_pass -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_luminance_pyramid_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_luminance_pyramid_pass_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/2f781dd6105f5057af2d64823d2cc54c6e7b986245ebf3dd3e05acb976bafe48.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_LUMINANCE_PYRAMID_PASS_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_luminance_pyramid_pass_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_luminance_pyramid_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_luminance_pyramid_pass_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/d98f11615fa8c82a962a04c2338f6bb0da918151fe81c975c2191e24a64a1ea0.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_LUMINANCE_PYRAMID_PASS_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_luminance_pyramid_pass_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_luminance_pyramid_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_luminance_pyramid_pass_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/2b63fee5dd69f1766c72025d3b6f100c595dcd0d9a78544cbef585424ea34e24.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_OPTICAL_FLOW_ADVANCED_PASS_V5_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_optical_flow_advanced_pass_v5_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_optical_flow_advanced_pass_v5_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/cf66e1c6583e1f306644935c8847e8557aeef9bc4bb1c661cfc7ea8ce81fa7b4.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_OPTICAL_FLOW_ADVANCED_PASS_V5_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_optical_flow_advanced_pass_v5 -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_optical_flow_advanced_pass_v5_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/9c7931ea86f674264b2daf1c5627dca3b1e77a39f2f394c3cd9f7e3e31dfc4b5.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_OPTICAL_FLOW_ADVANCED_PASS_V5_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/aa79aa90e887916718190380489af2502c9d85d762c446a0b6466b35d25dde3a.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_OPTICAL_FLOW_ADVANCED_PASS_V5_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/d40224321d1d226b1ea40274a9ce9d99189787db05c09ea7ca05eef67414140b.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_SCD_DIVERGENCE_PASS_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_scd_divergence_pass_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_scd_divergence_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_scd_divergence_pass_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/3b5e1a9fb5af5a02eb9098941fe9f5a97890056322f1816409af416f985948b8.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_SCD_DIVERGENCE_PASS_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_scd_divergence_pass -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_scd_divergence_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_scd_divergence_pass_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/4ef5b0d2324c2e16a3ed4fbb72922accd1117870354c169659d945cf07e0fdfd.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_SCD_DIVERGENCE_PASS_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_scd_divergence_pass_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_scd_divergence_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_scd_divergence_pass_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/5ce52507bfd18baa7fdb4ebb474074a0d8b91e940061bf387215dcff4b8e53f9.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_COMPUTE_SCD_DIVERGENCE_PASS_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_compute_scd_divergence_pass_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_compute_scd_divergence_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_compute_scd_divergence_pass_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/596243a4596aecc9d326d9922105fb9503e4cefaab2dab67df318733be263fa3.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_FILTER_OPTICAL_FLOW_PASS_V5_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_filter_optical_flow_pass_v5_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_filter_optical_flow_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_filter_optical_flow_pass_v5_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/f0104fb40bfd5bdf122e1864f90ccd56f4f65cde2c3b67a138c31cff5d0e951a.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_FILTER_OPTICAL_FLOW_PASS_V5_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_filter_optical_flow_pass_v5 -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_filter_optical_flow_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_filter_optical_flow_pass_v5_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/9028d28707fb30839eebf97b9427b4cdd4683eefd641c98386e957618505580e.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_FILTER_OPTICAL_FLOW_PASS_V5_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_filter_optical_flow_pass_v5_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_filter_optical_flow_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_filter_optical_flow_pass_v5_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/e7a2936b48684eee1276a987ab091918d5c1d6195a4ebc9c86ce4b1e6cc1d248.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_FILTER_OPTICAL_FLOW_PASS_V5_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_filter_optical_flow_pass_v5_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_filter_optical_flow_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_filter_optical_flow_pass_v5_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/e7bf84d5514b03532c26a7570498ad86e02de619930819bc25ef0bd91e110d95.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_GENERATE_SCD_HISTOGRAM_PASS_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_generate_scd_histogram_pass_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_generate_scd_histogram_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_generate_scd_histogram_pass_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/e00e4137e70adffff5f613d9d5fcd3b5b4eca10d76bcc40c7d69d5996979edcf.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_GENERATE_SCD_HISTOGRAM_PASS_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_generate_scd_histogram_pass -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_generate_scd_histogram_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_generate_scd_histogram_pass_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/078209c716c1140395a4e6376d496c5660ffc0ca8c754fbaa3fd64fdfc6ac689.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_GENERATE_SCD_HISTOGRAM_PASS_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_generate_scd_histogram_pass_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_generate_scd_histogram_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_generate_scd_histogram_pass_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/8672536345a399577ea22e91d563e01ad18478e639ac4182445565cd2963241b.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_GENERATE_SCD_HISTOGRAM_PASS_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_generate_scd_histogram_pass_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_generate_scd_histogram_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_generate_scd_histogram_pass_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/09f6291609021714e45430c1763e367fa032fce0639c2815ecf427d41114a61e.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_PREPARE_LUMA_PASS_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_prepare_luma_pass_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_prepare_luma_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_prepare_luma_pass_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/df47ecb1d666fe6b592dd305f7194e71e80c34f7f3345a7ed7d82fd4dbec3433.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_PREPARE_LUMA_PASS_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_prepare_luma_pass -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_prepare_luma_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_prepare_luma_pass_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/9b74dd08bf1eb9a0d6144bd615308603f0b217c92447891108c2a28e1ddf8551.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_PREPARE_LUMA_PASS_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_prepare_luma_pass_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_prepare_luma_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_prepare_luma_pass_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/368a7f52b6a6192a14940348a1a49ff6e249d611b86d5be3992b794beee62fb4.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_PREPARE_LUMA_PASS_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_prepare_luma_pass_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_prepare_luma_pass.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_prepare_luma_pass_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/947051b7c45f9aa3d2a84f065c9482a19a5d0fc6d1b319321973c560e4fed041.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_SCALE_OPTICAL_FLOW_ADVANCED_PASS_V5_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_scale_optical_flow_advanced_pass_v5_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_scale_optical_flow_advanced_pass_v5_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/3f958b6375b50697ce5ade2cd0167c746d8e964725cb7b6ae8ced3430f50cb52.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_SCALE_OPTICAL_FLOW_ADVANCED_PASS_V5_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_scale_optical_flow_advanced_pass_v5 -DFFX_HALF=0 -DFFX_HLSL_SM=62 -T cs_6_2 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_scale_optical_flow_advanced_pass_v5_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/6a0674ec1b3e775b5f0aca1940e389f68a088d6faeba0300e13ce540eb006e95.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_SCALE_OPTICAL_FLOW_ADVANCED_PASS_V5_WAVE64_16BIT_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64_16bit -DFFX_HALF=1 -enable-16bit-types -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64_16bit_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/08921f67386df9f56730ecba986c3393d4df5559949cee38f921a2b073c6ebb1.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\3027E1CD625065F6E74719DB30D1F842\FFX_OPTICALFLOW_SCALE_OPTICAL_FLOW_ADVANCED_PASS_V5_WAVE64_PERMUTATIONS.H.RULE
+setlocal
+cd "C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx"
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\tools\binary_store\FidelityFX_SC.exe" -reflection -deps=gcc -DFFX_GPU=1 -E CS -Wno-for-redefinition -Wno-ambig-lit-shift -DFFX_HLSL=1 -DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1} -name=ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64 -DFFX_HALF=0 -DFFX_PREFER_WAVE64="[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6 "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu" "-I C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/include/FidelityFX/gpu/opticalflow" "-output=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/shaders/opticalflow/ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E cmake_transform_depfile "Visual Studio 17 2022" MSBuildAdditionalInputs "C:/Users/vfxno/Documents/GitHub/Motion enhancer" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/shaders/dx12/ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64_permutations.h.d" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/d/36580654c6f8f91b800222911de949a341defad3410b5bf983965e82cdcd304a.AdditionalInputs"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\35566B4B97C9AD24740BC6DD6D29A8C7\FFX_SHADER_PERMUTATIONS_DX12.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\THIRD_PARTY\FIDELITYFX-SDK-V1.1.4\SRC\BACKENDS\DX12\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

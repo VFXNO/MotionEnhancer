@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\FilterFlowCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\InterpolateCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\LuminanceCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\MotionSearchCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\PresentFrameCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\dc8bdd38863e9ee15d239cbfe7afea1c\PyramidCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\a5d6dbd3a75ae455200477d3c2074ab6\motion_enhancer_shaders.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-d3d12\CMakeFiles\motion_enhancer_shaders" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CCA2B592-A623-3A4B-856D-6DE6244A3672}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

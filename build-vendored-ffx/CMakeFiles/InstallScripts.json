@@ -1,0 +1,31 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/opticalflow/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/frameinterpolation/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/fsr3/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/fsr3upscaler/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/fsr2/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/fsr1/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/spd/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/cacao/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/lpm/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/blur/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/vrs/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/cas/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/dof/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/lens/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/parallelsort/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/denoiser/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/sssr/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/brixelizer/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/brixelizergi/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/classifier/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/components/breadcrumbs/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/libs/pix/cmake_install.cmake",
+		"C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

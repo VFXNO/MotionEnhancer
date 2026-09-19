@@ -1,4 +1,4 @@
-# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
+﻿# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
 
 A C++17 frame interpolation application implementing an **8-level Gaussian pyramid** with **Zero-mean Normalized Cross-Correlation (ZNCC)** block matching motion estimation, multi-candidate spatial predictors (EPZS), 2D Gaussian block weighting, direct quarter-pel bilinear refinement, and **advanced artifact refinement** (photometric-aware occlusion gating, bilateral hole inpainting, Laplacian detail restoration, and color bounding box clamping).
 
@@ -24,22 +24,22 @@ A C++17 frame interpolation application implementing an **8-level Gaussian pyram
 
 ```
 Motion enhancer/
-├── CMakeLists.txt              # CMake build script (C++17, OpenMP, MSVC /O2)
-├── include/
-│   ├── Image.h                # Multi-channel float image container & bilinear sampler
-│   ├── Pyramid.h              # 8-level Gaussian pyramid builder
-│   ├── MotionVector.h         # Flow field, color-guided median filter, flow visualizer
-│   ├── ZNCCMatcher.h          # Coarse-to-fine ZNCC solver with EPZS & sub-pel search
-│   └── FrameInterpolator.h   # Bidirectional flow, occlusion detection & artifact refinement
-├── src/
-│   ├── Image.cpp
-│   ├── Pyramid.cpp
-│   ├── ZNCCMatcher.cpp
-│   ├── FrameInterpolator.cpp
-│   └── main.cpp               # CLI entry point and synthetic benchmark
-└── third_party/
-    ├── stb_image.h            # Single-header image loader
-    └── stb_image_write.h      # Single-header image saver
+â”œâ”€â”€ CMakeLists.txt              # CMake build script (C++17, OpenMP, MSVC /O2)
+â”œâ”€â”€ include/
+â”‚   â”œâ”€â”€ Image.h                # Multi-channel float image container & bilinear sampler
+â”‚   â”œâ”€â”€ Pyramid.h              # 8-level Gaussian pyramid builder
+â”‚   â”œâ”€â”€ MotionVector.h         # Flow field, color-guided median filter, flow visualizer
+â”‚   â”œâ”€â”€ ZNCCMatcher.h          # Coarse-to-fine ZNCC solver with EPZS & sub-pel search
+â”‚   â””â”€â”€ FrameInterpolator.h   # Bidirectional flow, occlusion detection & artifact refinement
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ Image.cpp
+â”‚   â”œâ”€â”€ Pyramid.cpp
+â”‚   â”œâ”€â”€ ZNCCMatcher.cpp
+â”‚   â”œâ”€â”€ FrameInterpolator.cpp
+â”‚   â””â”€â”€ main.cpp               # CLI entry point and synthetic benchmark
+â””â”€â”€ third_party/
+    â”œâ”€â”€ stb_image.h            # Single-header image loader
+    â””â”€â”€ stb_image_write.h      # Single-header image saver
 ```
 
 ---
@@ -60,6 +60,25 @@ cmake --build build --config Release
 ```
 
 The executable will be generated at `build/Release/motion_enhancer.exe`.
+
+### Optional AMD FidelityFX Optical Flow
+
+The repository includes AMD FidelityFX SDK v1.1.4 and its `FidelityFX_SC.exe`
+shader compiler under `third_party/FidelityFX-SDK-v1.1.4`. The default build
+enables native D3D12 Optical Flow without a separate AMD SDK download:
+
+```powershell
+cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+```
+
+The integration invokes AMD's supplied `tools/binary_store/FidelityFX_SC.exe`
+through the SDK CMake targets. It retains one temporal context and falls back
+to the native MSAD graph if AMD initialization or dispatch fails. SDK v1.1.4
+suppresses vectors through temporal frame index 5 after a reset, so a stream
+is primed once and every sequential pair thereafter submits only its new
+current frame. A changed source texture resets and re-primes the history.
+Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 
 ---
 
@@ -100,7 +119,7 @@ The executable will be generated at `build/Release/motion_enhancer.exe`.
 
 ---
 
-## Real-Time GPU Shader Overlay (WGC + DirectCompute)
+## Real-Time GPU Shader Overlay (WGC + D3D12)
 
 ### Graphical Interface
 
@@ -119,39 +138,50 @@ For live capture, **Source FPS** defaults to `Auto`, which estimates WGC frame c
 
 Quality presets have been replaced by explicit advanced settings. Live capture exposes pyramid levels, the finest searched level, coarse and refinement radii, and predictor smoothness. Offline interpolation additionally exposes block sizing, grid spacing, subpixel mode, consistency and photometric thresholds, detail strength, and all algorithm feature toggles. Values are validated before processing starts.
 
-The corresponding live command-line options are `--gpu-levels`, `--gpu-min-refine`, `--gpu-coarse-radius`, `--gpu-refine-radius`, and `--gpu-smoothness`. Offline controls use the algorithm options shown by `--help`.
+The corresponding live command-line options are `--gpu-levels`, `--gpu-min-refine`, `--gpu-coarse-radius`, `--gpu-refine-radius`, and `--gpu-smoothness`. The optical flow engine is selected at runtime with `--flow-engine <ffx|msad>`: `ffx` uses the bundled AMD FidelityFX Optical Flow (default, with automatic MSAD fallback on dispatch failure) and `msad` forces the project's own coarse-to-fine block-matching shader. The active engine is shown at startup and reported per interval in the overlay status line. Offline controls use the algorithm options shown by `--help`.
 Live source cadence is available with `--source-fps <auto|24|30|60>`.
 Output multiplication is available with `--multiplier <2|3|4|max>`.
 
 The command-line modes remain available for scripting and automation.
 
-Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame interpolator using **Windows Graphics Capture (WGC)** and **DirectX 11 HLSL Compute Shaders**:
+Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame interpolator using **Windows Graphics Capture (WGC)** and a D3D12-first compute/presentation context:
 
 ```
 [Target App Window (e.g. YouTube, Player, Game)]
-              │
-              ▼ (Zero-Copy GPU Capture via WGC)
-   [Direct3D 11 VRAM Texture]
-              │
-              ▼
-   [HLSL 7-Level Luminance Pyramid] (PyramidCS.hlsl)
-              │
-              ▼
-   [8x8 Block / 256-Candidate msad4 Search] (MotionSearchCS.hlsl)
-              │
-              ▼
-   [3x3 Vector Medoid + SAD-Guided Scaling] (FilterFlowCS/UpscaleFlowCS.hlsl)
-              │
-              ▼
+              â”‚
+              â–¼ (Zero-Copy GPU Capture via WGC)
+    [Direct3D 11 VRAM Texture from WGC]
+               â”‚
+               â–¼
+    [Shared capture texture + fence -> D3D12 queue]
+               â”‚
+               â–¼
+    [DXC HLSL 7-Level Luminance Pyramid] (PyramidCS.hlsl)
+              â”‚
+              â–¼
+   [Fixed 32x32 Block / 64x64 Support Candidate Search] (MotionSearchCS.hlsl)
+              â”‚
+              â–¼
+   [Coarse-to-Fine Block Search + Spatial Filtering] (MotionSearchCS/FilterFlowCS.hlsl)
+              â”‚
+              â–¼
    [Timestamp-Driven Single-Source Motion Warp] (InterpolateCS.hlsl)
-              │
-              ▼
+              â”‚
+              â–¼
    [Paced Click-Through DXGI/DWM Presenter] (50-120+ FPS)
 ```
 
-The real-time GPU path is a Direct3D 11 / Shader Model 5 adaptation of AMD FidelityFX Optical Flow v5. It estimates one signed `R16G16_SINT` vector per non-overlapping 8x8 luminance block, performs a 16x16 (`256` candidate) `msad4` search from coarse to fine, applies the published 3x3 vector-medoid filter, and selects among four scaled vectors using 4x4 SAD. Every block keeps its estimated motion vector without zero-motion or high-error rejection. Backward flow is reconstructed without a second matching hierarchy. Flow is cached per source pair and reused for every presentation timestamp. Runtime statistics report asynchronous D3D11 timestamp measurements as `GPU Pipeline`.
+The real-time GPU path uses two native devices on the same adapter: a D3D12 device and direct command queue own all compute and presentation, while an independent D3D11 device serves Windows Graphics Capture''s `ID3D11Texture2D` contract. `D3D12Context` owns native D3D12 pyramid, flow, and output resources; SRV/UAV descriptors; a shared root signature; per-pass compute PSOs; command recording; explicit state barriers; and fence synchronization. Luminance, pyramid reduction, bidirectional MotionSearch/MSAD, FilterFlow, InterpolateCS, and PresentFrameCS are dispatched natively, and presentation targets a native D3D12 flip-model swap chain. Captured frames cross into D3D12 through NT-handle shared textures created on the D3D11 capture device (`MISC_SHARED | MISC_SHARED_NTHANDLE`, no keyed mutex), with two shared timeline fences ordering access: D3D11 signals a capture-ready fence after each copy and the D3D12 queue waits on it before consuming; a second shared fence orders any D3D11 consumption of native results (offline readback). Release configuration compiles the HLSL with DXC (`cs_5_0`) into `.cso` artifacts; the DXC artifact is consumed directly by the native D3D12 pipeline, while the D3D11 compatibility path logs a warning and recompiles DXBC with the Windows compiler when the artifact is DXIL. Forward and backward flow are estimated independently with the same coarse-to-fine hierarchy, using swapped reference and candidate frames. Native resources are retained for synthesis and flow is cached per source pair.
 
-This is not AMD AFMF 2, which remains proprietary driver software. It ports the publicly documented FidelityFX optical-flow core while retaining this application's WGC capture, single-source synthesis, and D3D11 presentation architecture. See `THIRD_PARTY_NOTICES.md` for attribution.
+This is not AMD AFMF 2, which remains proprietary driver software. The default
+build uses the bundled AMD FidelityFX Optical Flow implementation and falls
+back to the project's native MSAD shader pipeline if FFX cannot initialize or
+dispatch. The FFX path supplies a current-to-previous 8x8 `R16G16_SINT` vector field.
+It is used as the backward field; the forward field is an explicit negated
+approximation produced by the conversion shader. Normal capture has no FFX
+flow readback or per-frame FFX logging. On the supplied 320x240 test pair with
++16,+8 px motion, the persistent-context offline run measured 32.95 dB PSNR
+versus 25.36 dB for a naive blend.
 
 ### Queue and Synchronization
 
@@ -163,7 +193,7 @@ For presentation timestamp $T$ bracketed by source timestamps $t_0$ and $t_1$, i
 
 $$\alpha = \operatorname{clamp}\left(\frac{T-t_0}{t_1-t_0}, 0, 1\right)$$
 
-The synthesis shader motion-warps exactly one source frame according to $\alpha$. It does not blend, crossfade, or run occlusion passes.
+The synthesis shader motion-warps both source frames according to $\alpha$ and blends them with forward/backward consistency weighting. It does not run a separate occlusion pass.
 
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)

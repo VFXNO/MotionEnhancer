@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\fidelityfx-sdk\libs\pix\x64\Release\copied_winpixevent_bin</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\fidelityfx-sdk\src\backends\dx12\x64\Release\ffx_shader_permutations_dx12</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

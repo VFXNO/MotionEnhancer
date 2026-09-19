@@ -1,0 +1,10 @@
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-FFX\CMAKEFILES\82E13D75827E6D16936920A0BFA710A0\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/MotionEnhancer.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

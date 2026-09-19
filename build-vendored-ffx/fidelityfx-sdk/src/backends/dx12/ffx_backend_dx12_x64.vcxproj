@@ -1,0 +1,315 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{15C571EE-528A-3798-91F6-65455DA7A0C6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ffx_backend_dx12_x64</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ffx_backend_dx12_x64.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ffx_backend_dx12_x64d</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ffx_backend_dx12_x64.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ffx_backend_dx12_x64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ffx_backend_dx12_x64.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ffx_backend_dx12_x64drel</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4201;4324;4408;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DisableSpecificWarnings>4201;4324;4408;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4201;4324;4408;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;FFX_OF;_UNICODE;UNICODE;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\shaders\dx12;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\CMakeCompileShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\CMakeCompileOpticalflowShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\CMakeShadersOpticalflow.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\CMakeCompileShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\CMakeCompileOpticalflowShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\CMakeShadersOpticalflow.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/vfxno/Documents/GitHub/Motion enhancer/third_party/FidelityFX-SDK-v1.1.4/src/backends/dx12/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\CMakeCompileShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\CMakeCompileOpticalflowShaders.txt;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\CMakeShadersOpticalflow.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\dx12\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_DebugPacing.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_DebugPacing.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDebugPacingPS.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDebugPacingVS.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPS.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPremulPS.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPremulVS.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionVS.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\ffx_dx12.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\ffx_shader_blobs.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\ffx_shader_blobs.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_assert.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_message.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.h" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.cpp" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\backends\dx12\d3dx12.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\backends\dx12\ffx_dx12.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_luminance_pyramid_pass.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_scd_divergence_pass.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_filter_optical_flow_pass_v5.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_generate_scd_histogram_pass.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_prepare_luma_pass.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_callbacks_glsl.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_callbacks_hlsl.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_common.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_luminance_pyramid.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_optical_flow_v5.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_scd_divergence.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_filter_optical_flow_v5.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_generate_scd_histogram.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_prepare_luma.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_resources.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_v5.h" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\ZERO_CHECK.vcxproj">
+      <Project>{0135961B-504D-3591-B9D3-8157965B65AA}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\libs\pix\copied_winpixevent_bin.vcxproj">
+      <Project>{1B7CA46B-5AE3-3738-BE1C-921E3C0A179E}</Project>
+      <Name>copied_winpixevent_bin</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\fidelityfx-sdk\src\backends\dx12\ffx_shader_permutations_dx12.vcxproj">
+      <Project>{B6DB3D51-014C-3F19-A76C-2518A1BB4A9C}</Project>
+      <Name>ffx_shader_permutations_dx12</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

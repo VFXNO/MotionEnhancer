@@ -185,6 +185,15 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//DirectX Shader Compiler
+DXC_EXECUTABLE:FILEPATH=C:/VulkanSDK/1.4.309.0/Bin/dxc.exe
+
+//FidelityFX SDK checkout for native Optical Flow
+FIDELITYFX_SDK_DIR:PATH=
+
+//Build the native AMD FidelityFX Optical Flow backend
+MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW:BOOL=OFF
+
 //Value Computed by CMake
 MotionEnhancer_BINARY_DIR:STATIC=C:/Users/vfxno/Documents/GitHub/Motion enhancer/build
 

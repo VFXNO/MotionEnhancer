@@ -1,4 +1,4 @@
-#include "GuiApp.h"
+﻿#include "GuiApp.h"
 #include "WindowHelper.h"
 
 #include <windows.h>
@@ -28,6 +28,8 @@ constexpr int IDC_GPU_COARSE_RADIUS = 109;
 constexpr int IDC_GPU_REFINE_RADIUS = 110;
 constexpr int IDC_GPU_SMOOTHNESS = 111;
 constexpr int IDC_LIVE_MULTIPLIER = 112;
+constexpr int IDC_LIVE_FLOW_ENGINE = 113;
+constexpr int IDC_LIVE_ADAPTER = 114;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -87,6 +89,8 @@ struct GuiState {
     HWND liveStatus = nullptr;
     HWND liveSourceFps = nullptr;
     HWND liveMultiplier = nullptr;
+    HWND liveFlowEngine = nullptr;
+    HWND liveAdapter = nullptr;
     HWND gpuLevels = nullptr;
     HWND gpuMinRefine = nullptr;
     HWND gpuCoarseRadius = nullptr;
@@ -431,7 +435,7 @@ void populateSourceRates(HWND combo) {
 }
 
 void populateMultipliers(HWND combo) {
-    const char* multipliers[] = { "2x", "3x", "4x", "Max" };
+    const char* multipliers[] = { "Max", "2x", "3x", "4x" };
     for (const char* multiplier : multipliers) {
         SendMessageA(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(multiplier));
     }
@@ -583,6 +587,12 @@ void startCapture() {
         return;
     }
 
+    int flowSelection = static_cast<int>(SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0));
+    const char* flowEngineArg = flowSelection == 1 ? "msad" : "ffx";
+    int adapterSelection = static_cast<int>(SendMessageA(g_state.liveAdapter, CB_GETCURSEL, 0, 0));
+    const char* adapterArg = adapterSelection == 1 ? "igpu" :
+                             adapterSelection == 2 ? "dgpu" : "auto";
+
     if (!launchJob({
             "--capture-window", title,
             "--source-fps", lowercaseWindowText(g_state.liveSourceFps),
@@ -591,7 +601,9 @@ void startCapture() {
             "--gpu-min-refine", getWindowText(g_state.gpuMinRefine),
             "--gpu-coarse-radius", getWindowText(g_state.gpuCoarseRadius),
             "--gpu-refine-radius", getWindowText(g_state.gpuRefineRadius),
-            "--gpu-smoothness", getWindowText(g_state.gpuSmoothness)
+            "--gpu-smoothness", getWindowText(g_state.gpuSmoothness),
+            "--flow-engine", flowEngineArg,
+            "--adapter", adapterArg
         }, JobType::Live)) {
         SetWindowTextA(g_state.liveStatus, "Could not start the capture process.");
         return;
@@ -750,6 +762,12 @@ void createControls() {
     HWND multiplierLabel = makeLabel("OUTPUT MULTIPLIER", 330, 138, 130);
     g_state.liveMultiplier = makeCombo(460, 134, 130, IDC_LIVE_MULTIPLIER);
     populateMultipliers(g_state.liveMultiplier);
+    HWND adapterLabel = makeLabel("GPU", 620, 138, 40);
+    g_state.liveAdapter = makeCombo(665, 134, 165, IDC_LIVE_ADAPTER);
+    SendMessageA(g_state.liveAdapter, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>("Auto"));
+    SendMessageA(g_state.liveAdapter, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>("Integrated GPU"));
+    SendMessageA(g_state.liveAdapter, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>("Discrete GPU"));
+    SendMessageA(g_state.liveAdapter, CB_SETCURSEL, 0, 0);
 
     HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-8)", 56, 208, 160);
     g_state.gpuLevels = makeEdit("7", 224, 204, 80, IDC_GPU_LEVELS, true);
@@ -761,6 +779,13 @@ void createControls() {
     g_state.gpuRefineRadius = makeEdit("8", 610, 244, 80, IDC_GPU_REFINE_RADIUS, true);
     HWND gpuSmoothnessLabel = makeLabel("Smoothness (0-0.1)", 56, 288, 160);
     g_state.gpuSmoothness = makeEdit("0", 224, 284, 80, IDC_GPU_SMOOTHNESS, false);
+    HWND flowEngineLabel = makeLabel("FLOW ENGINE", 430, 288, 130);
+    g_state.liveFlowEngine = makeCombo(610, 284, 180, IDC_LIVE_FLOW_ENGINE);
+    SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
+                 reinterpret_cast<LPARAM>("AMD FidelityFX (auto fallback)"));
+    SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
+                 reinterpret_cast<LPARAM>("MSAD block matching"));
+    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 0, 0);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 372, 180, 40, IDC_START_CAPTURE);
     HWND liveHelp = addControl(
@@ -774,9 +799,10 @@ void createControls() {
     g_state.liveControls = {
         liveHeading, g_state.windowList, g_state.refreshButton,
         liveFpsLabel, g_state.liveSourceFps, multiplierLabel, g_state.liveMultiplier,
+        adapterLabel, g_state.liveAdapter,
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
-        gpuSmoothnessLabel, g_state.gpuSmoothness,
+        gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
         g_state.captureButton, liveHelp, g_state.liveStatus
     };
 

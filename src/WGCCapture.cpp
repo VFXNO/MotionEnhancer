@@ -38,7 +38,7 @@ bool WGCCapture::initialize(ID3D11Device* d3d11Device) {
     return true;
 }
 
-bool WGCCapture::startCapture(HWND targetWindow) {
+bool WGCCapture::prepareCapture(HWND targetWindow) {
     if (!m_winrtDevice || !targetWindow) return false;
 
     if (!winrt::Windows::Graphics::Capture::GraphicsCaptureSession::IsSupported()) {
@@ -117,19 +117,40 @@ bool WGCCapture::startCapture(HWND targetWindow) {
             // Available only on recent Windows builds.
         }
 
-        ResetEvent(m_frameEvent);
-        m_session.StartCapture();
-        m_isCapturing = true;
-
-        std::cout << "Windows Graphics Capture started successfully (client "
+        std::cout << "Windows Graphics Capture prepared successfully (client "
                   << m_width << "x" << m_height << ", crop "
                   << m_cropX << "," << m_cropY << ").\n";
         return true;
     } catch (const winrt::hresult_error& e) {
+        m_isCapturing = false;
         std::cerr << "WinRT Exception in startCapture: " << winrt::to_string(e.message()) << "\n";
         return false;
     } catch (...) {
+        m_isCapturing = false;
         std::cerr << "Unknown exception in startCapture.\n";
+        return false;
+    }
+}
+
+bool WGCCapture::startCapture() {
+    if (!m_session || !m_framePool || !m_frameEvent) return false;
+    try {
+        m_isCapturing = true;
+        ResetEvent(m_frameEvent);
+        m_arrivalCount = 0;
+        m_drainedFrameCount = 0;
+        // StartCapture can synchronously invoke the free-threaded callback.
+        // Enable it first so the initial WGC frames always wake the render loop.
+        m_session.StartCapture();
+        std::cout << "Windows Graphics Capture started successfully.\n";
+        return true;
+    } catch (const winrt::hresult_error& e) {
+        m_isCapturing = false;
+        std::cerr << "WinRT Exception starting capture: " << winrt::to_string(e.message()) << "\n";
+        return false;
+    } catch (...) {
+        m_isCapturing = false;
+        std::cerr << "Unknown exception starting capture.\n";
         return false;
     }
 }
@@ -137,6 +158,12 @@ bool WGCCapture::startCapture(HWND targetWindow) {
 void WGCCapture::stopCapture() {
     m_isCapturing = false;
     m_frameArrivedRevoker.revoke();
+
+    {
+        std::lock_guard<std::mutex> lock(m_frameMutex);
+        if (m_latestFrame) m_latestFrame.Close();
+        m_latestFrame = nullptr;
+    }
 
     if (m_session) {
         m_session.Close();
@@ -154,6 +181,8 @@ void WGCCapture::stopCapture() {
     m_detectedSourceFps = 30;
     m_candidateSourceFps = 30;
     m_candidateSampleCount = 0;
+    m_arrivalCount = 0;
+    m_drainedFrameCount = 0;
     if (m_frameEvent) ResetEvent(m_frameEvent);
 }
 
@@ -163,9 +192,20 @@ void WGCCapture::onFrameArrived(
 ) {
     if (!m_isCapturing) return;
 
-    (void)sender;
-    // Free-threaded callbacks only wake the render thread. That thread drains
-    // the pool and copies the newest frame while its WGC surface is valid.
+    ++m_arrivalCount;
+    winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame newestFrame{ nullptr };
+    while (auto frame = sender.TryGetNextFrame()) {
+        ++m_drainedFrameCount;
+        if (newestFrame) newestFrame.Close();
+        newestFrame = frame;
+    }
+    if (!newestFrame) return;
+
+    {
+        std::lock_guard<std::mutex> lock(m_frameMutex);
+        if (m_latestFrame) m_latestFrame.Close();
+        m_latestFrame = newestFrame;
+    }
     if (m_frameEvent) SetEvent(m_frameEvent);
 }
 
@@ -175,12 +215,19 @@ bool WGCCapture::copyLatestFrame(
     uint32_t sourceFps,
     int64_t& timestamp100ns
 ) {
-    if (!context || !m_framePool) return false;
+    // Do not consume the latest WGC frame or advance the cadence clock until
+    // the presenter has a slot to receive it. Cross-adapter operation can keep
+    // all timeline slots occupied for several ticks; dropping here previously
+    // reduced dGPU capture to roughly two unique frames per second.
+    if (!context || !destination || !m_framePool) return false;
 
     winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame newestFrame{ nullptr };
-    while (auto frame = m_framePool.TryGetNextFrame()) {
-        if (newestFrame) newestFrame.Close();
-        newestFrame = frame;
+    {
+        std::lock_guard<std::mutex> lock(m_frameMutex);
+        if (m_latestFrame) {
+            newestFrame = m_latestFrame;
+            m_latestFrame = nullptr;
+        }
     }
     if (!newestFrame) return false;
 
@@ -224,9 +271,19 @@ bool WGCCapture::copyLatestFrame(
         int64_t tolerance = interval / 10;
         if (m_nextAcceptedTimestamp100ns > 0 &&
             timestamp100ns + tolerance < m_nextAcceptedTimestamp100ns) {
+            // Chronic rejection means the schedule drifted behind the source
+            // (jitter, rate re-detection). Without a rebase every later frame
+            // would be rejected forever and commits would stall permanently.
+            // Genuine downsampling (60 -> 30) never rejects more than one
+            // frame in a row, so a short run of rejections is safe to reset.
+            if (++m_cadenceRejectionRun >= 5) {
+                m_nextAcceptedTimestamp100ns = timestamp100ns + interval;
+                m_cadenceRejectionRun = 0;
+            }
             newestFrame.Close();
             return false;
         }
+        m_cadenceRejectionRun = 0;
 
         if (m_nextAcceptedTimestamp100ns == 0) {
             m_nextAcceptedTimestamp100ns = timestamp100ns + interval;
@@ -235,11 +292,6 @@ bool WGCCapture::copyLatestFrame(
                 m_nextAcceptedTimestamp100ns += interval;
             } while (m_nextAcceptedTimestamp100ns <= timestamp100ns + tolerance);
         }
-    }
-
-    if (!destination) {
-        newestFrame.Close();
-        return false;
     }
 
     auto surface = newestFrame.Surface();
@@ -272,6 +324,7 @@ bool WGCCapture::copyLatestFrame(
     sourceBox.back = 1;
 
     context->CopySubresourceRegion(destination, 0, 0, 0, 0, newTexture.Get(), 0, &sourceBox);
+    context->Flush();
 
     newestFrame.Close();
 

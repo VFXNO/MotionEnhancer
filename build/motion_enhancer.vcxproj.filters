@@ -19,6 +19,9 @@
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D11Context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D12Context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WGCCapture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,6 +55,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D11Context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D12Context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WGCCapture.h">

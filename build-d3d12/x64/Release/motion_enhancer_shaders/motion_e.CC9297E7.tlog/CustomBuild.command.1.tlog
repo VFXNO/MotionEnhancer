@@ -1,0 +1,90 @@
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\FILTERFLOWCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/FilterFlowCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FilterFlowCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\INTERPOLATECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/InterpolateCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/InterpolateCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\LUMINANCECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/LuminanceCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/LuminanceCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\MOTIONSEARCHCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\PRESENTFRAMECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/PresentFrameCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PresentFrameCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\DC8BDD38863E9EE15D239CBFE7AFEA1C\PYRAMIDCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/shaders/PyramidCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PyramidCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-D3D12\CMAKEFILES\A5D6DBD3A75AE455200477D3C2074AB6\MOTION_ENHANCER_SHADERS.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-d3d12/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,9 @@
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/CMakeFiles/motion_enhancer.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/CMakeFiles/motion_enhancer_shaders.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/CMakeFiles/ALL_BUILD.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/CMakeFiles/ZERO_CHECK.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/CMakeFiles/ALL_BUILD.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/src/components/opticalflow/CMakeFiles/ffx_opticalflow_x64.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/libs/pix/CMakeFiles/copied_winpixevent_bin.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/ffx_backend_dx12_x64.dir
+C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-ffx/fidelityfx-sdk/src/backends/dx12/CMakeFiles/ffx_shader_permutations_dx12.dir

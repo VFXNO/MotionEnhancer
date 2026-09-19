@@ -180,6 +180,7 @@ FlowField ZNCCMatcher::estimateLevel(
             int predU = coarseU;
             int predV = coarseV;
             float bestInitialScore = -1e30f;
+            float bestInitialZNCC = -1.0f;
 
             // Evaluate candidate predictors to select best initial search center
             for (const auto& cand : candidatePredictors) {
@@ -193,6 +194,7 @@ FlowField ZNCCMatcher::estimateLevel(
                 float cost = zncc - params.smoothnessWeight * static_cast<float>(devU * devU + devV * devV);
                 if (cost > bestInitialScore) {
                     bestInitialScore = cost;
+                    bestInitialZNCC = zncc;
                     predU = cand.first;
                     predV = cand.second;
                 }
@@ -200,7 +202,7 @@ FlowField ZNCCMatcher::estimateLevel(
 
             // Integer search in window [-effSearchRadius, effSearchRadius] around chosen predictor
             float bestCost = bestInitialScore;
-            float bestZNCC = -1.0f;
+            float bestZNCC = bestInitialZNCC;
             int bestU = predU;
             int bestV = predV;
 
@@ -367,11 +369,12 @@ FlowField ZNCCMatcher::estimateFlow(const Image& img0, const Image& img1) const 
     Image gray0 = img0.toGrayscale();
     Image gray1 = img1.toGrayscale();
 
-    int totalLevels = std::max(1, params.pyramidLevels);
+    int requestedLevels = std::max(1, params.pyramidLevels);
 
-    // Build 8-level image pyramids
-    Pyramid pyr0(gray0, totalLevels);
-    Pyramid pyr1(gray1, totalLevels);
+    Pyramid pyr0(gray0, requestedLevels);
+    Pyramid pyr1(gray1, requestedLevels);
+    int totalLevels = std::min(pyr0.size(), pyr1.size());
+    if (totalLevels <= 0) return FlowField();
 
     // Start at coarsest level (numLevels - 1, e.g. Level 7)
     int coarsestIdx = totalLevels - 1;

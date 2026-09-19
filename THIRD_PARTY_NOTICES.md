@@ -2,8 +2,10 @@
 
 ## AMD FidelityFX SDK
 
-The real-time optical-flow shaders contain a Direct3D 11 / Shader Model 5
-adaptation of the FidelityFX Optical Flow v5 algorithm.
+The repository vendors AMD FidelityFX SDK v1.1.4 under
+`third_party/FidelityFX-SDK-v1.1.4`, including the standalone Optical Flow
+source, DirectX 12 backend, and `FidelityFX_SC.exe` shader compiler. The
+project builds the generated Optical Flow shader permutations locally.
 
 Copyright (C) 2026 Advanced Micro Devices, Inc.
 

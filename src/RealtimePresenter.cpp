@@ -1,4 +1,6 @@
-#include "RealtimePresenter.h"
+﻿#include "RealtimePresenter.h"
+
+#include "D3D12Context.h"
 
 #include <algorithm>
 #include <dwmapi.h>
@@ -54,48 +56,56 @@ bool RealtimePresenter::initialize(
         nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
     if (!m_pacingTimer || m_qpcFrequency <= 0) return false;
 
-    D3D11_TEXTURE2D_DESC textureDesc = {};
-    textureDesc.Width = width;
-    textureDesc.Height = height;
-    textureDesc.MipLevels = 1;
-    textureDesc.ArraySize = 1;
-    textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    textureDesc.SampleDesc.Count = 1;
-    textureDesc.Usage = D3D11_USAGE_DEFAULT;
-    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-    D3D11_QUERY_DESC queryDesc = {};
-    queryDesc.Query = D3D11_QUERY_EVENT;
     for (auto& slot : m_slots) {
-        if (FAILED(m_context->device->CreateTexture2D(
-                &textureDesc, nullptr, slot.texture.GetAddressOf())) ||
-            FAILED(m_context->device->CreateQuery(
-                &queryDesc, slot.completion.GetAddressOf()))) {
+        // Capture slots are NT-handle shared with D3D12, which consumes them
+        // after the shared capture-ready fence is signaled.
+        if (!m_context->createSharedTexture2D(
+                width, height, DXGI_FORMAT_B8G8R8A8_UNORM,
+                D3D11_BIND_SHADER_RESOURCE, slot.texture, slot.texture12)) {
             return false;
         }
     }
 
     // Prime the flip-model chain once. Every subsequent Present is preceded by
     // one successful frame-latency wait and no back-buffer reference is retained.
-    ComPtr<ID3D11Texture2D> backBuffer;
-    if (FAILED(m_context->swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) return false;
-    ComPtr<ID3D11RenderTargetView> rtv;
-    if (FAILED(m_context->device->CreateRenderTargetView(
-            backBuffer.Get(), nullptr, rtv.GetAddressOf()))) return false;
-    const float clear[4] = {};
-    m_context->context->ClearRenderTargetView(rtv.Get(), clear);
-    backBuffer.Reset();
-    rtv.Reset();
-    if (FAILED(m_context->swapChain->Present(0, 0))) return false;
+    if (m_context->nativePresentation()) {
+        if (!m_context->nativeD3D12->backBuffer(0)) return false;
+    } else {
+        ComPtr<ID3D11Texture2D> backBuffer;
+        if (FAILED(m_context->swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) return false;
+        ComPtr<ID3D11RenderTargetView> rtv;
+        if (FAILED(m_context->device->CreateRenderTargetView(
+                backBuffer.Get(), nullptr, rtv.GetAddressOf()))) return false;
+        const float clear[4] = {};
+        m_context->context->ClearRenderTargetView(rtv.Get(), clear);
+        backBuffer.Reset();
+        rtv.Reset();
+    }
+    if (FAILED(m_context->presentSwapChain())) return false;
     return scheduleNextPresentation();
 }
 
 void RealtimePresenter::setSourceFps(uint32_t sourceFps) {
-    if (sourceFps > 0) {
-        m_sourceFps = sourceFps;
-        m_nominalSourceInterval100ns = 10000000LL / static_cast<int64_t>(sourceFps);
-        updateOutputCadence();
+    if (sourceFps == 0 || sourceFps == m_sourceFps) {
+        m_pendingSourceFps = 0;
+        m_pendingSourceFpsSamples = 0;
+        return;
     }
+
+    // Auto-detection can oscillate by one FPS between measurements. Require a
+    // short stable run before changing the presentation clock.
+    if (m_pendingSourceFps != sourceFps) {
+        m_pendingSourceFps = sourceFps;
+        m_pendingSourceFpsSamples = 1;
+        return;
+    }
+    if (++m_pendingSourceFpsSamples < 8) return;
+
+    m_sourceFps = sourceFps;
+    m_nominalSourceInterval100ns = 10000000LL / static_cast<int64_t>(sourceFps);
+    m_pendingSourceFps = 0;
+    m_pendingSourceFpsSamples = 0;
+    updateOutputCadence();
 }
 
 void RealtimePresenter::updateOutputCadence() {
@@ -111,12 +121,13 @@ bool RealtimePresenter::scheduleNextPresentation() {
     QueryPerformanceCounter(&now);
     int64_t qpcStep = static_cast<int64_t>(
         static_cast<double>(m_qpcFrequency) / m_outputRate + 0.5);
-    if (m_nextPresentationQpc <= now.QuadPart) {
-        int64_t behind = now.QuadPart - m_nextPresentationQpc;
-        m_nextPresentationQpc += (behind / qpcStep + 1) * qpcStep;
-    } else {
+    // Advance the cadence grid from the SCHEDULED time, never from "now":
+    // phase stays locked to the original grid, so an overrunning present
+    // shortens the next interval slightly instead of producing the
+    // long-short-long judder of deadline skipping.
+    do {
         m_nextPresentationQpc += qpcStep;
-    }
+    } while (m_nextPresentationQpc <= now.QuadPart);
 
     int64_t remainingQpc = std::max<int64_t>(1, m_nextPresentationQpc - now.QuadPart);
     LARGE_INTEGER due = {};
@@ -129,20 +140,7 @@ HANDLE RealtimePresenter::frameLatencyHandle() const {
     return m_context ? m_context->frameLatencyHandle() : nullptr;
 }
 
-void RealtimePresenter::updateCompletions() {
-    for (auto& slot : m_slots) {
-        if (slot.state == SlotState::CopyPending &&
-            m_context->context->GetData(
-                slot.completion.Get(), nullptr, 0,
-                D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_OK) {
-            slot.state = SlotState::Ready;
-            m_queuedFrameIndex = std::max(m_queuedFrameIndex, slot.index);
-        }
-    }
-}
-
 ID3D11Texture2D* RealtimePresenter::acquireCaptureTarget() {
-    updateCompletions();
     if (m_pendingWriteSlot >= 0) return nullptr;
 
     for (size_t i = 0; i < m_slots.size(); ++i) {
@@ -161,8 +159,19 @@ bool RealtimePresenter::commitCapturedFrame(int64_t timestamp100ns) {
     auto& slot = m_slots[static_cast<size_t>(m_pendingWriteSlot)];
     slot.timestamp100ns = timestamp100ns;
     slot.index = ++m_renderedFrameIndex;
-    slot.state = SlotState::CopyPending;
-    m_context->context->End(slot.completion.Get());
+    // Publish the D3D11 copy to D3D12 through the shared fence before the
+    // slot becomes visible to the interpolation timeline. The slot can be
+    // CPU-visible immediately: every D3D12 consumer queue-waits on this exact
+    // fence value, so a separate D3D11 event query is redundant and, on the
+    // NVIDIA cross-adapter path, sometimes never reports completion.
+    if (m_context->signalCaptureReady(slot.texture.Get()) == 0) {
+        slot.state = SlotState::Free;
+        slot.timestamp100ns = 0;
+        m_pendingWriteSlot = -1;
+        return false;
+    }
+    slot.state = SlotState::Ready;
+    m_queuedFrameIndex = std::max(m_queuedFrameIndex, slot.index);
     m_pendingWriteSlot = -1;
     return true;
 }
@@ -209,7 +218,8 @@ void RealtimePresenter::retireConsumedFrames(
     if (sorted.size() < 3) return;
     for (int slotIndex : sorted) {
         if (slotIndex == currentSlot) break;
-        if (slotIndex == m_cachedPreviousSlot || slotIndex == m_cachedCurrentSlot) {
+        if (slotIndex == m_cachedPreviousSlot || slotIndex == m_cachedCurrentSlot ||
+            slotIndex == m_pendingPreviousSlot || slotIndex == m_pendingCurrentSlot) {
             continue;
         }
         m_slots[static_cast<size_t>(slotIndex)].state = SlotState::Free;
@@ -220,22 +230,94 @@ bool RealtimePresenter::presentTexture(
     GPUInterpolator& interpolator,
     FrameSlot& slot
 ) {
+    if (m_context->nativePresentation()) {
+        ComPtr<ID3D12Resource> backBuffer = m_context->nativeD3D12->backBuffer(m_context->nativeD3D12->currentBackBufferIndex());
+        if (!backBuffer) {
+            std::cerr << "Presenter: D3D12 back buffer unavailable.\n";
+            return false;
+        }
+        if (!interpolator.presentSourceFrameNative(slot.texture.Get(), backBuffer.Get())) {
+            std::cerr << "Presenter: presentSourceFrameNative failed.\n";
+            return false;
+        }
+        backBuffer.Reset();
+        if (FAILED(m_context->presentSwapChain())) return false;
+        revealOutput();
+        return true;
+    }
     ComPtr<ID3D11Texture2D> backBuffer;
     if (FAILED(m_context->swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) return false;
     if (!interpolator.presentSourceFrame(slot.texture.Get(), backBuffer.Get())) return false;
     backBuffer.Reset();
-    if (FAILED(m_context->swapChain->Present(0, 0))) return false;
+    if (FAILED(m_context->presentSwapChain())) return false;
     revealOutput();
     return true;
 }
 
-bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
-    updateCompletions();
+bool RealtimePresenter::prefetchPair(GPUInterpolator& interpolator) {
+    // Run the expensive flow dispatch on the capture cadence instead of on a
+    // presentation tick: mirror presentNext's pair selection for the current
+    // (not yet advanced) target timestamp and prepare a changed pair without
+    // presenting. presentNext finds the cached slots and skips preparation.
+    if (m_pendingPreviousSlot >= 0) {
+        if (!interpolator.framePairReady()) return false;
+        m_cachedPreviousSlot = m_pendingPreviousSlot;
+        m_cachedCurrentSlot = m_pendingCurrentSlot;
+        m_pendingPreviousSlot = -1;
+        m_pendingCurrentSlot = -1;
+        return true;
+    }
+
     auto sorted = sortedReadySlots();
+    if (sorted.size() < 2 || m_targetPresentationTimestamp == 0) return false;
+
+    int previous = sorted.front();
+    int current = -1;
+    for (int slotIndex : sorted) {
+        const auto& slot = m_slots[static_cast<size_t>(slotIndex)];
+        if (slot.timestamp100ns <= m_targetPresentationTimestamp) previous = slotIndex;
+        // At an exact source timestamp presentation shows that source frame,
+        // but flow can already advance to the following pair. Strict `>`
+        // gives preparation the endpoint tick as additional lead time.
+        if (slot.timestamp100ns > m_targetPresentationTimestamp) {
+            current = slotIndex;
+            break;
+        }
+    }
+    // No slot at/after the target: the timeline holds on the newest frame, so
+    // there is no complete pair to prepare.
+    if (current < 0 || current == previous) return false;
+    if (m_cachedPreviousSlot == previous && m_cachedCurrentSlot == current) return false;
+
+    auto& previousFrame = m_slots[static_cast<size_t>(previous)];
+    auto& currentFrame = m_slots[static_cast<size_t>(current)];
+    if (!interpolator.prepareFramePair(
+            previousFrame.texture.Get(), currentFrame.texture.Get(),
+            previousFrame.index, currentFrame.index)) {
+        return false;
+    }
+    m_pendingPreviousSlot = previous;
+    m_pendingCurrentSlot = current;
+    return true;
+}
+
+bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
+    auto sorted = sortedReadySlots();
+    const char* mode = sorted.empty() ? "E" : nullptr;
     if (sorted.empty()) {
         // A consumed latency signal must always be paired with Present or the
         // waitable swapchain will not produce another presentation slot.
-        if (FAILED(m_context->swapChain->Present(0, 0))) return false;
+        // Presenting an unrendered back buffer flashes stale/black content, so
+        // re-render the retained last output when one exists.
+        if (!m_context->nativePresentation() ||
+            !m_context->nativeD3D12->rePresentLastOutput()) {
+            if (FAILED(m_context->presentSwapChain())) return false;
+            logPacing(mode);
+            return scheduleNextPresentation();
+        }
+        if (FAILED(m_context->presentSwapChain())) return false;
+        revealOutput();
+        logPacing(mode);
         return scheduleNextPresentation();
     }
 
@@ -255,11 +337,22 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
         }
     }
 
+    bool holdTimeline = false;
     if (current < 0) {
         current = sorted.back();
         previous = current;
-        m_targetPresentationTimestamp =
-            m_slots[static_cast<size_t>(current)].timestamp100ns;
+        // Keep the target timestamp when the next source frame has not
+        // arrived yet. Advancing here skips the next interpolation midpoint.
+        holdTimeline = true;
+        // The completed pair is no longer needed once the media timeline is
+        // beyond its newest endpoint. Leaving it cached pins two old slots;
+        // together with this newest frame that exhausts the three-slot queue
+        // and prevents WGC from ever delivering the next frame (especially
+        // visible through the slower cross-adapter dGPU path).
+        if (m_pendingPreviousSlot < 0) {
+            m_cachedPreviousSlot = -1;
+            m_cachedCurrentSlot = -1;
+        }
     }
 
     auto& previousFrame = m_slots[static_cast<size_t>(previous)];
@@ -285,20 +378,45 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
             static_cast<float>(duration), 0.0f, 1.0f);
 
         if (m_cachedPreviousSlot != previous || m_cachedCurrentSlot != current) {
-            if (!interpolator.prepareFramePair(
-                    previousFrame.texture.Get(), currentFrame.texture.Get(),
-                    previousFrame.index, currentFrame.index)) {
-                return false;
+            prefetchPair(interpolator);
+            if (m_cachedPreviousSlot != previous || m_cachedCurrentSlot != current) {
+                // Pair preparation is still running on the GPU. Consume the
+                // swap-chain token without blocking this 144 Hz deadline and
+                // keep the media timeline fixed until the pair is ready.
+                if (!m_context->nativePresentation() ||
+                    !m_context->nativeD3D12->rePresentLastOutput()) {
+                    if (FAILED(m_context->presentSwapChain())) return false;
+                } else if (FAILED(m_context->presentSwapChain())) {
+                    return false;
+                }
+                revealOutput();
+                if (!scheduleNextPresentation()) return false;
+                ++m_presentedFrameIndex;
+                logPacing("W");
+                return true;
             }
-            m_cachedPreviousSlot = previous;
-            m_cachedCurrentSlot = current;
         }
 
-        ComPtr<ID3D11Texture2D> backBuffer;
-        if (FAILED(m_context->swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) return false;
-        if (!interpolator.synthesize(backBuffer.Get(), m_interpolationFactor)) return false;
-        backBuffer.Reset();
-        presented = SUCCEEDED(m_context->swapChain->Present(0, 0));
+        if (m_context->nativePresentation()) {
+            ComPtr<ID3D12Resource> backBuffer = m_context->nativeD3D12->backBuffer(m_context->nativeD3D12->currentBackBufferIndex());
+            if (!backBuffer) {
+                std::cerr << "Presenter: D3D12 back buffer unavailable.\n";
+                return false;
+            }
+            bool ok = interpolator.synthesizeNative(backBuffer.Get(), m_interpolationFactor);
+            backBuffer.Reset();
+            if (!ok) {
+                std::cerr << "Presenter: synthesizeNative failed.\n";
+                return false;
+            }
+        } else {
+            ComPtr<ID3D11Texture2D> backBuffer;
+            if (FAILED(m_context->swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) return false;
+            bool ok = interpolator.synthesize(backBuffer.Get(), m_interpolationFactor);
+            backBuffer.Reset();
+            if (!ok) return false;
+        }
+        presented = SUCCEEDED(m_context->presentSwapChain());
     } else {
         m_interpolationFactor = 1.0f;
         presented = presentTexture(interpolator, currentFrame);
@@ -308,7 +426,45 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
     revealOutput();
     if (!scheduleNextPresentation()) return false;
     ++m_presentedFrameIndex;
-    m_targetPresentationTimestamp += m_refreshInterval100ns;
+    if (!holdTimeline) {
+        m_targetPresentationTimestamp += m_refreshInterval100ns;
+        // If advancing crossed into an already captured pair, submit its flow
+        // now. This gives preparation the whole interval before the next
+        // presentation deadline instead of discovering the pair at that tick.
+        prefetchPair(interpolator);
+    }
     retireConsumedFrames(sorted, current);
+    logPacing(mode ? mode : (previous != current ? "I" : "P"));
     return true;
+}
+
+void RealtimePresenter::logPacing(const char* mode) {
+    // MOTION_ENHANCER_PACING=1: per-present diagnostics. Bursty intervals with
+    // a healthy fps average are invisible to the 2-second status line.
+    static const bool enabled = [] {
+        char buffer[8] = {};
+        return GetEnvironmentVariableA("MOTION_ENHANCER_PACING", buffer, sizeof(buffer)) > 0;
+    }();
+    if (!enabled) return;
+    LARGE_INTEGER now = {};
+    QueryPerformanceCounter(&now);
+    const int64_t nowQpc = now.QuadPart;
+    int64_t deltaUs = m_lastPresentQpc.QuadPart
+        ? static_cast<int64_t>((nowQpc - m_lastPresentQpc.QuadPart) * 1000000 / m_qpcFrequency)
+        : 0;
+    m_lastPresentQpc.QuadPart = nowQpc;
+    std::cout << "[Pacing] " << mode
+              << " dt=" << deltaUs << "us"
+              << " alpha=" << m_interpolationFactor
+              << " t0=" << m_previousFrameTimestamp
+              << " t1=" << m_currentFrameTimestamp
+              << " target=" << m_targetPresentationTimestamp
+              << " ready=" << queueDepth()
+              << " slots=";
+    for (const auto& slot : m_slots) {
+        std::cout << (slot.state == SlotState::Free ? 'F' : 'R');
+    }
+    std::cout << " cache=" << m_cachedPreviousSlot << "," << m_cachedCurrentSlot
+              << " pending=" << m_pendingPreviousSlot << "," << m_pendingCurrentSlot
+              << "\n";
 }

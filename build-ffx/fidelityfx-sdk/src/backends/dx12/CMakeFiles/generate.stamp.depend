@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/include/FidelityFX/gpu/CMakeCompileShaders.txt
+C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/include/FidelityFX/gpu/opticalflow/CMakeCompileOpticalflowShaders.txt
+C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/src/backends/dx12/CMakeLists.txt
+C:/Users/vfxno/AppData/Local/Temp/opencode/FidelityFX-SDK-v1.1.4/sdk/src/backends/dx12/CMakeShadersOpticalflow.txt

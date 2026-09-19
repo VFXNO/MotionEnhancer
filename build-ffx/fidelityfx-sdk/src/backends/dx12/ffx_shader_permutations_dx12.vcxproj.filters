@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_luminance_pyramid_pass_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_luminance_pyramid_pass_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_luminance_pyramid_pass_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_luminance_pyramid_pass_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_optical_flow_advanced_pass_v5_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_optical_flow_advanced_pass_v5_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_optical_flow_advanced_pass_v5_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_scd_divergence_pass_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_scd_divergence_pass_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_scd_divergence_pass_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_compute_scd_divergence_pass_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_filter_optical_flow_pass_v5_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_filter_optical_flow_pass_v5_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_filter_optical_flow_pass_v5_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_filter_optical_flow_pass_v5_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_generate_scd_histogram_pass_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_generate_scd_histogram_pass_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_generate_scd_histogram_pass_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_generate_scd_histogram_pass_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_prepare_luma_pass_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_prepare_luma_pass_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_prepare_luma_pass_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_prepare_luma_pass_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_scale_optical_flow_advanced_pass_v5_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_scale_optical_flow_advanced_pass_v5_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64_16bit_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\27c0d830edbb3caeab2795ef7e34aff5\ffx_opticalflow_scale_optical_flow_advanced_pass_v5_wave64_permutations.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\CMakeFiles\82059af270e98ceb20ea8bc8e60e8744\ffx_shader_permutations_dx12.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\AppData\Local\Temp\opencode\FidelityFX-SDK-v1.1.4\sdk\src\backends\dx12\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-ffx\fidelityfx-sdk\src\backends\dx12\CMakeFiles\ffx_shader_permutations_dx12" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{D6492669-C24A-3BA2-BC61-C2DE4E156B72}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -178,6 +178,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{2FEC782F-4A9A-3B25-8F30-B140D8514F3A}</Project>
       <Name>motion_enhancer</Name>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\motion_enhancer_shaders.vcxproj">
+      <Project>{051EC740-FC2D-3E7D-AA0E-B699A9B09470}</Project>
+      <Name>motion_enhancer_shaders</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,0 +1,102 @@
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\FFXFLOWCONVERTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\FILTERFLOWCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/FilterFlowCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FilterFlowCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\INTERPOLATECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/InterpolateCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/InterpolateCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\LUMINANCECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/LuminanceCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/LuminanceCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\MOTIONSEARCHCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\PRESENTFRAMECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/PresentFrameCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PresentFrameCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\PYRAMIDCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/PyramidCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PyramidCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\C7A0E4DFE054C3BBE275E498A1A6BD74\MOTION_ENHANCER_SHADERS.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/vfxno/Documents/GitHub/Motion enhancer" "-BC:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx" --check-stamp-file "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

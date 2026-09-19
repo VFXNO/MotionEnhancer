@@ -24,6 +24,7 @@ public:
     void cancelCaptureTarget();
     void setSourceFps(uint32_t sourceFps);
     bool presentNext(GPUInterpolator& interpolator);
+    bool prefetchPair(GPUInterpolator& interpolator);
 
     HANDLE frameLatencyHandle() const;
     HANDLE pacingHandle() const { return m_pacingTimer; }
@@ -36,28 +37,30 @@ public:
     double outputRate() const { return m_outputRate; }
 
 private:
-    enum class SlotState { Free, CopyPending, Ready };
+    enum class SlotState { Free, Ready };
     struct FrameSlot {
-        ComPtr<ID3D11Texture2D> texture;
-        ComPtr<ID3D11Query> completion;
+        ComPtr<ID3D11Texture2D> texture;      // D3D11 capture side (shared)
+        ComPtr<ID3D12Resource> texture12;     // same allocation opened on D3D12
         SlotState state = SlotState::Free;
         uint64_t index = 0;
         int64_t timestamp100ns = 0;
     };
 
-    void updateCompletions();
     std::vector<int> sortedReadySlots() const;
     void retireConsumedFrames(const std::vector<int>& sorted, int currentSlot);
     bool presentTexture(GPUInterpolator& interpolator, FrameSlot& slot);
     bool scheduleNextPresentation();
     void updateOutputCadence();
     void revealOutput();
+    void logPacing(const char* mode);
 
     std::shared_ptr<D3D11Context> m_context;
     std::array<FrameSlot, 3> m_slots;
     int m_pendingWriteSlot = -1;
     int m_cachedPreviousSlot = -1;
     int m_cachedCurrentSlot = -1;
+    int m_pendingPreviousSlot = -1;
+    int m_pendingCurrentSlot = -1;
     uint32_t m_width = 0;
     uint32_t m_height = 0;
 
@@ -73,11 +76,14 @@ private:
     double m_refreshRate = 60.0;
     double m_outputRate = 60.0;
     uint32_t m_sourceFps = 30;
+    uint32_t m_pendingSourceFps = 0;
+    uint32_t m_pendingSourceFpsSamples = 0;
     uint32_t m_outputMultiplier = 2;
 
     HANDLE m_pacingTimer = nullptr;
     int64_t m_qpcFrequency = 0;
     int64_t m_nextPresentationQpc = 0;
+    LARGE_INTEGER m_lastPresentQpc = {};
     HWND m_outputWindow = nullptr;
     bool m_outputVisible = false;
 };
