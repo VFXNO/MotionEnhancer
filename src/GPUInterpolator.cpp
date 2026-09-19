@@ -20,12 +20,10 @@ bool GPUInterpolator::initialize(std::shared_ptr<D3D11Context> context) {
     m_pyramidCS     = m_context->compileComputeShader("PyramidCS.hlsl");
     m_blockMatchCS  = m_context->compileComputeShader("MotionSearchCS.hlsl");
     m_filterFlowCS  = m_context->compileComputeShader("FilterFlowCS.hlsl");
-    m_upscaleFlowCS = m_context->compileComputeShader("UpscaleFlowCS.hlsl");
-    m_invertFlowCS  = m_context->compileComputeShader("InvertFlowCS.hlsl");
     m_interpolateCS = m_context->compileComputeShader("InterpolateCS.hlsl");
     m_presentFrameCS = m_context->compileComputeShader("PresentFrameCS.hlsl");
 
-    if (!m_luminanceCS || !m_pyramidCS || !m_blockMatchCS || !m_filterFlowCS || !m_upscaleFlowCS || !m_invertFlowCS ||
+    if (!m_luminanceCS || !m_pyramidCS || !m_blockMatchCS || !m_filterFlowCS ||
         !m_interpolateCS || !m_presentFrameCS) {
         std::cerr << "Error: Failed to compile one or more GPU compute shaders.\n";
         return false;
@@ -81,6 +79,7 @@ bool GPUInterpolator::presentSourceFrame(
 
 bool GPUInterpolator::resizeBuffers(uint32_t width, uint32_t height) {
     if (m_width == width && m_height == height) return true;
+    invalidateFramePair();
     m_width = width;
     m_height = height;
 
@@ -101,29 +100,34 @@ bool GPUInterpolator::resizeBuffers(uint32_t width, uint32_t height) {
     }
 
     for (int l = 0; l < MAX_PYRAMID_LEVELS; ++l) {
-        uint32_t levelW = std::max(2u, width >> l);
-        uint32_t levelH = std::max(2u, height >> l);
+        uint32_t levelW = std::max(1u, width >> l);
+        uint32_t levelH = std::max(1u, height >> l);
 
+        // R16_FLOAT, not R32_FLOAT: the D3D11 spec does not guarantee linear
+        // filtering support for 32-bit float formats on FL11.0 hardware (many
+        // GPUs silently fall back to point sampling), but PyramidCS.hlsl's
+        // 9-tap trick depends on true bilinear blending between texels. Half
+        // float has ample precision for 0-255 luma and is universally
+        // guaranteed to support full linear filtering.
         m_pyr0[l].width = levelW;
         m_pyr0[l].height = levelH;
-        m_context->createTexture2D(levelW, levelH, DXGI_FORMAT_R32_FLOAT, m_pyr0[l].texture, m_pyr0[l].srv, m_pyr0[l].uav);
+        if (!m_context->createTexture2D(levelW, levelH, DXGI_FORMAT_R16_FLOAT, m_pyr0[l].texture, m_pyr0[l].srv, m_pyr0[l].uav)) return false;
 
         m_pyr1[l].width = levelW;
         m_pyr1[l].height = levelH;
-        m_context->createTexture2D(levelW, levelH, DXGI_FORMAT_R32_FLOAT, m_pyr1[l].texture, m_pyr1[l].srv, m_pyr1[l].uav);
+        if (!m_context->createTexture2D(levelW, levelH, DXGI_FORMAT_R16_FLOAT, m_pyr1[l].texture, m_pyr1[l].srv, m_pyr1[l].uav)) return false;
 
         m_fwdFlow[l].width = levelW;
         m_fwdFlow[l].height = levelH;
-        uint32_t flowW = (levelW + 7) / 8;
-        uint32_t flowH = (levelH + 7) / 8;
-        m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R16G16_SINT, m_fwdFlow[l].flowTexture, m_fwdFlow[l].flowSRV, m_fwdFlow[l].flowUAV);
-        m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R16G16_SINT, m_fwdFlow[l].upscaledTexture, m_fwdFlow[l].upscaledSRV, m_fwdFlow[l].upscaledUAV);
+        uint32_t flowW = (levelW + 15) / 16;
+        uint32_t flowH = (levelH + 15) / 16;
+        if (!m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R32G32_FLOAT, m_fwdFlow[l].flowTexture, m_fwdFlow[l].flowSRV, m_fwdFlow[l].flowUAV) ||
+            !m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R32G32_FLOAT, m_fwdFlow[l].upscaledTexture, m_fwdFlow[l].upscaledSRV, m_fwdFlow[l].upscaledUAV)) return false;
 
-        if (l == 0) {
-            m_bwdFlow[l].width = levelW;
-            m_bwdFlow[l].height = levelH;
-            m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R16G16_SINT, m_bwdFlow[l].flowTexture, m_bwdFlow[l].flowSRV, m_bwdFlow[l].flowUAV);
-        }
+        m_bwdFlow[l].width = levelW;
+        m_bwdFlow[l].height = levelH;
+        if (!m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R32G32_FLOAT, m_bwdFlow[l].flowTexture, m_bwdFlow[l].flowSRV, m_bwdFlow[l].flowUAV) ||
+            !m_context->createTexture2D(flowW, flowH, DXGI_FORMAT_R32G32_FLOAT, m_bwdFlow[l].upscaledTexture, m_bwdFlow[l].upscaledSRV, m_bwdFlow[l].upscaledUAV)) return false;
     }
 
     return true;
@@ -136,14 +140,23 @@ bool GPUInterpolator::prepareFramePair(
     uint64_t frame1Index
 ) {
     if (!m_context || !frame0 || !frame1) return false;
-    if (frame0Index == m_cachedFrame0Index && frame1Index == m_cachedFrame1Index) {
-        return true;
+
+    D3D11_TEXTURE2D_DESC desc0 = {};
+    D3D11_TEXTURE2D_DESC desc1 = {};
+    frame0->GetDesc(&desc0);
+    frame1->GetDesc(&desc1);
+    if (desc0.Width != desc1.Width || desc0.Height != desc1.Height) {
+        std::cerr << "Error: GPU frame pair dimensions do not match.\n";
+        return false;
+    }
+    if (desc0.Width != m_width || desc0.Height != m_height) {
+        if (!resizeBuffers(desc0.Width, desc0.Height)) return false;
     }
 
-    D3D11_TEXTURE2D_DESC desc;
-    frame0->GetDesc(&desc);
-    if (desc.Width != m_width || desc.Height != m_height) {
-        if (!resizeBuffers(desc.Width, desc.Height)) return false;
+
+    if (frame0Index == m_cachedFrame0Index && frame1Index == m_cachedFrame1Index &&
+        m_cachedFrame0SRV && m_cachedFrame1SRV) {
+        return true;
     }
 
     auto d3dContext = m_context->context.Get();
@@ -185,10 +198,18 @@ bool GPUInterpolator::prepareFramePair(
         return false;
     }
 
+    // Do not let the coarsest level shrink below ~24 px on its short side: a 16x16 block
+    // there already spans hundreds of screen pixels, so retain the pyramid
+    // for the coarsest search; parent vectors are propagated in the matcher.
+    int totalLevels = m_totalLevels;
+    while (totalLevels > 1 && std::min(m_width, m_height) >> (totalLevels - 1) < kMinCoarsestExtent) {
+        --totalLevels;
+    }
+
     ShaderConstants constants = {};
     constants.width = m_width;
     constants.height = m_height;
-    constants.totalLevels = m_totalLevels;
+    constants.totalLevels = totalLevels;
     constants.smoothnessWeight = m_smoothnessWeight;
 
     // =========================================================================
@@ -227,7 +248,7 @@ bool GPUInterpolator::prepareFramePair(
     // =========================================================================
     d3dContext->CSSetShader(m_pyramidCS.Get(), nullptr, 0);
 
-    for (int l = 1; l < m_totalLevels; ++l) {
+    for (int l = 1; l < totalLevels; ++l) {
         constants.levelWidth = m_pyr0[l].width;
         constants.levelHeight = m_pyr0[l].height;
         constants.levelIndex = l;
@@ -255,130 +276,82 @@ bool GPUInterpolator::prepareFramePair(
     }
 
     // =========================================================================
-    // Step 3: Hierarchical Coarse-to-Fine Census/SAD Block Matching
+    // Step 3: Bidirectional coarse-to-fine block matching. Parent flow is
+    // consumed directly by MotionSearchCS as the fine-level predictor.
     // =========================================================================
-    int coarsestIdx = m_totalLevels - 1;
-
-    // Coarsest Level 7
-    {
-        constants.levelWidth = m_pyr0[coarsestIdx].width;
-        constants.levelHeight = m_pyr0[coarsestIdx].height;
-        constants.levelIndex = coarsestIdx;
-        constants.blockSize = 8;
-        constants.searchRadius = m_coarseSearchRadius;
-        m_context->updateConstants(constants);
-
-        d3dContext->CSSetShader(m_blockMatchCS.Get(), nullptr, 0);
-
-        // Forward flow Level 7
-        ID3D11ShaderResourceView* fwdSRV[] = { m_pyr0[coarsestIdx].srv.Get(), m_pyr1[coarsestIdx].srv.Get(), nullptr };
-        ID3D11UnorderedAccessView* fwdUAV[] = { m_fwdFlow[coarsestIdx].upscaledUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 3, fwdSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, fwdUAV, nullptr);
-        uint32_t flowWidth = (m_pyr0[coarsestIdx].width + 7) / 8;
-        uint32_t flowHeight = (m_pyr0[coarsestIdx].height + 7) / 8;
-        d3dContext->Dispatch((flowWidth + 1) / 2, (flowHeight + 1) / 2, 1);
-
-        d3dContext->CSSetShaderResources(0, 3, nullSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
-
-        d3dContext->CSSetShader(m_filterFlowCS.Get(), nullptr, 0);
-        ID3D11ShaderResourceView* filterSRV[] = { m_fwdFlow[coarsestIdx].upscaledSRV.Get() };
-        ID3D11UnorderedAccessView* filterUAV[] = { m_fwdFlow[coarsestIdx].flowUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 1, filterSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, filterUAV, nullptr);
-        d3dContext->Dispatch((flowWidth + 15) / 16, (flowHeight + 15) / 16, 1);
-        d3dContext->CSSetShaderResources(0, 1, nullSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
-    }
-
-    // Refine down to the user-selected minimum level.
-    for (int l = coarsestIdx - 1; l >= m_minRefineLevel; --l) {
-        // 3a. Bilinearly upscale flow from level l+1 to level l
-        constants.levelWidth = m_fwdFlow[l].width;
-        constants.levelHeight = m_fwdFlow[l].height;
-        constants.levelIndex = l;
-        m_context->updateConstants(constants);
-
-        d3dContext->CSSetShader(m_upscaleFlowCS.Get(), nullptr, 0);
-
-        // Upscale Forward Flow
-        ID3D11ShaderResourceView* upFwdSrc[] = {
-            m_fwdFlow[l + 1].flowSRV.Get(), m_pyr0[l].srv.Get(), m_pyr1[l].srv.Get()
+    int coarsestIdx = totalLevels - 1;
+    auto estimateDirection = [&](FlowLevelResources* flow,
+                                 PyramidLevelResources* reference,
+                                 PyramidLevelResources* candidate) {
+        auto dispatchFilter = [&](int level) {
+            constants.levelWidth = flow[level].width;
+            constants.levelHeight = flow[level].height;
+            constants.levelIndex = level;
+            m_context->updateConstants(constants);
+            d3dContext->CSSetShader(m_filterFlowCS.Get(), nullptr, 0);
+            ID3D11ShaderResourceView* inputs[] = {
+                flow[level].upscaledSRV.Get(), reference[level].srv.Get(), candidate[level].srv.Get() };
+            d3dContext->CSSetShaderResources(0, 3, inputs);
+            ID3D11UnorderedAccessView* output[] = { flow[level].flowUAV.Get() };
+            d3dContext->CSSetUnorderedAccessViews(0, 1, output, nullptr);
+            uint32_t flowWidth = (flow[level].width + 15) / 16;
+            uint32_t flowHeight = (flow[level].height + 15) / 16;
+            d3dContext->Dispatch((flowWidth + 15) / 16, (flowHeight + 15) / 16, 1);
+            d3dContext->CSSetShaderResources(0, 3, nullSRV);
+            d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
         };
-        ID3D11UnorderedAccessView* upFwdDst[] = { m_fwdFlow[l].flowUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 3, upFwdSrc);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, upFwdDst, nullptr);
-        uint32_t flowWidth = (m_fwdFlow[l].width + 7) / 8;
-        uint32_t flowHeight = (m_fwdFlow[l].height + 7) / 8;
-        d3dContext->Dispatch((flowWidth + 15) / 16, (flowHeight + 15) / 16, 1);
 
-        d3dContext->CSSetShaderResources(0, 3, nullSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
+        for (int level = coarsestIdx; level >= 0; --level) {
+            constants.levelWidth = flow[level].width;
+            constants.levelHeight = flow[level].height;
+            constants.levelIndex = level;
+            constants.totalLevels = totalLevels;
+            constants.blockSize = 16;
+            constants.searchRadius = level == coarsestIdx ? m_coarseSearchRadius : m_refineSearchRadius;
+            m_context->updateConstants(constants);
 
-        // 3b. Refine Flow at Level l
-        constants.blockSize = 4;
-        constants.searchRadius = m_refineSearchRadius;
+            d3dContext->CSSetShader(m_blockMatchCS.Get(), nullptr, 0);
+            ID3D11ShaderResourceView* inputs[] = {
+                reference[level].srv.Get(), candidate[level].srv.Get(),
+                level == coarsestIdx ? nullptr : flow[level + 1].flowSRV.Get() };
+            d3dContext->CSSetShaderResources(0, 3, inputs);
+            ID3D11UnorderedAccessView* output[] = { flow[level].upscaledUAV.Get() };
+            d3dContext->CSSetUnorderedAccessViews(0, 1, output, nullptr);
+            d3dContext->Dispatch((flow[level].width + 15) / 16,
+                                 (flow[level].height + 15) / 16, 1);
+            d3dContext->CSSetShaderResources(0, 3, nullSRV);
+            d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
+            dispatchFilter(level);
+        }
+
+    };
+
+    estimateDirection(m_fwdFlow, m_pyr0, m_pyr1);
+    estimateDirection(m_bwdFlow, m_pyr1, m_pyr0);
+
+    auto refineBidirectional = [&](FlowLevelResources& current,
+                                   FlowLevelResources& opposite) {
+        constants.levelWidth = current.width;
+        constants.levelHeight = current.height;
+        constants.levelIndex = 0;
         m_context->updateConstants(constants);
-
-        d3dContext->CSSetShader(m_blockMatchCS.Get(), nullptr, 0);
-
-        // Refine Forward
-        ID3D11ShaderResourceView* refFwdSRV[] = { m_pyr0[l].srv.Get(), m_pyr1[l].srv.Get(), m_fwdFlow[l].flowSRV.Get() };
-        ID3D11UnorderedAccessView* refFwdUAV[] = { m_fwdFlow[l].upscaledUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 3, refFwdSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, refFwdUAV, nullptr);
-        d3dContext->Dispatch((flowWidth + 1) / 2, (flowHeight + 1) / 2, 1);
-
-        d3dContext->CSSetShaderResources(0, 3, nullSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
-
-        d3dContext->CSSetShader(m_filterFlowCS.Get(), nullptr, 0);
-        ID3D11ShaderResourceView* filterSRV[] = { m_fwdFlow[l].upscaledSRV.Get() };
-        ID3D11UnorderedAccessView* filterUAV[] = { m_fwdFlow[l].flowUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 1, filterSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, filterUAV, nullptr);
-        d3dContext->Dispatch((flowWidth + 15) / 16, (flowHeight + 15) / 16, 1);
-        d3dContext->CSSetShaderResources(0, 1, nullSRV);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
-
-    }
-
-    // Upscale the refined flow to full native resolution.
-    for (int l = m_minRefineLevel - 1; l >= 0; --l) {
-        constants.levelWidth = m_fwdFlow[l].width;
-        constants.levelHeight = m_fwdFlow[l].height;
-        constants.levelIndex = l;
-        m_context->updateConstants(constants);
-
-        d3dContext->CSSetShader(m_upscaleFlowCS.Get(), nullptr, 0);
-
-        ID3D11ShaderResourceView* upFwdSrc[] = {
-            m_fwdFlow[l + 1].flowSRV.Get(), m_pyr0[l].srv.Get(), m_pyr1[l].srv.Get()
+        d3dContext->CSSetShader(m_bidirectionalRefineCS.Get(), nullptr, 0);
+        ID3D11ShaderResourceView* inputs[] = {
+            current.flowSRV.Get(), opposite.flowSRV.Get()
         };
-        ID3D11UnorderedAccessView* upFwdDst[] = { m_fwdFlow[l].flowUAV.Get() };
-        d3dContext->CSSetShaderResources(0, 3, upFwdSrc);
-        d3dContext->CSSetUnorderedAccessViews(0, 1, upFwdDst, nullptr);
-        uint32_t flowWidth = (m_fwdFlow[l].width + 7) / 8;
-        uint32_t flowHeight = (m_fwdFlow[l].height + 7) / 8;
+        d3dContext->CSSetShaderResources(0, 2, inputs);
+        ID3D11UnorderedAccessView* output[] = { current.upscaledUAV.Get() };
+        d3dContext->CSSetUnorderedAccessViews(0, 1, output, nullptr);
+        uint32_t flowWidth = (current.width + 15) / 16;
+        uint32_t flowHeight = (current.height + 15) / 16;
         d3dContext->Dispatch((flowWidth + 15) / 16, (flowHeight + 15) / 16, 1);
-        d3dContext->CSSetShaderResources(0, 3, nullSRV);
+        d3dContext->CSSetShaderResources(0, 2, nullSRV);
         d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
+        d3dContext->CopyResource(current.flowTexture.Get(), current.upscaledTexture.Get());
+    };
 
-    }
-
-    // Approximate backward flow from the completed forward field.
-    constants.levelWidth = m_width;
-    constants.levelHeight = m_height;
-    m_context->updateConstants(constants);
-    d3dContext->CSSetShader(m_invertFlowCS.Get(), nullptr, 0);
-    ID3D11ShaderResourceView* invertSRV[] = { m_fwdFlow[0].flowSRV.Get() };
-    ID3D11UnorderedAccessView* invertUAV[] = { m_bwdFlow[0].flowUAV.Get() };
-    d3dContext->CSSetShaderResources(0, 1, invertSRV);
-    d3dContext->CSSetUnorderedAccessViews(0, 1, invertUAV, nullptr);
-    d3dContext->Dispatch(((m_width + 7) / 8 + 15) / 16, ((m_height + 7) / 8 + 15) / 16, 1);
-    d3dContext->CSSetShaderResources(0, 1, nullSRV);
-    d3dContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
+    refineBidirectional(m_fwdFlow[0], m_bwdFlow[0]);
+    refineBidirectional(m_bwdFlow[0], m_fwdFlow[0]);
 
     if (timingSlot >= 0) {
         auto& timing = m_gpuTiming[static_cast<size_t>(timingSlot)];

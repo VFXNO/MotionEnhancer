@@ -11,6 +11,7 @@
 #include "RealtimePresenter.h"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -28,6 +29,8 @@ static void printUsage(const char* progName) {
               << "  " << progName << " --capture-window <title> [options]   # Real-time GPU overlay\n"
               << "  " << progName << " --list-windows                      # List desktop windows for capture\n"
               << "  " << progName << " <frame0.png> <frame1.png> <out.png> # Offline 2-frame interpolation\n"
+              << "  " << progName << " --gpu-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--save-flow f.png]\n"
+              << "                                        # Run the real-time GPU shader pipeline on two PNGs\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n\n"
               << "Real-Time GPU Overlay Options:\n"
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
@@ -36,8 +39,8 @@ static void printUsage(const char* progName) {
               << "  --gpu-levels <1-8>       Real-time pyramid levels (default: 7)\n"
               << "  --gpu-min-refine <n>     Finest searched level, 0 to levels-1 (default: 0)\n"
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 8)\n"
-              << "  --gpu-refine-radius <0-8>   Refinement radius (default: 8)\n"
-              << "  --gpu-smoothness <0-0.1>    Predictor smoothness weight (default: 0)\n"
+              << "  --gpu-refine-radius <0-8>   Refinement radius (default: 2)\n"
+              << "  --gpu-smoothness <0-0.1>    Predictor smoothness weight (default: 0.0005)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
               << "  --time <float>          Intermediate timestamp in (0.0, 1.0) (default: 0.5)\n"
@@ -198,6 +201,223 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Offline GPU path: runs the exact real-time shader pipeline on two PNGs so
+// the HLSL can be checked against a known image pair / ground truth.
+// ---------------------------------------------------------------------------
+static bool uploadFrameTexture(D3D11Context& ctx, const Image& img, ComPtr<ID3D11Texture2D>& texture) {
+    std::vector<uint8_t> pixels(static_cast<size_t>(img.width) * img.height * 4);
+    for (int y = 0; y < img.height; ++y) {
+        for (int x = 0; x < img.width; ++x) {
+            size_t o = (static_cast<size_t>(y) * img.width + x) * 4;
+            for (int c = 0; c < 3; ++c) {
+                float v = img.channels >= 3 ? img.get(x, y, c) : img.get(x, y, 0);
+                pixels[o + c] = static_cast<uint8_t>(std::clamp(std::lround(v), 0L, 255L));
+            }
+            pixels[o + 3] = 255;
+        }
+    }
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width = static_cast<UINT>(img.width);
+    desc.Height = static_cast<UINT>(img.height);
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    D3D11_SUBRESOURCE_DATA init = { pixels.data(), static_cast<UINT>(img.width * 4), 0 };
+    return SUCCEEDED(ctx.device->CreateTexture2D(&desc, &init, texture.GetAddressOf()));
+}
+
+static bool readbackTexture(D3D11Context& ctx, ID3D11Texture2D* source, std::vector<uint8_t>& bytes,
+                            UINT& width, UINT& height, UINT& rowPitch) {
+    D3D11_TEXTURE2D_DESC desc = {};
+    source->GetDesc(&desc);
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.BindFlags = 0;
+    desc.MiscFlags = 0;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ComPtr<ID3D11Texture2D> staging;
+    if (FAILED(ctx.device->CreateTexture2D(&desc, nullptr, staging.GetAddressOf()))) return false;
+    ctx.context->CopyResource(staging.Get(), source);
+    D3D11_MAPPED_SUBRESOURCE mapped = {};
+    if (FAILED(ctx.context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped))) return false;
+    width = desc.Width;
+    height = desc.Height;
+    rowPitch = mapped.RowPitch;
+    bytes.assign(static_cast<const uint8_t*>(mapped.pData),
+                 static_cast<const uint8_t*>(mapped.pData) + static_cast<size_t>(mapped.RowPitch) * desc.Height);
+    ctx.context->Unmap(staging.Get(), 0);
+    return true;
+}
+
+static FlowField readbackFlowGrid(D3D11Context& ctx, ID3D11Texture2D* flowTexture, int imageW, int imageH) {
+    std::vector<uint8_t> bytes;
+    UINT w = 0, h = 0, pitch = 0;
+    if (!flowTexture || !readbackTexture(ctx, flowTexture, bytes, w, h, pitch)) return FlowField();
+    // Expand the per-block grid to a per-pixel field so FlowField::toColorImage
+    // and the centre-vector check work as they do for the CPU path.
+    FlowField field(imageW, imageH);
+    for (int y = 0; y < imageH; ++y) {
+        for (int x = 0; x < imageW; ++x) {
+            UINT bx = std::min<UINT>(static_cast<UINT>(x / 16), w - 1);
+            UINT by = std::min<UINT>(static_cast<UINT>(y / 16), h - 1);
+            const float* v = reinterpret_cast<const float*>(bytes.data() + static_cast<size_t>(by) * pitch + bx * 8);
+            field.set(x, y, MotionVector(v[0], v[1], 1.0f));
+        }
+    }
+    return field;
+}
+
+static int runOfflineGPUInterpolation(
+    const std::string& input0Path,
+    const std::string& input1Path,
+    const std::string& outputPath,
+    const std::string& flowOutputPath,
+    const std::string& groundTruthPath,
+    float t,
+    const GPUInterpolationSettings& gpuSettings
+) {
+    Image frame0 = Image::load(input0Path);
+    Image frame1 = Image::load(input1Path);
+    if (frame0.empty() || frame1.empty()) return 1;
+    if (frame0.width != frame1.width || frame0.height != frame1.height) {
+        std::cerr << "Error: frame dimensions mismatch\n";
+        return 1;
+    }
+
+    auto d3dContext = std::make_shared<D3D11Context>();
+    if (!d3dContext->initialize()) return 1;
+
+    GPUInterpolator gpu;
+    gpu.setSettings(gpuSettings);
+    if (!gpu.initialize(d3dContext)) return 1;
+    if (!gpu.resizeBuffers(static_cast<uint32_t>(frame0.width), static_cast<uint32_t>(frame0.height))) return 1;
+
+    const uint32_t flowGridWidth = (static_cast<uint32_t>(frame0.width) + 15) / 16;
+    const uint32_t flowGridHeight = (static_cast<uint32_t>(frame0.height) + 15) / 16;
+    int debugLevels = std::clamp(gpuSettings.pyramidLevels, 1, GPUInterpolator::MAX_PYRAMID_LEVELS);
+    while (debugLevels > 1 &&
+           std::min(frame0.width, frame0.height) >> (debugLevels - 1) < GPUInterpolator::kMinCoarsestExtent) {
+        --debugLevels;
+    }
+    std::cout << "GPU block matching debug:\n"
+              << "  Block size:             16x16 pixels\n"
+              << "  Matching support:       16x16 pixels\n"
+              << "  Flow grid (full):       " << flowGridWidth << "x" << flowGridHeight
+              << " vectors (" << static_cast<uint64_t>(flowGridWidth) * flowGridHeight << ")\n"
+              << "  Directions:             forward + backward\n"
+              << "  Pyramid levels searched: " << debugLevels << "\n"
+              << "  Coarse search radius:   " << gpuSettings.coarseSearchRadius << "\n"
+              << "  Refine search radius:   " << gpuSettings.refineSearchRadius << "\n";
+    for (int level = 0; level < debugLevels; ++level) {
+        uint32_t levelWidth = std::max(1u, static_cast<uint32_t>(frame0.width) >> level);
+        uint32_t levelHeight = std::max(1u, static_cast<uint32_t>(frame0.height) >> level);
+        uint32_t levelFlowWidth = (levelWidth + 15) / 16;
+        uint32_t levelFlowHeight = (levelHeight + 15) / 16;
+        std::cout << "  L" << level << ": " << levelWidth << "x" << levelHeight
+                  << " image, flow " << levelFlowWidth << "x" << levelFlowHeight << "\n";
+    }
+
+    ComPtr<ID3D11Texture2D> tex0, tex1, outTex;
+    if (!uploadFrameTexture(*d3dContext, frame0, tex0) || !uploadFrameTexture(*d3dContext, frame1, tex1)) {
+        std::cerr << "Error: failed to upload frames\n";
+        return 1;
+    }
+    {
+        D3D11_TEXTURE2D_DESC desc = {};
+        desc.Width = static_cast<UINT>(frame0.width);
+        desc.Height = static_cast<UINT>(frame0.height);
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        if (FAILED(d3dContext->device->CreateTexture2D(&desc, nullptr, outTex.GetAddressOf()))) return 1;
+    }
+
+    // Warm-up pass so the GPU timestamp query of a steady-state run can be
+    // read back by the second call (the query resolves one call later).
+    if (!gpu.prepareFramePair(tex0.Get(), tex1.Get(), 0, 1)) {
+        std::cerr << "Error: prepareFramePair failed\n";
+        return 1;
+    }
+    d3dContext->context->Flush();
+    auto start = std::chrono::high_resolution_clock::now();
+    if (!gpu.prepareFramePair(tex0.Get(), tex1.Get(), 1, 2)) {
+        std::cerr << "Error: prepareFramePair failed\n";
+        return 1;
+    }
+    if (!gpu.synthesize(outTex.Get(), t)) {
+        std::cerr << "Error: synthesize failed\n";
+        return 1;
+    }
+    d3dContext->context->Flush();
+
+    std::vector<uint8_t> bytes;
+    UINT w = 0, h = 0, pitch = 0;
+    if (!readbackTexture(*d3dContext, outTex.Get(), bytes, w, h, pitch)) {
+        std::cerr << "Error: readback failed\n";
+        return 1;
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
+
+    Image output(static_cast<int>(w), static_cast<int>(h), 3);
+    for (UINT y = 0; y < h; ++y) {
+        const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
+        for (UINT x = 0; x < w; ++x) {
+            for (int c = 0; c < 3; ++c) {
+                output.set(static_cast<int>(x), static_cast<int>(y), c, static_cast<float>(row[x * 4 + c]));
+            }
+        }
+    }
+    if (!output.savePNG(outputPath)) {
+        std::cerr << "Failed to save " << outputPath << "\n";
+        return 1;
+    }
+    // Third call only to resolve the timestamp query of the timed run.
+    gpu.prepareFramePair(tex0.Get(), tex1.Get(), 2, 3);
+    std::cout << "GPU offline interpolation (t = " << t << "): flow pipeline "
+              << std::fixed << std::setprecision(2) << gpu.getLastGpuTimeMs() << " ms GPU, "
+              << elapsedMs << " ms wall incl. readback -> " << outputPath << "\n";
+
+    FlowField forward = readbackFlowGrid(*d3dContext, gpu.forwardFlowTexture(), frame0.width, frame0.height);
+    if (!forward.empty()) {
+        MotionVector centre = forward.get(frame0.width / 2, frame0.height / 2);
+        std::cout << "  Centre block vector: (" << centre.vx << ", " << centre.vy << ")\n";
+        if (!flowOutputPath.empty()) {
+            forward.toColorImage().savePNG(flowOutputPath);
+            std::cout << "  Saved forward flow visualization to: " << flowOutputPath << "\n";
+            // Also dump the raw block grid as text (one "vx,vy" per block) so
+            // vectors can be inspected exactly rather than through the hue map.
+            std::ofstream txt(flowOutputPath + ".txt");
+            for (int by = 0; by * 16 < frame0.height; ++by) {
+                for (int bx = 0; bx * 16 < frame0.width; ++bx) {
+                    MotionVector v = forward.get(bx * 16, by * 16);
+                    txt << static_cast<int>(v.vx) << "," << static_cast<int>(v.vy) << (bx * 16 + 16 < frame0.width ? " " : "\n");
+                }
+            }
+        }
+    }
+
+    if (!groundTruthPath.empty()) {
+        Image truth = Image::load(groundTruthPath);
+        if (!truth.empty() && truth.width == output.width && truth.height == output.height) {
+            Image blend(frame0.width, frame0.height, 3);
+            for (int y = 0; y < blend.height; ++y)
+                for (int x = 0; x < blend.width; ++x)
+                    for (int c = 0; c < 3; ++c)
+                        blend.set(x, y, c, (1.0f - t) * frame0.get(x, y, c) + t * frame1.get(x, y, c));
+            std::cout << "  PSNR vs ground truth: " << std::fixed << std::setprecision(2)
+                      << computePSNR(output, truth) << " dB (naive blend: "
+                      << computePSNR(blend, truth) << " dB)\n";
+        }
+    }
+    return 0;
+}
+
 static int runRealtimeGPUInterpolation(
     const std::string& windowTitle,
     const GPUInterpolationSettings& gpuSettings,
@@ -289,6 +509,24 @@ static int runRealtimeGPUInterpolation(
         return;
     }
 
+    std::ofstream gpuDebug("gpu_debug.txt", std::ios::trunc);
+    if (gpuDebug) {
+        uint32_t flowWidth = (capture.getWidth() + 15) / 16;
+        uint32_t flowHeight = (capture.getHeight() + 15) / 16;
+        gpuDebug << "GPU block matching debug\n"
+                 << "Block size: 16x16 pixels\n"
+                 << "Matching support: 16x16 pixels\n"
+                 << "Flow format: R32G32_FLOAT\n"
+                 << "Flow grid: " << flowWidth << "x" << flowHeight
+                 << " vectors (" << static_cast<uint64_t>(flowWidth) * flowHeight << ")\n"
+                 << "Directions: forward + backward\n"
+                 << "Pyramid levels requested: " << gpuSettings.pyramidLevels << "\n"
+                 << "Coarse search radius: " << gpuSettings.coarseSearchRadius << "\n"
+                 << "Refine search radius: " << gpuSettings.refineSearchRadius << "\n"
+                 << "Capture size: " << capture.getWidth() << "x" << capture.getHeight() << "\n";
+        gpuDebug.flush();
+    }
+
     std::cout << "\n============================================================\n"
               << " >>> Real-Time GPU Frame Interpolation Active!\n"
               << "  Capture Engine: Windows Graphics Capture (WGC API - Zero-Copy GPU VRAM)\n"
@@ -302,7 +540,9 @@ static int runRealtimeGPUInterpolation(
               << "  FPS Multiplier: " << (outputMultiplier == 0 ? "display max" : std::to_string(outputMultiplier) + "x") << "\n"
               << "  Output Clock:   " << std::fixed << std::setprecision(2)
               << presenter.outputRate() << " Hz (display " << presenter.refreshRate() << " Hz)\n"
-              << "  Compute Engine: FidelityFX-style 8x8 Block SAD Optical Flow (DirectCompute)\n"
+              << "  Compute Engine: FidelityFX-style 16x16 Block MSAD64 Optical Flow (DirectCompute)\n"
+              << "  Flow Grid:      " << ((capture.getWidth() + 15) / 16) << "x"
+              << ((capture.getHeight() + 15) / 16) << " vectors\n"
               << "  Presentation:   Paced Click-Through DWM Presenter\n"
               << "  Hotkeys:        [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
               << "============================================================\n\n" << std::flush;
@@ -432,6 +672,8 @@ int main(int argc, char** argv) {
     std::string flowOutputPath;
     std::string occOutputPath;
     std::string captureWindowQuery;
+    std::string groundTruthPath;
+    bool gpuOffline = false;
     uint32_t sourceFps = 0;
     uint32_t outputMultiplier = 2;
     GPUInterpolationSettings gpuSettings;
@@ -484,6 +726,10 @@ int main(int argc, char** argv) {
                     sourceFps = 0;
                 }
             }
+        } else if (arg == "--gpu-offline") {
+            gpuOffline = true;
+        } else if (arg == "--ground-truth" && i + 1 < argc) {
+            groundTruthPath = argv[++i];
         } else if (arg == "--gpu-levels" && i + 1 < argc) {
             gpuSettings.pyramidLevels = std::clamp(std::stoi(argv[++i]), 1, 8);
         } else if (arg == "--gpu-min-refine" && i + 1 < argc) {
@@ -626,6 +872,13 @@ int main(int argc, char** argv) {
         std::cerr << "Error: missing required positional arguments <frame0.png> <frame1.png> <output.png>\n";
         printUsage(argv[0]);
         return 1;
+    }
+
+    if (gpuOffline) {
+        gpuSettings.minRefineLevel = std::clamp(
+            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
+        return runOfflineGPUInterpolation(input0Path, input1Path, outputPath,
+                                          flowOutputPath, groundTruthPath, t, gpuSettings);
     }
 
     std::cout << "Loading input frames:\n"

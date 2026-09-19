@@ -14,7 +14,7 @@ Pyramid::Pyramid(const Image& baseImage, int levels) {
 }
 
 void Pyramid::build(const Image& baseImage, int requestedLevels) {
-    numLevels = requestedLevels;
+    numLevels = std::max(1, requestedLevels);
     levels.clear();
     levels.reserve(numLevels);
 
@@ -27,8 +27,10 @@ void Pyramid::build(const Image& baseImage, int requestedLevels) {
 
     // Build successive coarsened levels
     for (int l = 1; l < numLevels; ++l) {
+        if (levels.back().width == 1 && levels.back().height == 1) break;
         Image smoothed = levels[l - 1].convolve5(GAUSSIAN_5TAP);
         Image downsampled = smoothed.downsample2x();
         levels.push_back(downsampled);
     }
+    numLevels = static_cast<int>(levels.size());
 }

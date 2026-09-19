@@ -137,10 +137,10 @@ Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame
    [HLSL 7-Level Luminance Pyramid] (PyramidCS.hlsl)
               │
               ▼
-   [8x8 Block / 256-Candidate msad4 Search] (MotionSearchCS.hlsl)
+   [Bidirectional 16x16 Block / Candidate Search] (MotionSearchCS.hlsl)
               │
               ▼
-   [3x3 Vector Medoid + SAD-Guided Scaling] (FilterFlowCS/UpscaleFlowCS.hlsl)
+   [Coarse-to-Fine Block Search + Spatial Filtering] (MotionSearchCS/FilterFlowCS.hlsl)
               │
               ▼
    [Timestamp-Driven Single-Source Motion Warp] (InterpolateCS.hlsl)
@@ -149,7 +149,7 @@ Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame
    [Paced Click-Through DXGI/DWM Presenter] (50-120+ FPS)
 ```
 
-The real-time GPU path is a Direct3D 11 / Shader Model 5 adaptation of AMD FidelityFX Optical Flow v5. It estimates one signed `R16G16_SINT` vector per non-overlapping 8x8 luminance block, performs a 16x16 (`256` candidate) `msad4` search from coarse to fine, applies the published 3x3 vector-medoid filter, and selects among four scaled vectors using 4x4 SAD. Every block keeps its estimated motion vector without zero-motion or high-error rejection. Backward flow is reconstructed without a second matching hierarchy. Flow is cached per source pair and reused for every presentation timestamp. Runtime statistics report asynchronous D3D11 timestamp measurements as `GPU Pipeline`.
+The real-time GPU path is a Direct3D 11 / Shader Model 5 adaptation of AMD FidelityFX Optical Flow v5. It estimates one `R32G32_FLOAT` vector per non-overlapping 16x16 luminance block, evaluates candidates with centered 8x8 MSAD64 matching over Rec.709 luma, performs coarse-to-fine candidate search by consuming the parent block vector directly in `MotionSearchCS.hlsl`, applies spatial flow filtering and bidirectional consistency correction, and retains the highest-scoring candidate. Forward and backward flow are estimated independently with the same coarse-to-fine hierarchy, using swapped reference and candidate frames. Flow is cached per source pair and reused for every presentation timestamp. Runtime statistics report asynchronous D3D11 timestamp measurements as `GPU Pipeline`.
 
 This is not AMD AFMF 2, which remains proprietary driver software. It ports the publicly documented FidelityFX optical-flow core while retaining this application's WGC capture, single-source synthesis, and D3D11 presentation architecture. See `THIRD_PARTY_NOTICES.md` for attribution.
 
@@ -163,7 +163,7 @@ For presentation timestamp $T$ bracketed by source timestamps $t_0$ and $t_1$, i
 
 $$\alpha = \operatorname{clamp}\left(\frac{T-t_0}{t_1-t_0}, 0, 1\right)$$
 
-The synthesis shader motion-warps exactly one source frame according to $\alpha$. It does not blend, crossfade, or run occlusion passes.
+The synthesis shader motion-warps both source frames according to $\alpha$ and blends them with forward/backward consistency weighting. It does not run a separate occlusion pass.
 
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)
