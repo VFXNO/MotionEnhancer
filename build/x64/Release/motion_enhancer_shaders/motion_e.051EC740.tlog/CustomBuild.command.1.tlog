@@ -1,3 +1,15 @@
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD\CMAKEFILES\672356622FBD2451C45269BD6E910AB8\FFXFLOWCONVERTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
 ^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD\CMAKEFILES\672356622FBD2451C45269BD6E910AB8\FILTERFLOWCS.CSO.RULE
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
@@ -38,7 +50,19 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD\CMAKEFILES\672356622FBD2451C45269BD6E910AB8\PACKLUMACS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

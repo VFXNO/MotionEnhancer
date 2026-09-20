@@ -37,13 +37,15 @@ set(SOURCES
     src/Pyramid.cpp
     src/ZNCCMatcher.cpp
     src/FrameInterpolator.cpp
-    src/D3D11Context.cpp
-    src/D3D12Context.cpp
-    src/WGCCapture.cpp
-    src/GPUInterpolator.cpp
+    src/GraphicsDevice.cpp
+    src/ComputeKernels.cpp
+    src/FlowEngine.cpp
+    src/FrameTimeline.cpp
+    src/CaptureEngine.cpp
+    src/Presenter.cpp
+    src/RealtimeSession.cpp
     src/WindowHelper.cpp
     src/GuiApp.cpp
-    src/RealtimePresenter.cpp
     app.rc
 )
 
@@ -54,13 +56,16 @@ set(HEADERS
     include/MotionVector.h
     include/ZNCCMatcher.h
     include/FrameInterpolator.h
-    include/D3D11Context.h
-    include/D3D12Context.h
-    include/WGCCapture.h
-    include/GPUInterpolator.h
+    include/GraphicsDevice.h
+    include/ComputeKernels.h
+    include/FlowEngine.h
+    include/FrameTimeline.h
+    include/CaptureEngine.h
+    include/Presenter.h
+    include/RealtimeSession.h
+    include/WallClock.h
     include/WindowHelper.h
     include/GuiApp.h
-    include/RealtimePresenter.h
     third_party/stb_image.h
     third_party/stb_image_write.h
 )
@@ -98,6 +103,7 @@ if(WIN32)
         dxgi
         d3dcompiler
         dwmapi
+        avrt
         comctl32
         comdlg32
         windowsapp
@@ -117,18 +123,24 @@ if(WIN32)
     if(DXC_EXECUTABLE)
         set(DXC_OUTPUTS)
         set(MOTION_ENHANCER_SHADERS Common.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
-                                     FilterFlowCS.hlsl InterpolateCS.hlsl PresentFrameCS.hlsl)
+                                     FilterFlowCS.hlsl InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl)
         endif()
         foreach(SHADER IN LISTS MOTION_ENHANCER_SHADERS)
             if(SHADER MATCHES "\\.hlsl$")
                 string(REGEX REPLACE "\\.hlsl$" ".cso" SHADER_OBJECT "${SHADER}")
+                # DXC emits DXIL (SM 6.0) for every profile; the matcher uses
+                # wave intrinsics, which need the 6.0 profile explicitly.
+                set(SHADER_PROFILE cs_5_0)
+                if(SHADER STREQUAL "MotionSearchCS.hlsl")
+                    set(SHADER_PROFILE cs_6_0)
+                endif()
                 add_custom_command(
                     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
                     COMMAND ${CMAKE_COMMAND} -E make_directory
                             "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-                    COMMAND "${DXC_EXECUTABLE}" -E CSMain -T cs_5_0 -O3
+                    COMMAND "${DXC_EXECUTABLE}" -E CSMain -T ${SHADER_PROFILE} -O3
                             -I "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
                             -Fo "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"

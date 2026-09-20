@@ -6,6 +6,10 @@
 #include <sstream>
 #include <filesystem>
 
+#ifndef D3D12_COMMAND_QUEUE_PRIORITY_GLOBAL_HIGH
+#define D3D12_COMMAND_QUEUE_PRIORITY_GLOBAL_HIGH (100)
+#endif
+
 D3D11Context::~D3D11Context() {
     if (m_frameLatencyWaitableObject) {
         CloseHandle(m_frameLatencyWaitableObject);
@@ -64,6 +68,10 @@ bool D3D11Context::initialize(GraphicsAdapterPreference preference) {
     if (SUCCEEDED(hr)) {
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        // High global priority keeps flow pair preparation ahead of the
+        // captured application's GPU work, so it beats the presentation
+        // deadline even when the target is rendering at full load.
+        queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_GLOBAL_HIGH;
         hr = d3d12Device->CreateCommandQueue(
             &queueDesc, IID_PPV_ARGS(d3d12Queue.GetAddressOf()));
         if (SUCCEEDED(hr)) {

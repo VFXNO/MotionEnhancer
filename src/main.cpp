@@ -1,15 +1,11 @@
-﻿#include "Image.h"
+#include "Image.h"
 #include "Pyramid.h"
 #include "MotionVector.h"
 #include "ZNCCMatcher.h"
 #include "FrameInterpolator.h"
-#include "D3D11Context.h"
-#include "WGCCapture.h"
-#include "GPUInterpolator.h"
-#include "D3D12Context.h"
+#include "RealtimeSession.h"
 #include "WindowHelper.h"
 #include "GuiApp.h"
-#include "RealtimePresenter.h"
 
 #include <iostream>
 #include <fstream>
@@ -32,7 +28,7 @@ static void printUsage(const char* progName) {
               << "  " << progName << " --capture-window <title> [options]   # Real-time GPU overlay\n"
               << "  " << progName << " --list-windows                      # List desktop windows for capture\n"
               << "  " << progName << " <frame0.png> <frame1.png> <out.png> # Offline 2-frame interpolation\n"
-              << "  " << progName << " --gpu-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--save-flow f.png]\n"
+              << "  " << progName << " --gpu-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--save-flow f.png] [--gpu-offline-prev p.png]\n"
               << "                                        # Run the real-time GPU shader pipeline on two PNGs\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n\n"
@@ -40,14 +36,14 @@ static void printUsage(const char* progName) {
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
               << "  --multiplier <2|3|4|max>      Output FPS multiplier (default: max = display rate)\n"
-              << "  --gpu-levels <1-8>       Real-time pyramid levels (default: 7)\n"
+              << "  --gpu-levels <1-8>       Real-time pyramid levels (default: 8)\n"
               << "  --gpu-min-refine <n>     Finest searched level, 0 to levels-1 (default: 0)\n"
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 8)\n"
-              << "  --gpu-refine-radius <0-8>   Refinement radius (default: 2)\n"
+              << "  --gpu-refine-radius <0-8>   Finest-level search radius (default: 8)\n"
               << "  --gpu-smoothness <0-0.1>    Predictor smoothness weight (default: 0.0005)\n"
               << "  --flow-engine <ffx|msad>    Optical flow engine (default: ffx; MSAD is\n"
               << "                              the automatic and forced fallback)\n"
-              << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto)\n"
+              << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
               << "  --time <float>          Intermediate timestamp in (0.0, 1.0) (default: 0.5)\n"
@@ -208,519 +204,6 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Offline GPU path: runs the exact real-time shader pipeline on two PNGs so
-// the HLSL can be checked against a known image pair / ground truth.
-// ---------------------------------------------------------------------------
-static bool uploadFrameTexture(D3D11Context& ctx, const Image& img, ComPtr<ID3D11Texture2D>& texture) {
-    std::vector<uint8_t> pixels(static_cast<size_t>(img.width) * img.height * 4);
-    for (int y = 0; y < img.height; ++y) {
-        for (int x = 0; x < img.width; ++x) {
-            size_t o = (static_cast<size_t>(y) * img.width + x) * 4;
-            for (int c = 0; c < 3; ++c) {
-                float v = img.channels >= 3 ? img.get(x, y, c) : img.get(x, y, 0);
-                pixels[o + c] = static_cast<uint8_t>(std::clamp(std::lround(v), 0L, 255L));
-            }
-            pixels[o + 3] = 255;
-        }
-    }
-    ComPtr<ID3D12Resource> texture12;
-    if (!ctx.createSharedTexture2D(static_cast<uint32_t>(img.width),
-                                   static_cast<uint32_t>(img.height),
-                                   DXGI_FORMAT_R8G8B8A8_UNORM,
-                                   D3D11_BIND_SHADER_RESOURCE, texture, texture12)) {
-        return false;
-    }
-    ctx.context->UpdateSubresource(texture.Get(), 0, nullptr, pixels.data(),
-                                   static_cast<UINT>(img.width * 4), 0);
-    // Publish the upload to D3D12 through the shared capture-ready fence.
-    ctx.signalCaptureReady(texture.Get());
-    return true;
-}
-
-static bool readbackTexture(D3D11Context& ctx, ID3D11Texture2D* source, std::vector<uint8_t>& bytes,
-                            UINT& width, UINT& height, UINT& rowPitch) {
-    D3D11_TEXTURE2D_DESC desc = {};
-    source->GetDesc(&desc);
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.BindFlags = 0;
-    desc.MiscFlags = 0;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    ComPtr<ID3D11Texture2D> staging;
-    if (FAILED(ctx.device->CreateTexture2D(&desc, nullptr, staging.GetAddressOf()))) return false;
-    ctx.context->CopyResource(staging.Get(), source);
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (FAILED(ctx.context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped))) return false;
-    width = desc.Width;
-    height = desc.Height;
-    rowPitch = mapped.RowPitch;
-    bytes.assign(static_cast<const uint8_t*>(mapped.pData),
-                 static_cast<const uint8_t*>(mapped.pData) + static_cast<size_t>(mapped.RowPitch) * desc.Height);
-    ctx.context->Unmap(staging.Get(), 0);
-    return true;
-}
-
-static FlowField readbackFlowGrid(D3D11Context& ctx, ID3D11Texture2D* flowTexture, int imageW, int imageH) {
-    std::vector<uint8_t> bytes;
-    UINT w = 0, h = 0, pitch = 0;
-    if (!flowTexture || !readbackTexture(ctx, flowTexture, bytes, w, h, pitch)) return FlowField();
-    // Expand the per-block grid to a per-pixel field so FlowField::toColorImage
-    // and the centre-vector check work as they do for the CPU path.
-    FlowField field(imageW, imageH);
-    for (int y = 0; y < imageH; ++y) {
-        for (int x = 0; x < imageW; ++x) {
-            UINT bx = std::min<UINT>(static_cast<UINT>(x / 16), w - 1);
-            UINT by = std::min<UINT>(static_cast<UINT>(y / 16), h - 1);
-            const float* v = reinterpret_cast<const float*>(bytes.data() + static_cast<size_t>(by) * pitch + bx * 8);
-            field.set(x, y, MotionVector(v[0], v[1], 1.0f));
-        }
-    }
-    return field;
-}
-
-static int runOfflineGPUInterpolation(
-    const std::string& input0Path,
-    const std::string& input1Path,
-    const std::string& outputPath,
-    const std::string& flowOutputPath,
-    const std::string& groundTruthPath,
-    float t,
-    const GPUInterpolationSettings& gpuSettings,
-    GraphicsAdapterPreference adapterPreference
-) {
-    Image frame0 = Image::load(input0Path);
-    Image frame1 = Image::load(input1Path);
-    if (frame0.empty() || frame1.empty()) return 1;
-    if (frame0.width != frame1.width || frame0.height != frame1.height) {
-        std::cerr << "Error: frame dimensions mismatch\n";
-        return 1;
-    }
-
-    auto d3dContext = std::make_shared<D3D11Context>();
-    if (!d3dContext->initialize(adapterPreference)) return 1;
-
-    GPUInterpolator gpu;
-    gpu.setSettings(gpuSettings);
-    if (!gpu.initialize(d3dContext)) return 1;
-    if (!gpu.resizeBuffers(static_cast<uint32_t>(frame0.width), static_cast<uint32_t>(frame0.height))) return 1;
-
-    const uint32_t flowGridWidth = (static_cast<uint32_t>(frame0.width) + 31) / 32;
-    const uint32_t flowGridHeight = (static_cast<uint32_t>(frame0.height) + 31) / 32;
-    int debugLevels = std::clamp(gpuSettings.pyramidLevels, 1, GPUInterpolator::MAX_PYRAMID_LEVELS);
-    while (debugLevels > 1 &&
-           std::min(frame0.width, frame0.height) >> (debugLevels - 1) < GPUInterpolator::kMinCoarsestExtent) {
-        --debugLevels;
-    }
-    std::cout << "GPU block matching debug:\n"
-              << "  Block size:             32x32 pixels\n"
-              << "  Matching support:       64x64 pixels / 64 samples\n"
-              << "  Flow grid (full):       " << flowGridWidth << "x" << flowGridHeight
-              << " vectors (" << static_cast<uint64_t>(flowGridWidth) * flowGridHeight << ")\n"
-              << "  Directions:             forward + backward\n"
-              << "  Pyramid levels searched: " << debugLevels << "\n"
-              << "  Coarse search radius:   " << gpuSettings.coarseSearchRadius << "\n"
-              << "  Refine search radius:   " << gpuSettings.refineSearchRadius << "\n";
-    for (int level = 0; level < debugLevels; ++level) {
-        uint32_t levelWidth = std::max(1u, static_cast<uint32_t>(frame0.width) >> level);
-        uint32_t levelHeight = std::max(1u, static_cast<uint32_t>(frame0.height) >> level);
-        uint32_t levelBlock = 32u;
-        uint32_t levelFlowWidth = (levelWidth + levelBlock - 1) / levelBlock;
-        uint32_t levelFlowHeight = (levelHeight + levelBlock - 1) / levelBlock;
-        std::cout << "  L" << level << ": " << levelWidth << "x" << levelHeight
-                  << " image, flow " << levelFlowWidth << "x" << levelFlowHeight << "\n";
-    }
-
-    ComPtr<ID3D11Texture2D> tex0, tex1, outTex;
-    if (!uploadFrameTexture(*d3dContext, frame0, tex0) || !uploadFrameTexture(*d3dContext, frame1, tex1)) {
-        std::cerr << "Error: failed to upload frames\n";
-        return 1;
-    }
-    {
-        ComPtr<ID3D12Resource> outTex12;
-        if (!d3dContext->createSharedTexture2D(
-                static_cast<uint32_t>(frame0.width), static_cast<uint32_t>(frame0.height),
-                DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_SHADER_RESOURCE, outTex, outTex12)) {
-            std::cerr << "Error: failed to create output texture\n";
-            return 1;
-        }
-    }
-
-    // Warm-up pass so the GPU timestamp query of a steady-state run can be
-    // read back by the second call (the query resolves one call later).
-    if (!gpu.prepareFramePair(tex0.Get(), tex1.Get(), 0, 1)) {
-        std::cerr << "Error: prepareFramePair failed\n";
-        return 1;
-    }
-    if (d3dContext->nativeD3D12 &&
-        !d3dContext->nativeD3D12->waitPairOutput()) {
-        std::cerr << "Error: warm-up frame pair did not complete\n";
-        return 1;
-    }
-    d3dContext->context->Flush();
-    auto start = std::chrono::high_resolution_clock::now();
-    if (!gpu.prepareFramePair(tex0.Get(), tex1.Get(), 1, 2)) {
-        std::cerr << "Error: prepareFramePair failed\n";
-        return 1;
-    }
-    if (!gpu.synthesize(outTex.Get(), t)) {
-        std::cerr << "Error: synthesize failed\n";
-        return 1;
-    }
-    d3dContext->context->Flush();
-
-    std::vector<uint8_t> bytes;
-    UINT w = 0, h = 0, pitch = 0;
-    if (!readbackTexture(*d3dContext, outTex.Get(), bytes, w, h, pitch)) {
-        std::cerr << "Error: readback failed\n";
-        return 1;
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
-
-    Image output(static_cast<int>(w), static_cast<int>(h), 3);
-    for (UINT y = 0; y < h; ++y) {
-        const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
-        for (UINT x = 0; x < w; ++x) {
-            for (int c = 0; c < 3; ++c) {
-                output.set(static_cast<int>(x), static_cast<int>(y), c, static_cast<float>(row[x * 4 + c]));
-            }
-        }
-    }
-    if (!output.savePNG(outputPath)) {
-        std::cerr << "Failed to save " << outputPath << "\n";
-        return 1;
-    }
-    // Third call only to resolve the timestamp query of the timed run.
-    gpu.prepareFramePair(tex0.Get(), tex1.Get(), 2, 3);
-    std::cout << "GPU offline interpolation (t = " << t << "): flow pipeline "
-              << std::fixed << std::setprecision(2) << gpu.getLastGpuTimeMs() << " ms GPU, "
-              << elapsedMs << " ms wall incl. readback -> " << outputPath << "\n";
-
-    const bool nativeFfx = d3dContext->nativeD3D12 && d3dContext->nativeD3D12->usingFfxOpticalFlow();
-    std::cout << "  Flow estimator: "
-              << (nativeFfx ? "AMD FidelityFX Optical Flow" : "native MSAD shader graph") << "\n";
-    FlowField forward = nativeFfx ? FlowField() :
-        readbackFlowGrid(*d3dContext, gpu.forwardFlowTexture(), frame0.width, frame0.height);
-    if (!nativeFfx && !forward.empty()) {
-        MotionVector centre = forward.get(frame0.width / 2, frame0.height / 2);
-        std::cout << "  Centre block vector: (" << centre.vx << ", " << centre.vy << ")\n";
-        if (!flowOutputPath.empty()) {
-            forward.toColorImage().savePNG(flowOutputPath);
-            std::cout << "  Saved forward flow visualization to: " << flowOutputPath << "\n";
-            // Also dump the raw block grid as text (one "vx,vy" per block) so
-            // vectors can be inspected exactly rather than through the hue map.
-            std::ofstream txt(flowOutputPath + ".txt");
-            for (int by = 0; by * 16 < frame0.height; ++by) {
-                for (int bx = 0; bx * 16 < frame0.width; ++bx) {
-                    MotionVector v = forward.get(bx * 16, by * 16);
-                    txt << static_cast<int>(v.vx) << "," << static_cast<int>(v.vy) << (bx * 16 + 16 < frame0.width ? " " : "\n");
-                }
-            }
-        }
-    }
-
-    if (!groundTruthPath.empty()) {
-        Image truth = Image::load(groundTruthPath);
-        if (!truth.empty() && truth.width == output.width && truth.height == output.height) {
-            Image blend(frame0.width, frame0.height, 3);
-            for (int y = 0; y < blend.height; ++y)
-                for (int x = 0; x < blend.width; ++x)
-                    for (int c = 0; c < 3; ++c)
-                        blend.set(x, y, c, (1.0f - t) * frame0.get(x, y, c) + t * frame1.get(x, y, c));
-            std::cout << "  PSNR vs ground truth: " << std::fixed << std::setprecision(2)
-                      << computePSNR(output, truth) << " dB (naive blend: "
-                      << computePSNR(blend, truth) << " dB)\n";
-        }
-    }
-    return 0;
-}
-
-static int runRealtimeGPUInterpolation(
-    const std::string& windowTitle,
-    const GPUInterpolationSettings& gpuSettings,
-    uint32_t sourceFps,
-    uint32_t outputMultiplier,
-    GraphicsAdapterPreference adapterPreference
-) {
-    int exitCode = 0;
-    std::thread renderThread([&]() {
-        WindowHelper::attachInteractiveDesktop();
-
-        std::cout << "\n============================================================\n"
-                  << " Initializing Real-Time GPU Shader-Based Frame Interpolation\n"
-                  << "============================================================\n";
-
-        HWND targetHwnd = nullptr;
-        if (!windowTitle.empty()) {
-            targetHwnd = WindowHelper::findWindowByTitle(windowTitle);
-            if (!targetHwnd) {
-                std::cerr << "Error: Target window matching \"" << windowTitle << "\" not found!\n";
-                WindowHelper::printWindowList();
-                exitCode = 1;
-                return;
-            }
-        } else {
-            std::cout << "No window title specified. Listing top-level visible windows:\n";
-            WindowHelper::printWindowList();
-            std::cout << "Usage: motion_enhancer.exe --capture-window <window_title>\n";
-            exitCode = 0;
-            return;
-        }
-
-        char titleBuf[256] = {};
-        GetWindowTextA(targetHwnd, titleBuf, sizeof(titleBuf));
-        std::cout << "Target window: \"" << titleBuf << "\" (HWND: 0x" << std::hex << (uintptr_t)targetHwnd << std::dec << ")\n" << std::flush;
-
-    // 1. Initialize the D3D12-first graphics context. WGC runs on a native
-    // D3D11 device on the same adapter; frames are shared via NT handles.
-    std::cout << "[1/5] Initializing D3D12 compute/present device and D3D11 capture device...\n" << std::flush;
-    auto d3dContext = std::make_shared<D3D11Context>();
-    if (!d3dContext->initialize(adapterPreference)) {
-        std::cerr << "Error: Failed to initialize Direct3D graphics device.\n";
-        exitCode = 1;
-        return;
-    }
-    std::cout << "      " << d3dContext->backendName() << " ready.\n" << std::flush;
-
-    // 2. Create Overlay Window
-    std::cout << "[2/5] Creating click-through tracking presentation window...\n" << std::flush;
-    OverlayWindow overlay;
-    if (!overlay.create(targetHwnd, "Motion Enhancer GPU Overlay")) {
-        exitCode = 1;
-        return;
-    }
-
-    // 3. Initialize Windows Graphics Capture (WGC)
-    std::cout << "[3/5] Starting Windows Graphics Capture (WGC API) session...\n" << std::flush;
-    WGCCapture capture;
-    if (!capture.initialize(d3dContext->device.Get())) {
-        exitCode = 1;
-        return;
-    }
-
-    if (!capture.prepareCapture(targetHwnd)) {
-        exitCode = 1;
-        return;
-    }
-
-    // 4. Match the back buffer to the WGC texture. DXGI scales it to the
-    // overlay client area during presentation when window borders differ.
-    std::cout << "[4/5] Initializing hardware overlay presentation surface ("
-              << capture.getWidth() << "x" << capture.getHeight() << ")...\n" << std::flush;
-    RealtimePresenter presenter;
-    if (!presenter.initialize(
-            d3dContext, overlay.hwnd, capture.getWidth(), capture.getHeight(),
-            sourceFps, outputMultiplier)) {
-        exitCode = 1;
-        return;
-    }
-
-    // 5. Initialize GPU Shader Interpolator (compiles HLSL compute shaders)
-    std::cout << "[5/5] Compiling and loading HLSL Compute Shaders...\n" << std::flush;
-    GPUInterpolator gpuInterpolator;
-    gpuInterpolator.setSettings(gpuSettings);
-    if (!gpuInterpolator.initialize(d3dContext)) {
-        exitCode = 1;
-        return;
-    }
-    if (!gpuInterpolator.resizeBuffers(capture.getWidth(), capture.getHeight())) {
-        exitCode = 1;
-        return;
-    }
-    if (d3dContext->nativeD3D12 && d3dContext->nativeD3D12->isReady()) {
-        const char* flowEngine;
-        if (gpuSettings.preferFfxOpticalFlow) {
-            flowEngine = d3dContext->nativeD3D12->ffxAvailable()
-                ? "AMD FidelityFX Optical Flow (selected; MSAD on dispatch failure)"
-                : "native MSAD shader graph (AMD FidelityFX unavailable)";
-        } else {
-            flowEngine = "native MSAD shader graph (selected)";
-        }
-        std::cout << "      Flow Engine: " << flowEngine << "\n" << std::flush;
-    }
-    if (!capture.startCapture()) {
-        exitCode = 1;
-        return;
-    }
-
-    std::ofstream gpuDebug("gpu_debug.txt", std::ios::trunc);
-    if (gpuDebug) {
-        uint32_t flowWidth = (capture.getWidth() + 31) / 32;
-        uint32_t flowHeight = (capture.getHeight() + 31) / 32;
-        gpuDebug << "GPU block matching debug\n"
-                 << "Block size: 32x32 pixels\n"
-                 << "Matching support: 16x16 pixels\n"
-                 << "Flow format: R32G32_FLOAT\n"
-                 << "Flow grid: " << flowWidth << "x" << flowHeight
-                 << " vectors (" << static_cast<uint64_t>(flowWidth) * flowHeight << ")\n"
-                 << "Directions: forward + backward\n"
-                 << "Pyramid levels requested: " << gpuSettings.pyramidLevels << "\n"
-                 << "Coarse search radius: " << gpuSettings.coarseSearchRadius << "\n"
-                 << "Refine search radius: " << gpuSettings.refineSearchRadius << "\n"
-                 << "Capture size: " << capture.getWidth() << "x" << capture.getHeight() << "\n";
-        gpuDebug.flush();
-    }
-
-    std::cout << "\n============================================================\n"
-              << " >>> Real-Time GPU Frame Interpolation Active!\n"
-               << "  Capture Engine: Windows Graphics Capture (D3D11 input, zero-copy GPU VRAM)\n"
-              << "  Source Window:  \"" << titleBuf << "\" (" << capture.getWidth() << "x" << capture.getHeight() << ")\n"
-              << "  GPU Settings:   " << gpuSettings.pyramidLevels << " levels, refine to L"
-              << gpuSettings.minRefineLevel << ", radii " << gpuSettings.coarseSearchRadius
-              << "/" << gpuSettings.refineSearchRadius << ", smoothness "
-              << gpuSettings.smoothnessWeight << "\n"
-              << "  Source Cadence: "
-              << (sourceFps == 0 ? "auto (detecting)" : std::to_string(sourceFps) + " FPS") << "\n"
-              << "  FPS Multiplier: " << (outputMultiplier == 0 ? "display max" : std::to_string(outputMultiplier) + "x") << "\n"
-              << "  Output Clock:   " << std::fixed << std::setprecision(2)
-              << presenter.outputRate() << " Hz (display " << presenter.refreshRate() << " Hz)\n"
-               << "  Compute Engine: D3D12 queue with shared-texture capture, DXC SM5 compute shaders\n"
-              << "  Flow Grid:      " << ((capture.getWidth() + 15) / 16) << "x"
-              << ((capture.getHeight() + 15) / 16) << " vectors\n"
-              << "  Presentation:   Paced Click-Through DWM Presenter\n"
-              << "  Hotkeys:        [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
-              << "============================================================\n\n" << std::flush;
-
-    auto lastFpsTime = std::chrono::high_resolution_clock::now();
-    uint64_t lastPresentedIndex = 0;
-    double totalPresentMs = 0.0;
-    double totalTrackMs = 0.0;
-    double totalMsgMs = 0.0;
-    double totalUpdateMs = 0.0;
-    HANDLE frameEvent = capture.getFrameEvent();
-    HANDLE presentationEvent = presenter.frameLatencyHandle();
-    HANDLE pacingEvent = presenter.pacingHandle();
-    HANDLE waitHandles[] = { frameEvent, presentationEvent, pacingEvent };
-    bool latencyReady = false;
-    bool pacingReady = false;
-    const bool perfLog = [] {
-        char buffer[8] = {};
-        return GetEnvironmentVariableA("MOTION_ENHANCER_PERF", buffer, sizeof(buffer)) > 0;
-    }();
-    std::chrono::high_resolution_clock::time_point lastWaitEnd = std::chrono::high_resolution_clock::now();
-    if (!frameEvent || !presentationEvent || !pacingEvent) {
-        std::cerr << "Error: Required capture or presentation synchronization handle is unavailable.\n";
-        exitCode = 1;
-        return;
-    }
-
-    while (true) {
-        DWORD waitResult = MsgWaitForMultipleObjectsEx(
-            3,
-            waitHandles,
-            INFINITE,
-            QS_ALLINPUT,
-            MWMO_INPUTAVAILABLE
-        );
-
-        auto tm0 = std::chrono::high_resolution_clock::now();
-        if (!overlay.processMessages()) break;
-        auto tm1 = std::chrono::high_resolution_clock::now();
-        totalMsgMs += std::chrono::duration<double, std::milli>(tm1 - tm0).count();
-
-        auto tr0 = std::chrono::high_resolution_clock::now();
-        overlay.updateTracking();
-        auto tr1 = std::chrono::high_resolution_clock::now();
-        totalTrackMs += std::chrono::duration<double, std::milli>(tr1 - tr0).count();
-
-        // Some applications do not reliably deliver a FrameArrived callback
-        // while an owned overlay is visible. Polling at the output cadence
-        // still drains any WGC frame the pool has made available.
-        bool captureReady = waitResult == WAIT_OBJECT_0;
-        if (waitResult == WAIT_OBJECT_0 + 1) latencyReady = true;
-        if (waitResult == WAIT_OBJECT_0 + 2) pacingReady = true;
-        if (!latencyReady && WaitForSingleObject(presentationEvent, 0) == WAIT_OBJECT_0) {
-            latencyReady = true;
-        }
-        if (!pacingReady && WaitForSingleObject(pacingEvent, 0) == WAIT_OBJECT_0) {
-            pacingReady = true;
-        }
-        if (!captureReady && pacingReady) captureReady = true;
-        if (captureReady) {
-            auto tu0 = std::chrono::high_resolution_clock::now();
-            ID3D11Texture2D* destination = presenter.acquireCaptureTarget();
-            int64_t timestamp100ns = 0;
-            if (destination && capture.copyLatestFrame(
-                    d3dContext->context.Get(), destination, sourceFps, timestamp100ns)) {
-                presenter.setSourceFps(sourceFps > 0 ? sourceFps : capture.getDetectedSourceFps());
-                presenter.commitCapturedFrame(timestamp100ns);
-            } else if (destination) {
-                presenter.cancelCaptureTarget();
-            }
-            auto tu1 = std::chrono::high_resolution_clock::now();
-            totalUpdateMs += std::chrono::duration<double, std::milli>(tu1 - tu0).count();
-        }
-
-        // Move pair preparation (FFX flow dispatch + fence waits) off the
-        // presentation deadline: run it here, on the capture cadence, at most
-        // once per loop iteration. presentNext reuses the cached pair.
-        auto tp0 = std::chrono::high_resolution_clock::now();
-        bool prefetched = presenter.prefetchPair(gpuInterpolator);
-        auto tp1 = std::chrono::high_resolution_clock::now();
-        double prefetchMs = std::chrono::duration<double, std::milli>(tp1 - tp0).count();
-        if (perfLog) {
-            double waitMs = std::chrono::duration<double, std::milli>(tm0 - lastWaitEnd).count();
-            lastWaitEnd = tp1;
-            if (prefetchMs > 4.0 || waitMs > 4.0 || prefetched)
-                std::cerr << "[Perf] wait=" << waitMs << "ms prefetch=" << prefetchMs
-                          << "ms (ran=" << prefetched << ")\n";
-        }
-
-        if (latencyReady && pacingReady) {
-            auto frameStart = std::chrono::high_resolution_clock::now();
-            if (!presenter.presentNext(gpuInterpolator)) {
-                std::cerr << "Error: Realtime queued presentation failed.\n";
-                break;
-            }
-            auto frameEnd = std::chrono::high_resolution_clock::now();
-            double presentMs = std::chrono::duration<double, std::milli>(frameEnd - frameStart).count();
-            totalPresentMs += presentMs;
-            if (perfLog && (presentMs > 4.0 || prefetchMs > 4.0))
-                std::cerr << "[Perf] present=" << presentMs
-                          << "ms prefetchWas=" << prefetchMs << "ms\n";
-            latencyReady = false;
-            pacingReady = false;
-        }
-
-        auto now = std::chrono::high_resolution_clock::now();
-        double elapsedSec = std::chrono::duration<double>(now - lastFpsTime).count();
-        if (elapsedSec >= 2.0) {
-            uint64_t presented = presenter.presentedFrameIndex();
-            uint64_t intervalFrames = presented - lastPresentedIndex;
-            double fps = static_cast<double>(intervalFrames) / elapsedSec;
-            double n = intervalFrames > 0 ? static_cast<double>(intervalFrames) : 1.0;
-            std::cout << "[GPU Overlay] FPS: " << std::fixed << std::setprecision(1) << fps
-                      << " fps | GPU Pipeline: " << std::setprecision(2) << gpuInterpolator.getLastGpuTimeMs() << " ms"
-                      << " | Frame Slot: " << (totalPresentMs / n) << " ms"
-                      << " | Queue: " << presenter.queueDepth()
-                      << " | Source: "
-                      << (sourceFps > 0 ? sourceFps : capture.getDetectedSourceFps()) << " fps"
-                      << " | Target: " << std::setprecision(1) << presenter.outputRate() << " fps"
-                      << " | Alpha: " << presenter.interpolationFactor()
-                      << " | R/Q/P: " << presenter.renderedFrameIndex() << "/"
-                      << presenter.queuedFrameIndex() << "/"
-                      << presenter.presentedFrameIndex()
-                      << " | Flow: "
-                      << (d3dContext->nativeD3D12 &&
-                          d3dContext->nativeD3D12->usingFfxOpticalFlow() ? "AMD FFX" : "MSAD")
-                      << " | WGC A/D: " << capture.getArrivalCount() << "/"
-                      << capture.getDrainedFrameCount() << "\n" << std::flush;
-            lastPresentedIndex = presented;
-            totalPresentMs = 0.0;
-            totalTrackMs = 0.0;
-            totalMsgMs = 0.0;
-            totalUpdateMs = 0.0;
-            lastFpsTime = now;
-        }
-    }
-
-        capture.stopCapture();
-        std::cout << "Real-time GPU frame interpolation terminated.\n";
-    });
-
-    renderThread.join();
-    return exitCode;
-}
 
 int main(int argc, char** argv) {
     setvbuf(stdout, nullptr, _IONBF, 0);
@@ -741,11 +224,12 @@ int main(int argc, char** argv) {
     std::string occOutputPath;
     std::string captureWindowQuery;
     std::string groundTruthPath;
+    std::string previousFramePath;
     bool gpuOffline = false;
     uint32_t sourceFps = 0;
     uint32_t outputMultiplier = 0;   // Max: present at the display refresh rate
     GraphicsAdapterPreference adapterPreference = GraphicsAdapterPreference::Auto;
-    GPUInterpolationSettings gpuSettings;
+    FlowSettings gpuSettings;
 
     InterpolatorParams params;
     params.matcherParams.pyramidLevels = 8;
@@ -802,6 +286,8 @@ int main(int argc, char** argv) {
             gpuOffline = true;
         } else if (arg == "--ground-truth" && i + 1 < argc) {
             groundTruthPath = argv[++i];
+        } else if (arg == "--gpu-offline-prev" && i + 1 < argc) {
+            previousFramePath = argv[++i];
         } else if (arg == "--gpu-levels" && i + 1 < argc) {
             gpuSettings.pyramidLevels = std::clamp(std::stoi(argv[++i]), 1, 8);
         } else if (arg == "--gpu-min-refine" && i + 1 < argc) {
@@ -951,19 +437,19 @@ int main(int argc, char** argv) {
     }
 
     if (d3d12SelfTest) {
-        auto d3dContext = std::make_shared<D3D11Context>();
-        if (!d3dContext->initialize(adapterPreference) || !d3dContext->nativeD3D12) {
-            std::cerr << "D3D12 diagnostic: native backend initialization failed.\n";
-            return 1;
-        }
-        return d3dContext->nativeD3D12->runDiagnostics(d3dContext.get()) ? 0 : 1;
+        return runD3D12SelfTest(adapterPreference);
     }
 
     if (!captureWindowQuery.empty()) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
-        return runRealtimeGPUInterpolation(captureWindowQuery, gpuSettings, sourceFps,
-                                             outputMultiplier, adapterPreference);
+        RealtimeOptions options;
+        options.windowTitle = captureWindowQuery;
+        options.flow = gpuSettings;
+        options.sourceFps = sourceFps;
+        options.outputMultiplier = outputMultiplier;
+        options.adapter = adapterPreference;
+        return runRealtimeSession(options);
     }
 
     if (runTest) {
@@ -983,9 +469,9 @@ int main(int argc, char** argv) {
     if (gpuOffline) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
-        return runOfflineGPUInterpolation(input0Path, input1Path, outputPath,
+        return runOfflineGpuInterpolation(input0Path, input1Path, outputPath,
                                           flowOutputPath, groundTruthPath, t, gpuSettings,
-                                          adapterPreference);
+                                          adapterPreference, previousFramePath);
     }
 
     std::cout << "Loading input frames:\n"

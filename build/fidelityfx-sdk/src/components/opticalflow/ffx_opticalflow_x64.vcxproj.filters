@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_assert.cpp">
+      <Filter>shared_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.cpp">
+      <Filter>shared_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_message.cpp">
+      <Filter>shared_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_object_management.cpp">
+      <Filter>shared_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components\opticalflow\ffx_opticalflow.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.h">
+      <Filter>shared_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_object_management.h">
+      <Filter>shared_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components\opticalflow\ffx_opticalflow_private.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_assert.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_message.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_error.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_fx.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_interface.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_types.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\ffx_util.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\components\opticalflow\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="private_source">
+      <UniqueIdentifier>{5DCB762F-0C7D-37D1-A6C0-C6A1BB307820}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public_source">
+      <UniqueIdentifier>{3411D418-6F9A-3425-B1EC-DD009B368572}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared_source">
+      <UniqueIdentifier>{0015830F-0CF0-35F6-ADBE-5EEE4059101A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

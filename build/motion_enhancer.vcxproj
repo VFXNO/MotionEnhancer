@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -110,16 +110,16 @@
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -148,7 +148,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_opticalflow_x64d.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_backend_dx12_x64d.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -167,7 +167,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -190,18 +190,18 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -230,7 +230,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_opticalflow_x64.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_backend_dx12_x64.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -249,7 +249,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -272,18 +272,18 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -312,7 +312,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>fidelityfx-sdk\src\components\opticalflow\MinSizeRel\ffx_opticalflow_x64.lib;fidelityfx-sdk\src\backends\dx12\MinSizeRel\ffx_backend_dx12_x64.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -331,7 +331,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -355,16 +355,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\vfxno\Documents\GitHub\Motion enhancer\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -393,7 +393,7 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_opticalflow_x64drel.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\bin\ffx_sdk\ffx_backend_dx12_x64drel.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;windowsapp.lib;C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
@@ -473,26 +473,31 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\Pyramid.cpp" />
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\ZNCCMatcher.cpp" />
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FrameInterpolator.cpp" />
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D11Context.cpp" />
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D12Context.cpp" />
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WGCCapture.cpp" />
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GPUInterpolator.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GraphicsDevice.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\ComputeKernels.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FlowEngine.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FrameTimeline.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\CaptureEngine.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\Presenter.cpp" />
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\RealtimeSession.cpp" />
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WindowHelper.cpp" />
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GuiApp.cpp" />
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\RealtimePresenter.cpp" />
     <ResourceCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\app.rc" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Image.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Pyramid.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\MotionVector.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\ZNCCMatcher.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FrameInterpolator.h" />
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D11Context.h" />
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D12Context.h" />
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WGCCapture.h" />
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GPUInterpolator.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GraphicsDevice.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\ComputeKernels.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FlowEngine.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FrameTimeline.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\CaptureEngine.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Presenter.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\RealtimeSession.h" />
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WallClock.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WindowHelper.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GuiApp.h" />
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\RealtimePresenter.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\stb_image.h" />
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\stb_image_write.h" />
   </ItemGroup>
@@ -503,6 +508,20 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\libs\pix\copied_winpixevent_bin.vcxproj">
+      <Project>{FF4537B1-BE7E-30E4-B846-6ABC069E64D8}</Project>
+      <Name>copied_winpixevent_bin</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\dx12\ffx_backend_dx12_x64.vcxproj">
+      <Project>{261E1E58-6C6B-3D70-9A8E-95C4F1711535}</Project>
+      <Name>ffx_backend_dx12_x64</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\components\opticalflow\ffx_opticalflow_x64.vcxproj">
+      <Project>{7EFF358B-05F5-3C8E-9F1B-16970CC9A905}</Project>
+      <Name>ffx_opticalflow_x64</Name>
     </ProjectReference>
     <ProjectReference Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\motion_enhancer_shaders.vcxproj">
       <Project>{051EC740-FC2D-3E7D-AA0E-B699A9B09470}</Project>

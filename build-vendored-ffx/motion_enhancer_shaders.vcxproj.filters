@@ -16,6 +16,9 @@
     <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\CMakeFiles\dbf8c53eb0aeb2808c336792eda976cd\MotionSearchCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\CMakeFiles\dbf8c53eb0aeb2808c336792eda976cd\PackLumaCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build-vendored-ffx\CMakeFiles\dbf8c53eb0aeb2808c336792eda976cd\PresentFrameCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>

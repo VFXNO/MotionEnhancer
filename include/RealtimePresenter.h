@@ -46,8 +46,12 @@ private:
         int64_t timestamp100ns = 0;
     };
 
-    std::vector<int> sortedReadySlots() const;
-    void retireConsumedFrames(const std::vector<int>& sorted, int currentSlot);
+    static constexpr size_t kSlotCount = 3;
+    // Fills out with ready slot indices sorted by timestamp; returns the
+    // count. Fixed storage: called on every pacing tick, so it must not
+    // allocate.
+    size_t sortedReadySlots(int (&out)[kSlotCount]) const;
+    void retireConsumedFrames(const int* sorted, size_t count, int currentSlot);
     bool presentTexture(GPUInterpolator& interpolator, FrameSlot& slot);
     bool scheduleNextPresentation();
     void updateOutputCadence();

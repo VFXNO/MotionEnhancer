@@ -324,7 +324,10 @@ bool WGCCapture::copyLatestFrame(
     sourceBox.back = 1;
 
     context->CopySubresourceRegion(destination, 0, 0, 0, 0, newTexture.Get(), 0, &sourceBox);
-    context->Flush();
+    // No Flush here: commitCapturedFrame -> signalCaptureReady records the
+    // shared fence signal on the SAME immediate context and flushes once,
+    // submitting copy + signal as a single GPU submission. A second Flush
+    // here only adds a kernel-mode submission round per source frame.
 
     newestFrame.Close();
 

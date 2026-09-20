@@ -1,4 +1,4 @@
-﻿#include "GuiApp.h"
+#include "GuiApp.h"
 #include "WindowHelper.h"
 
 #include <windows.h>
@@ -770,7 +770,7 @@ void createControls() {
     SendMessageA(g_state.liveAdapter, CB_SETCURSEL, 0, 0);
 
     HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-8)", 56, 208, 160);
-    g_state.gpuLevels = makeEdit("7", 224, 204, 80, IDC_GPU_LEVELS, true);
+    g_state.gpuLevels = makeEdit("8", 224, 204, 80, IDC_GPU_LEVELS, true);
     HWND gpuMinRefineLabel = makeLabel("Finest searched level", 430, 208, 175);
     g_state.gpuMinRefine = makeEdit("0", 610, 204, 80, IDC_GPU_MIN_REFINE, true);
     HWND gpuCoarseLabel = makeLabel("Coarse radius (0-8)", 56, 248, 160);

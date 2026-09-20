@@ -287,7 +287,28 @@ bool D3D12Context::beginCommands(bool asyncPair, int presentationIndex) {
         // Pair preparation is polled by the presenter and must never block.
         // Presentation only waits here if the GPU has fallen a full two back
         // buffers behind; normal 144 Hz operation takes the nonblocking path.
-        if (asyncPair || !waitForFence(previousFence)) return false;
+        if (asyncPair) return false;
+        // The wait itself is unavoidable back-pressure: the latency token
+        // consumed by the main loop must always pair with a Present, or the
+        // waitable swapchain stops producing slots. Log it throttled so GPU
+        // starvation is visible instead of silent judder.
+        LARGE_INTEGER t0 = {}, t1 = {}, freq = {};
+        QueryPerformanceCounter(&t0);
+        const bool ready = waitForFence(previousFence);
+        QueryPerformanceCounter(&t1);
+        QueryPerformanceFrequency(&freq);
+        const double stallMs =
+            static_cast<double>(t1.QuadPart - t0.QuadPart) * 1000.0 /
+            static_cast<double>(freq.QuadPart);
+        if (stallMs > 0.5 &&
+            (m_lastStallLogQpc.QuadPart == 0 ||
+             (t1.QuadPart - m_lastStallLogQpc.QuadPart) * 1000.0 /
+                 static_cast<double>(freq.QuadPart) > 1000.0)) {
+            m_lastStallLogQpc = t1;
+            std::cerr << "D3D12: presentation stalled " << stallMs
+                      << " ms waiting for GPU backlog (allocator fence behind).\n";
+        }
+        if (!ready) return false;
     }
     if (FAILED(allocator->Reset()) || FAILED(m_commandList->Reset(allocator, nullptr))) {
         return false;
@@ -688,11 +709,11 @@ bool D3D12Context::dispatchFfxFramePair(const SharedFrame& frame0, const SharedF
 
     bool ok = true;
     if (discontinuity) {
-        // v1.1.4 suppresses vectors through temporal index 5 after reset.
-        // Prime only on a new stream; sequential pairs submit frame1 once.
+        // The bundled optical flow callbacks always emit vectors (the stock
+        // frameIndex <= 5 post-reset suppression is patched out), so a single
+        // reset dispatch re-establishes the temporal chain. Sequential pairs
+        // still submit only frame1.
         ok = dispatch(frame0.resource, true);
-        for (int i = 0; ok && i < 5; ++i)
-            ok = dispatch(frame0.resource, false);
     }
     if (ok) ok = dispatch(frame1.resource, false);
     if (ok) {

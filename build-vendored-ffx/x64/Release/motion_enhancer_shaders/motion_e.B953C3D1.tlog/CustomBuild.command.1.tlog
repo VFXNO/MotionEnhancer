@@ -50,7 +50,19 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\VFXNO\DOCUMENTS\GITHUB\MOTION ENHANCER\BUILD-VENDORED-FFX\CMAKEFILES\DBF8C53EB0AEB2808C336792EDA976CD\PACKLUMACS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build-vendored-ffx/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

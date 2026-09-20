@@ -5,6 +5,12 @@
       <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\x64\Release\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
+      <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\libs\pix\x64\Release\copied_winpixevent_bin</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\fidelityfx-sdk\src\backends\dx12\x64\Release\ffx_shader_permutations_dx12</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
       <FullPath>C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\x64\Release\motion_enhancer_shaders</FullPath>
     </ProjectOutput>
     <ProjectOutput>

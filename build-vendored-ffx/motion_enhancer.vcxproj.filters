@@ -16,25 +16,31 @@
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FrameInterpolator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D11Context.cpp">
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GraphicsDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\D3D12Context.cpp">
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\ComputeKernels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WGCCapture.cpp">
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FlowEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GPUInterpolator.cpp">
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\FrameTimeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\CaptureEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\Presenter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\RealtimeSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\WindowHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\GuiApp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\src\RealtimePresenter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,25 +60,34 @@
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FrameInterpolator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D11Context.h">
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GraphicsDevice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\D3D12Context.h">
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\ComputeKernels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WGCCapture.h">
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FlowEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GPUInterpolator.h">
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\FrameTimeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\CaptureEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\Presenter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\RealtimeSession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WallClock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\WindowHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\GuiApp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\include\RealtimePresenter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\stb_image.h">

@@ -1,4 +1,4 @@
-﻿# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
+# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
 
 A C++17 frame interpolation application implementing an **8-level Gaussian pyramid** with **Zero-mean Normalized Cross-Correlation (ZNCC)** block matching motion estimation, multi-candidate spatial predictors (EPZS), 2D Gaussian block weighting, direct quarter-pel bilinear refinement, and **advanced artifact refinement** (photometric-aware occlusion gating, bilateral hole inpainting, Laplacian detail restoration, and color bounding box clamping).
 
@@ -148,30 +148,34 @@ Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame
 
 ```
 [Target App Window (e.g. YouTube, Player, Game)]
-              â”‚
-              â–¼ (Zero-Copy GPU Capture via WGC)
-    [Direct3D 11 VRAM Texture from WGC]
-               â”‚
-               â–¼
-    [Shared capture texture + fence -> D3D12 queue]
-               â”‚
-               â–¼
-    [DXC HLSL 7-Level Luminance Pyramid] (PyramidCS.hlsl)
-              â”‚
-              â–¼
-   [Fixed 32x32 Block / 64x64 Support Candidate Search] (MotionSearchCS.hlsl)
-              â”‚
-              â–¼
-   [Coarse-to-Fine Block Search + Spatial Filtering] (MotionSearchCS/FilterFlowCS.hlsl)
-              â”‚
-              â–¼
-   [Timestamp-Driven Single-Source Motion Warp] (InterpolateCS.hlsl)
-              â”‚
-              â–¼
-   [Paced Click-Through DXGI/DWM Presenter] (50-120+ FPS)
+              |  WGC (D3D11 surface, timestamp)
+              v
+    [Capture thread: copy -> slot ring, luma diff, cadence classify]
+              |  shared NT-handle texture + capture-ready fence
+              v
+    [Flow queue: FFX Optical Flow  (or MSAD pyramid search + filter)]
+              |  flow ring entry + flow fence
+              v
+    [Frame timeline: media clock = display time - offset - latency budget]
+              |  pair (t0, t1), alpha
+              v
+    [Present queue: InterpolateCS -> flip swap chain, Present(1)]
+              |  paced by the DWM compositor clock (one frame per refresh)
+              v
+    [Click-through overlay window]
 ```
 
-The real-time GPU path uses two native devices on the same adapter: a D3D12 device and direct command queue own all compute and presentation, while an independent D3D11 device serves Windows Graphics Capture''s `ID3D11Texture2D` contract. `D3D12Context` owns native D3D12 pyramid, flow, and output resources; SRV/UAV descriptors; a shared root signature; per-pass compute PSOs; command recording; explicit state barriers; and fence synchronization. Luminance, pyramid reduction, bidirectional MotionSearch/MSAD, FilterFlow, InterpolateCS, and PresentFrameCS are dispatched natively, and presentation targets a native D3D12 flip-model swap chain. Captured frames cross into D3D12 through NT-handle shared textures created on the D3D11 capture device (`MISC_SHARED | MISC_SHARED_NTHANDLE`, no keyed mutex), with two shared timeline fences ordering access: D3D11 signals a capture-ready fence after each copy and the D3D12 queue waits on it before consuming; a second shared fence orders any D3D11 consumption of native results (offline readback). Release configuration compiles the HLSL with DXC (`cs_5_0`) into `.cso` artifacts; the DXC artifact is consumed directly by the native D3D12 pipeline, while the D3D11 compatibility path logs a warning and recompiles DXBC with the Windows compiler when the artifact is DXIL. Forward and backward flow are estimated independently with the same coarse-to-fine hierarchy, using swapped reference and candidate frames. Native resources are retained for synthesis and flow is cached per source pair.
+The real-time path is D3D12-only for compute and presentation; a D3D11 device on the same adapter exists solely to satisfy Windows Graphics Capture's `ID3D11Texture2D` contract. It is organised as five components:
+
+| Component | Thread | Role |
+|---|---|---|
+| `GraphicsDevice` | – | D3D12 device, a **present queue** and a separate **flow queue**, the D3D11 capture device, and the shared NT-handle textures/fences that order D3D11 → D3D12 access. |
+| `CaptureEngine` | capture (producer) | WGC callback only queues frames. The producer thread copies each into a slot ring, runs a sparse GPU luma diff against the newest frame (rejects identical repaints, flags scene cuts), classifies the frame against the source cadence, and submits its flow. |
+| `FlowEngine` | capture | AMD FidelityFX Optical Flow (MSAD graph as fallback) into a 16-entry flow ring on the flow queue. Nothing here ever blocks the render thread. |
+| `FrameTimeline` | shared | Cadence lock, timestamp regularisation, the media clock, and the adaptive latency budget. |
+| `Presenter` | render | 3-buffer flip-model swap chain, `Present(1)`, one command list per refresh, GPU-side fence waits only. |
+
+Release builds compile the HLSL with DXC (`cs_5_0`) into `.cso` artifacts loaded by the D3D12 pipelines; the D3D11 luma-diff kernel is a tiny embedded shader compiled at runtime.
 
 This is not AMD AFMF 2, which remains proprietary driver software. The default
 build uses the bundled AMD FidelityFX Optical Flow implementation and falls
@@ -179,21 +183,51 @@ back to the project's native MSAD shader pipeline if FFX cannot initialize or
 dispatch. The FFX path supplies a current-to-previous 8x8 `R16G16_SINT` vector field.
 It is used as the backward field; the forward field is an explicit negated
 approximation produced by the conversion shader. Normal capture has no FFX
-flow readback or per-frame FFX logging. On the supplied 320x240 test pair with
-+16,+8 px motion, the persistent-context offline run measured 32.95 dB PSNR
-versus 25.36 dB for a naive blend.
+flow readback or per-frame FFX logging.
 
-### Queue and Synchronization
+### Native MSAD matcher (`--flow-engine msad`)
 
-The renderer uses three application-owned source slots and a two-buffer flip-discard swapchain. WGC copies end with GPU event queries; only completed slots enter the ordered queue. The queue never grows beyond three frames and never overwrites a source texture referenced by cached flow.
+`MotionSearchCS.hlsl` is a coarse-to-fine block matcher built the way AMD's FidelityFX Optical Flow kernel is: 8×8 blocks on an 8-level luma pyramid, `msad4`, packed luma, ±8 search at every level. One 8×8 thread group per block (SM 6.0, wave intrinsics for every reduction).
 
-Presentation requires both a high-resolution refresh deadline and an available swapchain frame-latency slot. Exactly one frame is submitted per combined signal. There are no sleeps, `DwmFlush` calls, immediate midpoint/source bursts, or retained back-buffer references.
+- **Pyramids per frame, not per pair**: each captured frame's luma pyramid and its packed 4-bytes-per-texel copy (`PackLumaCS`) are built once and cached in its capture slot, so a running stream costs one pyramid per new frame — FFX keeps the previous frame's pyramid the same way.
+- **msad4**: one instruction scores a 4-byte reference word against the four alignments of an 8-byte source pair, i.e. four horizontal candidates at once; a block against four candidates is 16 msad4. The candidate window is staged in shared memory from the packed texture, word-aligned. (msad4 is native on AMD hardware; NVIDIA drivers emulate it with byte ops, so there it is merely not slower.)
+- **Edge weighting for free**: msad4 ignores reference bytes that are 0, so the reference is split into an *edge* word (samples above the block's adaptive gradient threshold, full weight) and a *smooth* word (the rest, weight 0.1). A flat-shaded (cel) character is matched by its outline, not by the background behind it, while the low-weight remainder breaks ties along straight edges.
+- **Temporal prediction**: the filtered flow of every level is double-buffered, and the previous pair's flow *at the same level* is a candidate for every block (valid while the frame chain is unbroken). With the search disabled entirely, the temporal predictor alone reaches 33.6 dB on the 3-frame sequence test below.
+- **Candidates**: parent predictor, temporal predictor and the eight neighbouring parents (EPZS) are scored once each; a ±radius window is searched around the best, plus a window around zero when zero is outside it. Zero only wins when it is *strictly* better by one luma level — ties go to motion, never to a stall. Blocks with too few edge samples pick among the candidates only; `FilterFlowCS` then applies a 3×3 consensus.
+- **Radius**: `--gpu-coarse-radius` above the finest level and `--gpu-refine-radius` at it (both default 8). A wide window at every level means a wrong vector from a coarse level is recoverable one level down — the coarse levels only extend the reach.
 
-For presentation timestamp $T$ bracketed by source timestamps $t_0$ and $t_1$, interpolation uses:
+`tools\make_flow_tests.ps1` regenerates the synthetic verification pairs and runs both engines. Current results (PSNR vs. ground truth, naive blend in brackets); `n*` cases use a noise-like background, the others the sinusoidal `--test` background, which is diagonally translation-invariant and misleads aperture-ambiguous blocks:
 
-$$\alpha = \operatorname{clamp}\left(\frac{T-t_0}{t_1-t_0}, 0, 1\right)$$
+| Case | MSAD | FFX |
+|---|---|---|
+| global shift −12 px | 48.4 dB | 54.6 dB (27.3) |
+| global shift −10 px | 51.0 dB | 56.6 dB (27.5) |
+| cel ellipse, motion (6,4) | **39.3 dB** | 34.9 dB (27.1) |
+| cel ellipse, motion (16,8) | **30.1 dB** | 27.3 dB (24.2) |
+| noise bg, cel ellipse (6,4) | **35.0 dB** | 33.6 dB (26.6) |
+| noise bg, cel ellipse (16,8) | 28.3 dB | 28.2 dB (23.9) |
+| textured circle, motion (16,8) | **34.5 dB** | 33.0 dB (25.4) |
+| 3-frame sequence, temporal chain primed | 34.0 dB | – (25.8) |
 
-The synthesis shader motion-warps both source frames according to $\alpha$ and blends them with forward/backward consistency weighting. It does not run a separate occlusion pass.
+At 1080p on an RTX 3050 Ti laptop (best of 40 back-to-back submissions, `MOTION_ENHANCER_BENCH_ITERS=40`) the MSAD graph costs 5.7 ms per source pair on a worst-case noise image, FFX 2.5 ms; both run on the flow queue and never touch the presentation deadline. `--gpu-offline-prev <frame>` primes the temporal chain with the pair before the timed one; `MOTION_ENHANCER_MSAD_DEBUG=1|3|5|6` makes the matcher report edge counts, the parent level's flow, or skip its window/centre stages for timing.
+
+### Pacing and Synchronization
+
+**Output clock.** The render loop is woken by the DWM compositor clock (`DCompositionWaitForCompositorClock`), i.e. once per vsync; the swap chain's frame-latency object is used only as non-blocking back-pressure. A phase-locked loop on the wake times predicts the display time of the frame being rendered, so consecutive frames are exactly one refresh apart even when the wake-up itself jitters, and it resyncs only on a genuinely missed refresh.
+
+**Media clock.** Source frames carry WGC timestamps $t_i$. The timeline tracks the minimum capture offset $O$ between wall clock and $t$, and maps a predicted display time $T$ to media time
+
+$$m = T - O - D$$
+
+where $D$ is a latency budget that starts at one source period plus two refreshes and adapts: it grows whenever a needed pair was not ready (starvation) and decays while pairs have been ready with margin. For the pair $t_0 \le m < t_1$ the blend factor is $\alpha = (m - t_0)/(t_1 - t_0)$. Because $m$ advances with the wall clock, a missed refresh skips media time instead of slowing it, and motion always plays at 1x.
+
+**Source cadence.** The period is estimated from every non-duplicate WGC arrival (mean of the middle half of the last 16 intervals) and locks when three quarters of them agree. Once locked, a frame arriving far off the cadence grid is held for 0.7 periods: if a newer frame supersedes it (a UI repaint between video frames) it is dropped, otherwise it is accepted late and the grid resyncs. Two frames closer than 0.3 periods are treated as one (the later replaces the earlier). Accepted timestamps are regularised onto the grid with a slow phase correction, which removes the ±8 ms jitter of a 24 fps video repainted at 60 Hz. Identical repaints (fewer than 0.05 % of sampled pixels changed) never enter the timeline; pairs classified as scene cuts are presented as a hard switch rather than interpolated.
+
+**GPU ordering.** All ordering is on the GPU: the present queue waits on the capture-ready fence for both source frames and on the flow-queue fence for the pair, then interpolates. Shared capture textures are simultaneous-access resources read through implicit COMMON-state promotion, so no transition barriers are recorded on them from either queue. Slots and flow-ring entries are recycled only after the fences of every queue that read them have passed.
+
+The synthesis shader treats flow as one vector per 8×8 block: the default warp for each pixel is the bilinear blend of the four nearest block vectors of both fields. Around a moving object that blend ramps between object and background motion over an ~8 px band, dragging background along the object and smearing edges. So each pixel also scores the raw vectors of its surrounding blocks (both fields, put in frame0→frame1 sense) with a symmetric photometric check — the pixels' trajectory $p - v\alpha$ in frame0 vs. $p + v(1-\alpha)$ in frame1 must match over a 5-tap neighbourhood — and switches off the bilinear default only when a block vector beats it by a clear margin (~4 luma levels per tap). Both source samples are then warped by the same chosen vector and blended by $\alpha$, so the boundary follows the silhouette instead of the block grid; ties and flat/noisy areas stay on the bilinear default (no flicker), and occlusions keep the best available match. There is no separate occlusion pass.
+
+Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predicted display time, media time, pair, alpha); `MOTION_ENHANCER_D3D_DEBUG=1` enables the D3D12/D3D11 debug layers and prints validation messages with the 2-second status line; `MOTION_ENHANCER_PIXEL_SELECT=0` disables the per-pixel vector selection and restores the plain bilinear warp blend.
 
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)

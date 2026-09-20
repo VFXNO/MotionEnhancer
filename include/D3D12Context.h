@@ -167,6 +167,7 @@ private:
     // no pair output is pending. dispatchInterpolate waits for it GPU-side and
     // the presenter polls it to defer a tick without blocking the CPU.
     uint64_t m_pairPendingFenceValue = 0;
+    LARGE_INTEGER m_lastStallLogQpc = {};
     bool m_failed = false;
 
     ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;

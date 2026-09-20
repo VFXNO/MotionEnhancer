@@ -15,7 +15,7 @@ cbuffer PipelineConstants : register(b0)
     float TimeT;         // interpolation time in [0,1]: 0 = frame0, 1 = frame1
     float SmoothnessWeight;
     uint ParentBlockSize;
-    uint Pad1;
+    float FlowScale;      // explicit scale/sign for flow conversion passes
 };
 
 SamplerState LinearClamp : register(s0);

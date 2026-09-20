@@ -105,6 +105,70 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\672356622fbd2451c45269bd6e910ab8\FfxFlowConvertCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\FfxFlowConvertCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\FfxFlowConvertCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\FfxFlowConvertCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/FfxFlowConvertCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/FfxFlowConvertCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\FfxFlowConvertCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
     <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\672356622fbd2451c45269bd6e910ab8\FilterFlowCS.cso.rule">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/FilterFlowCS.cso</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
@@ -302,7 +366,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -317,7 +381,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -332,7 +396,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -347,7 +411,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
 if %errorlevel% neq 0 goto :cmEnd
-C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_6_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/MotionSearchCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/MotionSearchCS.hlsl"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -357,6 +421,70 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\MotionSearchCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\672356622fbd2451c45269bd6e910ab8\PackLumaCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\PackLumaCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\PackLumaCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\PackLumaCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders"
+if %errorlevel% neq 0 goto :cmEnd
+C:\VulkanSDK\1.4.309.0\Bin\dxc.exe -E CSMain -T cs_5_0 -O3 -I "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders" -Fo "C:/Users/vfxno/Documents/GitHub/Motion enhancer/build/shaders/PackLumaCS.cso" "C:/Users/vfxno/Documents/GitHub/Motion enhancer/shaders/PackLumaCS.hlsl"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\PackLumaCS.hlsl;C:\Users\vfxno\Documents\GitHub\Motion enhancer\shaders\Common.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
@@ -498,7 +626,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</VerifyInputsAndOutputsExist>
@@ -510,7 +638,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</VerifyInputsAndOutputsExist>
@@ -522,7 +650,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</VerifyInputsAndOutputsExist>
@@ -534,7 +662,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\LuminanceCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PyramidCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\MotionSearchCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FilterFlowCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\InterpolateCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PresentFrameCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\PackLumaCS.cso;C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\vfxno\Documents\GitHub\Motion enhancer\build\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</VerifyInputsAndOutputsExist>
