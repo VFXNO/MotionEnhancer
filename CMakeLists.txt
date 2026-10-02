@@ -37,13 +37,18 @@ set(SOURCES
     src/Pyramid.cpp
     src/ZNCCMatcher.cpp
     src/FrameInterpolator.cpp
-    src/D3D11Context.cpp
-    src/D3D12Context.cpp
-    src/WGCCapture.cpp
-    src/GPUInterpolator.cpp
+    src/GraphicsDevice.cpp
+    src/ComputeKernels.cpp
+    src/FlowEngine.cpp
+    src/FrameTimeline.cpp
+    src/CaptureEngine.cpp
+    src/Presenter.cpp
+    src/RealtimeSession.cpp
+    src/NeuralFlow.cpp
+    src/NeuralFlowTrain.cpp
+    src/TrainingVideo.cpp
     src/WindowHelper.cpp
     src/GuiApp.cpp
-    src/RealtimePresenter.cpp
     app.rc
 )
 
@@ -54,13 +59,18 @@ set(HEADERS
     include/MotionVector.h
     include/ZNCCMatcher.h
     include/FrameInterpolator.h
-    include/D3D11Context.h
-    include/D3D12Context.h
-    include/WGCCapture.h
-    include/GPUInterpolator.h
+    include/GraphicsDevice.h
+    include/ComputeKernels.h
+    include/FlowEngine.h
+    include/FrameTimeline.h
+    include/CaptureEngine.h
+    include/Presenter.h
+    include/RealtimeSession.h
+    include/NeuralFlow.h
+    include/TrainingVideo.h
+    include/WallClock.h
     include/WindowHelper.h
     include/GuiApp.h
-    include/RealtimePresenter.h
     third_party/stb_image.h
     third_party/stb_image_write.h
 )
@@ -98,8 +108,14 @@ if(WIN32)
         dxgi
         d3dcompiler
         dwmapi
+        avrt
         comctl32
         comdlg32
+        mfplat
+        mfreadwrite
+        mfuuid
+        ole32
+        windowscodecs
         windowsapp
     )
     if(MSVC)
@@ -117,18 +133,25 @@ if(WIN32)
     if(DXC_EXECUTABLE)
         set(DXC_OUTPUTS)
         set(MOTION_ENHANCER_SHADERS Common.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
-                                     FilterFlowCS.hlsl InterpolateCS.hlsl PresentFrameCS.hlsl)
+                                      InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
+                                      FillFlowCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl)
         endif()
         foreach(SHADER IN LISTS MOTION_ENHANCER_SHADERS)
             if(SHADER MATCHES "\\.hlsl$")
                 string(REGEX REPLACE "\\.hlsl$" ".cso" SHADER_OBJECT "${SHADER}")
+                # DXC emits DXIL (SM 6.0) for every profile; the matcher uses
+                # wave intrinsics, which need the 6.0 profile explicitly.
+                set(SHADER_PROFILE cs_5_0)
+                if(SHADER STREQUAL "MotionSearchCS.hlsl")
+                    set(SHADER_PROFILE cs_6_0)
+                endif()
                 add_custom_command(
                     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
                     COMMAND ${CMAKE_COMMAND} -E make_directory
                             "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-                    COMMAND "${DXC_EXECUTABLE}" -E CSMain -T cs_5_0 -O3
+                    COMMAND "${DXC_EXECUTABLE}" -E CSMain -T ${SHADER_PROFILE} -O3
                             -I "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
                             -Fo "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"
@@ -140,6 +163,28 @@ if(WIN32)
         endforeach()
         add_custom_target(motion_enhancer_shaders ALL DEPENDS ${DXC_OUTPUTS})
         add_dependencies(motion_enhancer motion_enhancer_shaders)
+        # The copy also hangs off the *shader* target, not only the
+        # executable. As a POST_BUILD step on motion_enhancer alone it ran
+        # only when the exe relinked, so editing nothing but an .hlsl
+        # recompiled the .cso into the build tree and left the stale one next
+        # to the binary - the program then kept running the previous shader
+        # while every source file on disk said otherwise, and an A/B
+        # measurement taken that way is simply wrong.
+        #
+        # The destination is spelled out rather than taken from
+        # $<TARGET_FILE_DIR:motion_enhancer>: that generator expression would
+        # make this target depend on the executable, which already depends on
+        # this target, and CMake rejects the cycle.
+        if(CMAKE_CONFIGURATION_TYPES)
+            set(MOTION_ENHANCER_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        else()
+            set(MOTION_ENHANCER_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        endif()
+        add_custom_command(TARGET motion_enhancer_shaders POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+                "${MOTION_ENHANCER_BIN_DIR}/shaders"
+            COMMENT "Staging compiled shaders next to the executable")
         add_custom_command(TARGET motion_enhancer POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${CMAKE_CURRENT_BINARY_DIR}/shaders"

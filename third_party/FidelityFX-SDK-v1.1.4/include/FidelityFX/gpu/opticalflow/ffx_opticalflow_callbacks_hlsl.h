@@ -540,14 +540,8 @@ FfxFloat32 GetSceneChangeValue()
 
 FfxBoolean IsSceneChanged()
 {
-    if (FrameIndex() <= 5)
-    {
-        return 1.0;
-    }
-    else
-    {
-        return (LoadRwSCDOutput(SCD_OUTPUT_HISTORY_BITS_SLOT) & 0xfu) != 0;
-    }
+    // Motion Enhancer always needs a flow field, including across fast motion and cuts.
+    return false;
 }
 #endif
 

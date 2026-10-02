@@ -1,4 +1,4 @@
-﻿#include "GuiApp.h"
+#include "GuiApp.h"
 #include "WindowHelper.h"
 
 #include <windows.h>
@@ -8,9 +8,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <cstdlib>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -52,11 +54,20 @@ constexpr int IDC_OFFLINE_OCCLUSION = 219;
 constexpr int IDC_OFFLINE_DETAIL_STRENGTH = 220;
 constexpr int IDC_OFFLINE_PHOTO_THRESHOLD = 221;
 constexpr int IDC_OFFLINE_PHOTO_SIGMA = 222;
+constexpr int IDC_TRAIN_IMAGES = 301;
+constexpr int IDC_TRAIN_MODEL = 302;
+constexpr int IDC_SAVE_TRAIN_MODEL = 303;
+constexpr int IDC_OPEN_TRAIN_MODEL = 304;
+constexpr int IDC_RUN_TRAIN = 305;
+constexpr int IDC_TRAIN_STATUS = 306;
 constexpr UINT WM_PROCESS_COMPLETE = WM_APP + 1;
+constexpr UINT WM_TRAIN_COMPLETE = WM_APP + 2;
+constexpr UINT WM_TRAIN_PROGRESS = WM_APP + 3;
 
 enum class JobType : LPARAM {
     Live = 1,
-    Offline = 2
+    Offline = 2,
+    Train = 3
 };
 
 // ------------------------------------------------------------------
@@ -77,6 +88,7 @@ constexpr COLORREF ColTextOn    = RGB(3, 14, 18);
 
 constexpr RECT LivePanelRect = { 36, 172, 36 + 794, 172 + 176 };
 constexpr RECT OfflinePanelRect = { 36, 272, 36 + 794, 272 + 330 };
+constexpr RECT TrainPanelRect = { 36, 514, 36 + 794, 514 + 240 };
 
 struct GuiState {
     HWND hwnd = nullptr;
@@ -86,7 +98,14 @@ struct GuiState {
     HWND windowList = nullptr;
     HWND refreshButton = nullptr;
     HWND captureButton = nullptr;
+    HANDLE captureStopEvent = nullptr;
     HWND liveStatus = nullptr;
+    HWND trainingModel = nullptr;
+    HWND trainingImagesLabel = nullptr;
+    HWND trainButton = nullptr;
+    HWND trainingStatus = nullptr;
+    HWND useTrainedModel = nullptr;
+    std::vector<std::string> trainingImages;
     HWND liveSourceFps = nullptr;
     HWND liveMultiplier = nullptr;
     HWND liveFlowEngine = nullptr;
@@ -111,16 +130,11 @@ struct GuiState {
     HWND offlineGridStep = nullptr;
     HWND offlineSubpel = nullptr;
     HWND offlineSmoothness = nullptr;
-    HWND offlineOcclusion = nullptr;
     HWND offlineDetailStrength = nullptr;
-    HWND offlinePhotoThreshold = nullptr;
-    HWND offlinePhotoSigma = nullptr;
     HWND adaptiveBlock = nullptr;
     HWND spatialPredictors = nullptr;
     HWND gaussianWeights = nullptr;
     HWND bidirectional = nullptr;
-    HWND photoGate = nullptr;
-    HWND holeInpaint = nullptr;
     HWND detailRestore = nullptr;
     HWND colorClamp = nullptr;
     std::vector<HWND> liveControls;
@@ -135,6 +149,7 @@ HFONT g_fontLabel = nullptr;
 HFONT g_fontButton = nullptr;
 HFONT g_fontSection = nullptr;
 HBRUSH g_brField = nullptr;
+HBRUSH g_brBg = nullptr;
 HBRUSH g_brPanel = nullptr;
 HBRUSH g_brPanelHi = nullptr;
 HBRUSH g_brBgAlt = nullptr;
@@ -153,6 +168,7 @@ void ensureTheme() {
     g_fontButton = createFont("Segoe UI", -14, FW_SEMIBOLD);
     g_fontSection = createFont("Segoe UI", -15, FW_BOLD);
     g_brField = CreateSolidBrush(ColField);
+    g_brBg = CreateSolidBrush(ColBg);
     g_brPanel = CreateSolidBrush(ColPanel);
     g_brPanelHi = CreateSolidBrush(ColPanelHi);
     g_brBgAlt = CreateSolidBrush(ColBgAlt);
@@ -227,6 +243,16 @@ LRESULT CALLBACK styledControlProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
             break;
     }
     return DefSubclassProc(hwnd, message, wParam, lParam);
+}
+
+// A STATIC control with dynamically changing text must erase its entire
+// rectangle before drawing the next message. Otherwise a shorter warning
+// can be painted over the glyphs of the previous one.
+LRESULT CALLBACK changingStaticProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                    UINT_PTR subclassId, DWORD_PTR refData) {
+    LRESULT result = DefSubclassProc(hwnd, message, wParam, lParam);
+    if (message == WM_SETTEXT) InvalidateRect(hwnd, nullptr, TRUE);
+    return result;
 }
 
 LRESULT CALLBACK comboNcProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
@@ -368,9 +394,12 @@ void drawStyledComboItem(const DRAWITEMSTRUCT* draw) {
         return;
     }
 
-    char text[128] = {};
-    SendMessageA(draw->hwndItem, CB_GETLBTEXT, draw->itemID,
-                 reinterpret_cast<LPARAM>(text));
+    const LRESULT length = SendMessageA(draw->hwndItem, CB_GETLBTEXTLEN, draw->itemID, 0);
+    if (length == CB_ERR || length < 0 || length > 32767) return;
+    std::string text(static_cast<size_t>(length) + 1, '\0');
+    const LRESULT copied = SendMessageA(draw->hwndItem, CB_GETLBTEXT, draw->itemID,
+                                        reinterpret_cast<LPARAM>(text.data()));
+    if (copied == CB_ERR || copied < 0) return;
 
     bool isEditPart = (draw->itemState & ODS_COMBOBOXEDIT) != 0;
     bool highlighted = !isEditPart &&
@@ -383,20 +412,11 @@ void drawStyledComboItem(const DRAWITEMSTRUCT* draw) {
 
     RECT textRect = rc;
     textRect.left += 10;
-    DrawTextA(hdc, text, -1, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-
-    if (isEditPart) {
-        // Dropdown caret
-        int cx = rc.right - 16;
-        int cy = (rc.top + rc.bottom) / 2;
-        HPEN pen = CreatePen(PS_SOLID, 2, ColAccent);
-        HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
-        MoveToEx(hdc, cx - 5, cy - 2, nullptr);
-        LineTo(hdc, cx, cy + 3);
-        LineTo(hdc, cx + 5, cy - 2);
-        SelectObject(hdc, oldPen);
-        DeleteObject(pen);
-    }
+    // The dropdown caret is painted once by comboNcProc, not here too.
+    // Leave room for its button so long item names cannot run underneath it.
+    if (isEditPart) textRect.right -= 32;
+    DrawTextA(hdc, text.c_str(), -1, &textRect,
+              DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX);
 }
 
 // ------------------------------------------------------------------
@@ -465,7 +485,53 @@ std::string quoteArgument(const std::string& value) {
     return result;
 }
 
-bool launchJob(const std::vector<std::string>& arguments, JobType jobType) {
+std::string trainingResult(DWORD exitCode, const std::string& output) {
+    auto lineAfter = [&output](const char* marker) -> std::string {
+        const size_t at = output.rfind(marker);
+        if (at == std::string::npos) return {};
+        const size_t end = output.find('\n', at);
+        std::string line = output.substr(at, end == std::string::npos ? end : end - at);
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+        return line;
+    };
+
+    // The trainer writes the model only after validation improves, so the
+    // presence of this line is the whole success condition.
+    if (output.find("Model written: ") != std::string::npos) {
+        const std::string summary = lineAfter("Neural training finished:");
+        if (!summary.empty()) return "Model saved. " + summary.substr(std::strlen("Neural training finished: "));
+        return "Model saved. Ready for neural capture.";
+    }
+    if (output.find("Refusing to train") != std::string::npos)
+        return "Training aborted: the analytic gradient disagreed with the forward pass. "
+               "This is a code defect, not a data problem - run --neural-gradient-check.";
+    if (output.find("Model did not improve validation error") != std::string::npos)
+        return "No model saved: training did not improve validation error. "
+               "Try more or more varied footage.";
+    if (output.find("Too few training examples") != std::string::npos)
+        return "No model saved: too few usable examples. Use longer or larger sources.";
+    if (output.find("Neural training needs colour sources") != std::string::npos)
+        return "Training needs colour sources at least 256x256 pixels.";
+    if (exitCode == 0) return "Training complete. Model ready for neural capture.";
+    const size_t decode = output.rfind("Could not decode ");
+    if (decode != std::string::npos) {
+        const size_t end = output.find('\n', decode);
+        const size_t reason = output.rfind(": ", end);
+        if (reason != std::string::npos && reason > decode)
+            return "Video decode failed: " + output.substr(reason + 2, end - (reason + 2));
+        return "Video decode failed. Check its codec or try MP4.";
+    }
+    if (output.find("failed to load image") != std::string::npos)
+        return "Could not open that picture; check its format or installed Windows image codec.";
+    if (output.find("Training requires RGB images") != std::string::npos)
+        return "Training needs colour images at least 96x96 pixels.";
+    if (output.find("Insufficient or invalid training data") != std::string::npos)
+        return "Too few usable training blocks; try a longer or more detailed video.";
+    return "Training failed. Try a different video or image, or run the CLI for details.";
+}
+
+bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
+               bool configureNativeModel = false, const std::string& nativeModelPath = {}) {
     char executable[MAX_PATH] = {};
     if (GetModuleFileNameA(nullptr, executable, MAX_PATH) == 0) return false;
 
@@ -480,28 +546,97 @@ bool launchJob(const std::vector<std::string>& arguments, JobType jobType) {
     STARTUPINFOA startup = {};
     startup.cb = sizeof(startup);
     PROCESS_INFORMATION process = {};
-    if (!CreateProcessA(
+    // Only the neural capture child receives the GUI's model selection. Save
+    // and restore the parent's environment so training/FFX jobs and later
+    // launches cannot accidentally inherit a stale model. The GUI launches
+    // jobs on its single UI thread, so no other launch interleaves this.
+    char oldModel[MAX_PATH] = {};
+    const DWORD oldLength = configureNativeModel
+        ? GetEnvironmentVariableA("MOTION_ENHANCER_NEURAL_MODEL", oldModel, sizeof(oldModel)) : 0;
+    if (configureNativeModel && oldLength >= sizeof(oldModel)) return false;
+    if (configureNativeModel && !SetEnvironmentVariableA(
+            "MOTION_ENHANCER_NEURAL_MODEL", nativeModelPath.empty() ? nullptr : nativeModelPath.c_str())) return false;
+    HANDLE logRead = nullptr, logWrite = nullptr, inputNull = nullptr;
+    if (jobType == JobType::Train) {
+        SECURITY_ATTRIBUTES security = {sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+        if (!CreatePipe(&logRead, &logWrite, &security, 0) ||
+            !SetHandleInformation(logRead, HANDLE_FLAG_INHERIT, 0)) {
+            if (logRead) CloseHandle(logRead);
+            if (logWrite) CloseHandle(logWrite);
+            return false;
+        }
+        inputNull = CreateFileA("NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &security,
+                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (inputNull == INVALID_HANDLE_VALUE) {
+            CloseHandle(logRead);
+            CloseHandle(logWrite);
+            return false;
+        }
+        startup.dwFlags = STARTF_USESTDHANDLES;
+        startup.hStdInput = inputNull;
+        startup.hStdOutput = logWrite;
+        startup.hStdError = logWrite;
+    }
+    BOOL started = CreateProcessA(
             executable,
             mutableCommand.data(),
             nullptr,
             nullptr,
-            FALSE,
+            jobType == JobType::Train,
             CREATE_NO_WINDOW,
             nullptr,
             nullptr,
             &startup,
-            &process)) {
+            &process);
+    if (configureNativeModel) SetEnvironmentVariableA(
+        "MOTION_ENHANCER_NEURAL_MODEL", oldLength ? oldModel : nullptr);
+    if (logWrite) CloseHandle(logWrite);
+    if (inputNull) CloseHandle(inputNull);
+    if (!started) {
+        if (logRead) CloseHandle(logRead);
         return false;
     }
 
     CloseHandle(process.hThread);
     HWND notifyWindow = g_state.hwnd;
-    std::thread([handle = process.hProcess, notifyWindow, jobType]() {
+    std::thread([handle = process.hProcess, notifyWindow, jobType, logRead]() {
+        std::string output;
+        if (logRead) {
+            char buffer[1024];
+            DWORD length = 0;
+            std::string pending;
+            while (ReadFile(logRead, buffer, sizeof(buffer), &length, nullptr) && length) {
+                output.append(buffer, buffer + length);
+                if (output.size() > 8192) output.erase(0, output.size() - 8192);
+                pending.append(buffer, buffer + length);
+                size_t end = 0;
+                while ((end = pending.find('\n')) != std::string::npos) {
+                    const std::string line = pending.substr(0, end);
+                    if (line.rfind("Epoch ", 0) == 0 ||
+                        line.rfind("Real-frame step ", 0) == 0 ||
+                        line.rfind("Real-frame epoch ", 0) == 0) {
+                        const size_t clip = line.find(", val accuracy");
+                        auto* progress = new std::string(line.substr(0, clip));
+                        if (!PostMessageA(notifyWindow, WM_TRAIN_PROGRESS, 0,
+                                          reinterpret_cast<LPARAM>(progress))) delete progress;
+                    }
+                    pending.erase(0, end + 1);
+                }
+                if (pending.size() > 2048) pending.clear();
+            }
+            CloseHandle(logRead);
+        }
         WaitForSingleObject(handle, INFINITE);
         DWORD exitCode = 1;
         GetExitCodeProcess(handle, &exitCode);
         CloseHandle(handle);
-        PostMessageA(notifyWindow, WM_PROCESS_COMPLETE, exitCode, static_cast<LPARAM>(jobType));
+        if (jobType == JobType::Train) {
+            auto* result = new std::string(trainingResult(exitCode, output));
+            if (!PostMessageA(notifyWindow, WM_TRAIN_COMPLETE, exitCode, reinterpret_cast<LPARAM>(result)))
+                delete result;
+        } else {
+            PostMessageA(notifyWindow, WM_PROCESS_COMPLETE, exitCode, static_cast<LPARAM>(jobType));
+        }
     }).detach();
     return true;
 }
@@ -522,12 +657,89 @@ void selectFile(HWND edit, bool saveDialog) {
     dialog.hwndOwner = g_state.hwnd;
     dialog.lpstrFile = path;
     dialog.nMaxFile = MAX_PATH;
-    dialog.lpstrFilter = "PNG images (*.png)\0*.png\0All files (*.*)\0*.*\0";
+    dialog.lpstrFilter = saveDialog ? "PNG images (*.png)\0*.png\0All files (*.*)\0*.*\0"
+        : "Images\0*.png;*.jpg;*.jpeg;*.jfif;*.bmp;*.gif;*.tif;*.tiff;*.webp;*.heic;*.heif;*.avif;*.ico;*.tga;*.psd;*.pnm;*.hdr;*.jxr;*.wdp\0All files (*.*)\0*.*\0";
     dialog.lpstrDefExt = "png";
     dialog.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | (saveDialog ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST);
 
     BOOL selected = saveDialog ? GetSaveFileNameA(&dialog) : GetOpenFileNameA(&dialog);
     if (selected) SetWindowTextA(edit, path);
+}
+
+void selectTrainingImages() {
+    // Explorer returns either a single full path or a directory followed
+    // by NUL-separated filenames for multiselect.
+    std::vector<char> buffer(32768, '\0');
+    OPENFILENAMEA dialog = {};
+    dialog.lStructSize = sizeof(dialog);
+    dialog.hwndOwner = g_state.hwnd;
+    dialog.lpstrFile = buffer.data();
+    dialog.nMaxFile = static_cast<DWORD>(buffer.size());
+    dialog.lpstrFilter = "Videos and images\0*.mp4;*.m4v;*.mov;*.mkv;*.avi;*.wmv;*.webm;*.mpg;*.mpeg;*.png;*.jpg;*.jpeg;*.jfif;*.bmp;*.gif;*.tif;*.tiff;*.webp;*.heic;*.heif;*.avif;*.ico;*.tga;*.psd;*.pnm;*.hdr;*.jxr;*.wdp\0"
+                          "Videos\0*.mp4;*.m4v;*.mov;*.mkv;*.avi;*.wmv;*.webm;*.mpg;*.mpeg\0"
+                          "Images\0*.png;*.jpg;*.jpeg;*.jfif;*.bmp;*.gif;*.tif;*.tiff;*.webp;*.heic;*.heif;*.avif;*.ico;*.tga;*.psd;*.pnm;*.hdr;*.jxr;*.wdp\0All files (*.*)\0*.*\0";
+    dialog.Flags = OFN_EXPLORER | OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    if (!GetOpenFileNameA(&dialog)) return;
+    std::vector<std::string> paths;
+    const char* first = buffer.data();
+    const char* name = first + std::strlen(first) + 1;
+    if (!*name) {
+        paths.emplace_back(first);
+    } else {
+        const std::string directory(first);
+        while (*name) {
+            paths.emplace_back(directory + "\\" + name);
+            name += std::strlen(name) + 1;
+        }
+    }
+    if (paths.size() > 16) {
+        SetWindowTextA(g_state.trainingStatus, "Select up to 16 video or image files for one training run.");
+        return;
+    }
+    g_state.trainingImages = std::move(paths);
+    const std::string label = std::to_string(g_state.trainingImages.size()) + " file(s) selected";
+    SetWindowTextA(g_state.trainingImagesLabel, label.c_str());
+    SetWindowTextA(g_state.trainingStatus, "Ready to decode frames and train offline.");
+}
+
+void selectTrainingModel(bool saveDialog) {
+    char path[MAX_PATH] = {};
+    OPENFILENAMEA dialog = {};
+    dialog.lStructSize = sizeof(dialog);
+    dialog.hwndOwner = g_state.hwnd;
+    dialog.lpstrFile = path;
+    dialog.nMaxFile = MAX_PATH;
+    dialog.lpstrFilter = "Neural motion model (*.bin)\0*.bin\0All files (*.*)\0*.*\0";
+    dialog.lpstrDefExt = "bin";
+    dialog.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST |
+                   (saveDialog ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST);
+    if (saveDialog ? GetSaveFileNameA(&dialog) : GetOpenFileNameA(&dialog)) {
+        SetWindowTextA(g_state.trainingModel, path);
+        if (!saveDialog) {
+            SendMessageA(g_state.useTrainedModel, BM_SETCHECK, BST_CHECKED, 0);
+            SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 2, 0);
+            InvalidateRect(g_state.useTrainedModel, nullptr, FALSE);
+            SetWindowTextA(g_state.trainingStatus, "Model selected for the next neural capture.");
+        }
+    }
+}
+
+void trainModel() {
+    const std::string output = getWindowText(g_state.trainingModel);
+    if (g_state.trainingImages.empty() || output.empty()) {
+        SetWindowTextA(g_state.trainingStatus, "Choose a video or images and a model output path first.");
+        return;
+    }
+    std::vector<std::string> args = {"--train-neural", output};
+    args.insert(args.end(), g_state.trainingImages.begin(), g_state.trainingImages.end());
+    if (!launchJob(args, JobType::Train)) {
+        SetWindowTextA(g_state.trainingStatus, "Could not start model training.");
+        return;
+    }
+    EnableWindow(g_state.trainButton, FALSE);
+    EnableWindow(g_state.captureButton, FALSE);
+    EnableWindow(g_state.offlineButton, FALSE);
+    SetWindowTextA(g_state.trainingStatus, "Decoding video frames and training; window stays responsive...");
 }
 
 bool validateInteger(HWND control, int minimum, int maximum, const char* label, HWND status) {
@@ -562,6 +774,16 @@ std::string checkValue(HWND control) {
 }
 
 void startCapture() {
+    if (g_state.captureStopEvent) {
+        if (SetEvent(g_state.captureStopEvent)) {
+            EnableWindow(g_state.captureButton, FALSE);
+            SetWindowTextA(g_state.captureButton, "STOPPING...");
+            SetWindowTextA(g_state.liveStatus, "Stopping capture and releasing GPU resources...");
+        } else {
+            SetWindowTextA(g_state.liveStatus, "Could not request capture stop; use Ctrl+Alt+Esc.");
+        }
+        return;
+    }
     int selection = static_cast<int>(SendMessageA(g_state.windowList, CB_GETCURSEL, 0, 0));
     if (selection == CB_ERR) {
         SetWindowTextA(g_state.liveStatus, "Choose a target window first.");
@@ -569,9 +791,18 @@ void startCapture() {
     }
 
     int length = static_cast<int>(SendMessageA(g_state.windowList, CB_GETLBTEXTLEN, selection, 0));
+    if (length == CB_ERR || length < 0 || length > 32767) {
+        SetWindowTextA(g_state.liveStatus, "Window list changed; refresh and choose the target again.");
+        return;
+    }
     std::string title(static_cast<size_t>(length) + 1, '\0');
-    SendMessageA(g_state.windowList, CB_GETLBTEXT, selection, reinterpret_cast<LPARAM>(title.data()));
-    title.resize(static_cast<size_t>(length));
+    const LRESULT copied = SendMessageA(g_state.windowList, CB_GETLBTEXT,
+                                        selection, reinterpret_cast<LPARAM>(title.data()));
+    if (copied == CB_ERR || copied < 0) {
+        SetWindowTextA(g_state.liveStatus, "Window list changed; refresh and choose the target again.");
+        return;
+    }
+    title.resize(static_cast<size_t>(copied));
 
     if (!validateInteger(g_state.gpuLevels, 1, 8, "Pyramid levels", g_state.liveStatus) ||
         !validateInteger(g_state.gpuMinRefine, 0, 7, "Finest searched level", g_state.liveStatus) ||
@@ -588,13 +819,49 @@ void startCapture() {
     }
 
     int flowSelection = static_cast<int>(SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0));
-    const char* flowEngineArg = flowSelection == 1 ? "msad" : "ffx";
+    const char* flowEngineArg = flowSelection == 2 ? "neural" :
+                                flowSelection == 1 ? "sad" : "ffx";
     int adapterSelection = static_cast<int>(SendMessageA(g_state.liveAdapter, CB_GETCURSEL, 0, 0));
     const char* adapterArg = adapterSelection == 1 ? "igpu" :
                              adapterSelection == 2 ? "dgpu" : "auto";
 
+    bool useModel = SendMessageA(g_state.useTrainedModel, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    std::string modelPath = useModel ? getWindowText(g_state.trainingModel) : std::string();
+    if (flowSelection == 2 && !useModel) {
+        const std::string selectedPath = getWindowText(g_state.trainingModel);
+        const DWORD attributes = selectedPath.empty() ? INVALID_FILE_ATTRIBUTES
+                                                       : GetFileAttributesA(selectedPath.c_str());
+        if (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            useModel = true;
+            modelPath = selectedPath;
+            SendMessageA(g_state.useTrainedModel, BM_SETCHECK, BST_CHECKED, 0);
+            InvalidateRect(g_state.useTrainedModel, nullptr, FALSE);
+        }
+    }
+    if (useModel) {
+        const DWORD attributes = GetFileAttributesA(modelPath.c_str());
+        if (modelPath.empty() || attributes == INVALID_FILE_ATTRIBUTES ||
+            (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            SetWindowTextA(g_state.liveStatus, "Select an existing .bin model or uncheck Use trained model.");
+            return;
+        }
+    }
+    if (flowSelection == 2 && !useModel) {
+        SetWindowTextA(g_state.liveStatus, "Choose a trained .bin and check Use model for neural capture.");
+        return;
+    }
+
+    static uint64_t captureSequence = 0;
+    const std::string stopName = "Local\\MotionEnhancerStop-" + std::to_string(GetCurrentProcessId()) +
+                                 "-" + std::to_string(++captureSequence);
+    HANDLE stopEvent = CreateEventA(nullptr, TRUE, FALSE, stopName.c_str());
+    if (!stopEvent) {
+        SetWindowTextA(g_state.liveStatus, "Could not create capture stop event.");
+        return;
+    }
     if (!launchJob({
             "--capture-window", title,
+            "--stop-event", stopName,
             "--source-fps", lowercaseWindowText(g_state.liveSourceFps),
             "--multiplier", lowercaseWindowText(g_state.liveMultiplier),
             "--gpu-levels", getWindowText(g_state.gpuLevels),
@@ -604,13 +871,16 @@ void startCapture() {
             "--gpu-smoothness", getWindowText(g_state.gpuSmoothness),
             "--flow-engine", flowEngineArg,
             "--adapter", adapterArg
-        }, JobType::Live)) {
+        }, JobType::Live, true, modelPath)) {
+        CloseHandle(stopEvent);
         SetWindowTextA(g_state.liveStatus, "Could not start the capture process.");
         return;
     }
 
-    EnableWindow(g_state.captureButton, FALSE);
-    SetWindowTextA(g_state.liveStatus, "Capture running. Use Ctrl+Alt+F1 to toggle or Ctrl+Alt+Esc to exit.");
+    g_state.captureStopEvent = stopEvent;
+    SetWindowTextA(g_state.captureButton, "STOP CAPTURE");
+    EnableWindow(g_state.trainButton, FALSE);
+    SetWindowTextA(g_state.liveStatus, "Capture running. Click Stop Capture to exit cleanly.");
 }
 
 void runOffline() {
@@ -637,10 +907,7 @@ void runOffline() {
         !validateInteger(g_state.offlineRefineRadius, 0, 16, "Refine radius", g_state.offlineStatus) ||
         !validateInteger(g_state.offlineGridStep, 1, 8, "Grid step", g_state.offlineStatus) ||
         !validateFloat(g_state.offlineSmoothness, 0.0f, 0.1f, "Smoothness", g_state.offlineStatus) ||
-        !validateFloat(g_state.offlineOcclusion, 0.0f, 100.0f, "Occlusion threshold", g_state.offlineStatus) ||
-        !validateFloat(g_state.offlineDetailStrength, 0.0f, 1.0f, "Detail strength", g_state.offlineStatus) ||
-        !validateFloat(g_state.offlinePhotoThreshold, 0.0f, 255.0f, "Photo threshold", g_state.offlineStatus) ||
-        !validateFloat(g_state.offlinePhotoSigma, 0.01f, 255.0f, "Photo sigma", g_state.offlineStatus)) {
+        !validateFloat(g_state.offlineDetailStrength, 0.0f, 1.0f, "Detail strength", g_state.offlineStatus)) {
         return;
     }
     if (std::atoi(getWindowText(g_state.offlineMinBlock).c_str()) >
@@ -662,16 +929,11 @@ void runOffline() {
             "--grid-step", getWindowText(g_state.offlineGridStep),
             "--subpel", lowercaseWindowText(g_state.offlineSubpel),
             "--smoothness", getWindowText(g_state.offlineSmoothness),
-            "--occlusion-threshold", getWindowText(g_state.offlineOcclusion),
             "--detail-strength", getWindowText(g_state.offlineDetailStrength),
-            "--photo-threshold", getWindowText(g_state.offlinePhotoThreshold),
-            "--photo-sigma", getWindowText(g_state.offlinePhotoSigma),
             "--adaptive-block", checkValue(g_state.adaptiveBlock),
             "--spatial-pred", checkValue(g_state.spatialPredictors),
             "--gaussian-weight", checkValue(g_state.gaussianWeights),
             "--bidirectional", checkValue(g_state.bidirectional),
-            "--photo-gate", checkValue(g_state.photoGate),
-            "--hole-inpaint", checkValue(g_state.holeInpaint),
             "--detail-restore", checkValue(g_state.detailRestore),
             "--color-clamp", checkValue(g_state.colorClamp)
         }, JobType::Offline)) {
@@ -680,6 +942,7 @@ void runOffline() {
     }
 
     EnableWindow(g_state.offlineButton, FALSE);
+    EnableWindow(g_state.trainButton, FALSE);
     SetWindowTextA(g_state.offlineStatus, "Processing frames...");
 }
 
@@ -770,31 +1033,54 @@ void createControls() {
     SendMessageA(g_state.liveAdapter, CB_SETCURSEL, 0, 0);
 
     HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-8)", 56, 208, 160);
-    g_state.gpuLevels = makeEdit("7", 224, 204, 80, IDC_GPU_LEVELS, true);
+    g_state.gpuLevels = makeEdit("8", 224, 204, 80, IDC_GPU_LEVELS, true);
     HWND gpuMinRefineLabel = makeLabel("Finest searched level", 430, 208, 175);
     g_state.gpuMinRefine = makeEdit("0", 610, 204, 80, IDC_GPU_MIN_REFINE, true);
     HWND gpuCoarseLabel = makeLabel("Coarse radius (0-8)", 56, 248, 160);
-    g_state.gpuCoarseRadius = makeEdit("8", 224, 244, 80, IDC_GPU_COARSE_RADIUS, true);
+    // Matching FlowSettings: a wide coarse window locks onto aliases on
+    // periodic content (bar charts, text rows), and a radius of 7 or 8 at
+    // the finest level doubles the matcher's inner loop for no measured
+    // quality. See FlowSettings::coarseSearchRadius.
+    g_state.gpuCoarseRadius = makeEdit("4", 224, 244, 80, IDC_GPU_COARSE_RADIUS, true);
     HWND gpuRefineLabel = makeLabel("Refine radius (0-8)", 430, 248, 175);
-    g_state.gpuRefineRadius = makeEdit("8", 610, 244, 80, IDC_GPU_REFINE_RADIUS, true);
+    g_state.gpuRefineRadius = makeEdit("6", 610, 244, 80, IDC_GPU_REFINE_RADIUS, true);
     HWND gpuSmoothnessLabel = makeLabel("Smoothness (0-0.1)", 56, 288, 160);
     g_state.gpuSmoothness = makeEdit("0", 224, 284, 80, IDC_GPU_SMOOTHNESS, false);
     HWND flowEngineLabel = makeLabel("FLOW ENGINE", 430, 288, 130);
     g_state.liveFlowEngine = makeCombo(610, 284, 180, IDC_LIVE_FLOW_ENGINE);
     SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
-                 reinterpret_cast<LPARAM>("AMD FidelityFX (auto fallback)"));
+                 reinterpret_cast<LPARAM>("FFX Optical Flow"));
     SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
-                 reinterpret_cast<LPARAM>("MSAD block matching"));
-    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 0, 0);
+                 reinterpret_cast<LPARAM>("SAD block matching"));
+    SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
+                 reinterpret_cast<LPARAM>("Neural motion estimator"));
+    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 1, 0);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 372, 180, 40, IDC_START_CAPTURE);
     HWND liveHelp = addControl(
         "STATIC",
-        "Values remain fixed during capture. Ctrl+Alt+F1 toggles the overlay; Ctrl+Alt+Esc exits.",
+        "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay.",
         SS_LEFT, 36, 436, 760, 40, 0);
     setControlFont(liveHelp, g_fontLabel);
-    g_state.liveStatus = addControl("STATIC", "", SS_LEFT, 36, 622, 760, 24, IDC_LIVE_STATUS);
+    g_state.liveStatus = addControl("STATIC", "", SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS,
+                                     36, 476, 760, 24, IDC_LIVE_STATUS);
     setControlFont(g_state.liveStatus, g_fontBody);
+    SetWindowSubclass(g_state.liveStatus, changingStaticProc, 3, 0);
+
+    HWND trainHelp = makeLabel("Choose a video or images. Frames are extracted automatically, with no PNG export.", 56, 552, 740);
+    HWND selectImages = makeButton("Choose video/images...", 56, 578, 190, 30, IDC_TRAIN_IMAGES);
+    g_state.trainingImagesLabel = makeLabel("No files selected", 260, 583, 530);
+    SetWindowSubclass(g_state.trainingImagesLabel, changingStaticProc, 3, 0);
+    HWND modelLabel = makeLabel("MODEL FILE", 56, 620, 110);
+    g_state.trainingModel = makeEdit("", 170, 615, 410, IDC_TRAIN_MODEL, false);
+    HWND saveModel = makeButton("Save as...", 590, 615, 105, 30, IDC_SAVE_TRAIN_MODEL);
+    HWND openModel = makeButton("Load...", 705, 615, 105, 30, IDC_OPEN_TRAIN_MODEL);
+    g_state.trainButton = makeButton("TRAIN NEURAL MODEL", 56, 665, 180, 40, IDC_RUN_TRAIN);
+    g_state.useTrainedModel = makeCheckbox("Use model on next capture", 260, 672, 240, false);
+    g_state.trainingStatus = addControl("STATIC", "Choose video or images and save a model to begin.",
+                                        SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS, 56, 720, 740, 24, IDC_TRAIN_STATUS);
+    setControlFont(g_state.trainingStatus, g_fontBody);
+    SetWindowSubclass(g_state.trainingStatus, changingStaticProc, 3, 0);
 
     g_state.liveControls = {
         liveHeading, g_state.windowList, g_state.refreshButton,
@@ -803,7 +1089,10 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.captureButton, liveHelp, g_state.liveStatus
+        g_state.captureButton, liveHelp, g_state.liveStatus,
+        trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
+        g_state.trainingModel, saveModel, openModel, g_state.trainButton,
+        g_state.useTrainedModel, g_state.trainingStatus
     };
 
     // ---- Offline page ----
@@ -839,27 +1128,21 @@ void createControls() {
 
     HWND smoothnessLabel = makeLabel("Smoothness", 430, 302, 150);
     g_state.offlineSmoothness = makeEdit("0.0005", 580, 298, 80, IDC_OFFLINE_SMOOTHNESS, false);
-    HWND occlusionLabel = makeLabel("Occlusion threshold", 430, 334, 150);
-    g_state.offlineOcclusion = makeEdit("2.5", 580, 330, 80, IDC_OFFLINE_OCCLUSION, false);
-    HWND detailLabel = makeLabel("Detail strength", 430, 366, 150);
-    g_state.offlineDetailStrength = makeEdit("0.65", 580, 362, 80, IDC_OFFLINE_DETAIL_STRENGTH, false);
-    HWND photoThresholdLabel = makeLabel("Photo threshold", 430, 398, 150);
-    g_state.offlinePhotoThreshold = makeEdit("20", 580, 394, 80, IDC_OFFLINE_PHOTO_THRESHOLD, false);
-    HWND photoSigmaLabel = makeLabel("Photo sigma", 430, 430, 150);
-    g_state.offlinePhotoSigma = makeEdit("25", 580, 426, 80, IDC_OFFLINE_PHOTO_SIGMA, false);
+    HWND detailLabel = makeLabel("Detail strength", 430, 334, 150);
+    g_state.offlineDetailStrength = makeEdit("0.65", 580, 330, 80, IDC_OFFLINE_DETAIL_STRENGTH, false);
 
     g_state.adaptiveBlock = makeCheckbox("Adaptive blocks", 430, 462, 150, true);
     g_state.spatialPredictors = makeCheckbox("Spatial predictors", 580, 462, 170, true);
     g_state.gaussianWeights = makeCheckbox("Gaussian weights", 430, 488, 150, true);
     g_state.bidirectional = makeCheckbox("Bidirectional", 580, 488, 170, true);
-    g_state.photoGate = makeCheckbox("Photometric gate", 430, 514, 150, true);
-    g_state.holeInpaint = makeCheckbox("Hole inpainting", 580, 514, 170, true);
-    g_state.detailRestore = makeCheckbox("Detail restoration", 430, 540, 150, true);
-    g_state.colorClamp = makeCheckbox("Color clamp", 580, 540, 170, true);
+    g_state.detailRestore = makeCheckbox("Detail restoration", 430, 514, 150, true);
+    g_state.colorClamp = makeCheckbox("Color clamp", 580, 514, 170, true);
 
     g_state.offlineButton = makeButton("INTERPOLATE", 36, 620, 180, 40, IDC_RUN_OFFLINE);
-    g_state.offlineStatus = addControl("STATIC", "Select two PNG frames to begin.", SS_LEFT, 232, 628, 590, 24, IDC_OFFLINE_STATUS);
+    g_state.offlineStatus = addControl("STATIC", "Select two PNG frames to begin.",
+                                       SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS, 232, 628, 590, 24, IDC_OFFLINE_STATUS);
     setControlFont(g_state.offlineStatus, g_fontBody);
+    SetWindowSubclass(g_state.offlineStatus, changingStaticProc, 3, 0);
 
     g_state.offlineControls = {
         input0Label, g_state.input0, input0Browse, input1Label, g_state.input1, input1Browse,
@@ -868,10 +1151,10 @@ void createControls() {
         minBlockLabel, g_state.offlineMinBlock, maxBlockLabel, g_state.offlineMaxBlock,
         coarseLabel, g_state.offlineCoarseRadius, refineLabel, g_state.offlineRefineRadius,
         gridLabel, g_state.offlineGridStep, subpelLabel, g_state.offlineSubpel,
-        smoothnessLabel, g_state.offlineSmoothness, occlusionLabel, g_state.offlineOcclusion,
-        detailLabel, g_state.offlineDetailStrength, photoThresholdLabel, g_state.offlinePhotoThreshold,
-        photoSigmaLabel, g_state.offlinePhotoSigma, g_state.adaptiveBlock, g_state.spatialPredictors,
-        g_state.gaussianWeights, g_state.bidirectional, g_state.photoGate, g_state.holeInpaint,
+        smoothnessLabel, g_state.offlineSmoothness,
+        detailLabel, g_state.offlineDetailStrength,
+        g_state.adaptiveBlock, g_state.spatialPredictors,
+        g_state.gaussianWeights, g_state.bidirectional,
         g_state.detailRestore, g_state.colorClamp,
         g_state.offlineButton, g_state.offlineStatus
     };
@@ -917,13 +1200,12 @@ void paintClient(HWND hwnd) {
     RECT client = {};
     GetClientRect(hwnd, &client);
 
-    HBRUSH background = CreateSolidBrush(ColBg);
-    FillRect(hdc, &client, background);
-    DeleteObject(background);
+    FillRect(hdc, &client, g_brBg);
 
     paintHeader(hdc, client);
     if (g_state.activeTab == 0) {
         paintSectionPanel(hdc, LivePanelRect, "ADVANCED GPU FLOW");
+        paintSectionPanel(hdc, TrainPanelRect, "TRAIN NEURAL FLOW");
     } else {
         paintSectionPanel(hdc, OfflinePanelRect, "ADVANCED INTERPOLATION");
     }
@@ -973,14 +1255,26 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_CTLCOLORSTATIC: {
             HDC hdc = reinterpret_cast<HDC>(wParam);
-            int controlId = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
-            SetBkMode(hdc, TRANSPARENT);
-            if (controlId == IDC_LIVE_STATUS || controlId == IDC_OFFLINE_STATUS) {
+            HWND control = reinterpret_cast<HWND>(lParam);
+            int controlId = GetDlgCtrlID(control);
+            RECT rc = {};
+            GetWindowRect(control, &rc);
+            MapWindowPoints(HWND_DESKTOP, hwnd, reinterpret_cast<POINT*>(&rc), 2);
+            const int cx = (rc.left + rc.right) / 2;
+            const int cy = (rc.top + rc.bottom) / 2;
+            auto within = [cx, cy](const RECT& panel) {
+                return cx >= panel.left && cx < panel.right && cy >= panel.top && cy < panel.bottom;
+            };
+            const bool onPanel = g_state.activeTab == 0
+                ? within(LivePanelRect) || within(TrainPanelRect) : within(OfflinePanelRect);
+            SetBkMode(hdc, OPAQUE);
+            SetBkColor(hdc, onPanel ? ColPanel : ColBg);
+            if (controlId == IDC_LIVE_STATUS || controlId == IDC_OFFLINE_STATUS || controlId == IDC_TRAIN_STATUS) {
                 SetTextColor(hdc, ColAccent);
             } else {
                 SetTextColor(hdc, ColDim);
             }
-            return reinterpret_cast<LRESULT>(GetStockObject(NULL_BRUSH));
+            return reinterpret_cast<LRESULT>(onPanel ? g_brPanel : g_brBg);
         }
 
         case WM_CTLCOLOREDIT: {
@@ -1013,6 +1307,10 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                     return 0;
                 case IDC_REFRESH_WINDOWS: refreshWindowList(); return 0;
                 case IDC_START_CAPTURE: startCapture(); return 0;
+                case IDC_TRAIN_IMAGES: selectTrainingImages(); return 0;
+                case IDC_SAVE_TRAIN_MODEL: selectTrainingModel(true); return 0;
+                case IDC_OPEN_TRAIN_MODEL: selectTrainingModel(false); return 0;
+                case IDC_RUN_TRAIN: trainModel(); return 0;
                 case IDC_BROWSE_INPUT0: selectFile(g_state.input0, false); return 0;
                 case IDC_BROWSE_INPUT1: selectFile(g_state.input1, false); return 0;
                 case IDC_BROWSE_OUTPUT: selectFile(g_state.output, true); return 0;
@@ -1024,19 +1322,65 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
             DWORD exitCode = static_cast<DWORD>(wParam);
             JobType jobType = static_cast<JobType>(lParam);
             if (jobType == JobType::Live) {
+                if (g_state.captureStopEvent) {
+                    CloseHandle(g_state.captureStopEvent);
+                    g_state.captureStopEvent = nullptr;
+                }
                 EnableWindow(g_state.captureButton, TRUE);
+                SetWindowTextA(g_state.captureButton, "START CAPTURE");
+                EnableWindow(g_state.trainButton, TRUE);
                 SetWindowTextA(g_state.liveStatus, exitCode == 0 ? "Capture stopped." : "Capture ended with an error.");
-            } else {
+            } else if (jobType == JobType::Offline) {
                 EnableWindow(g_state.offlineButton, TRUE);
+                EnableWindow(g_state.trainButton, TRUE);
                 SetWindowTextA(g_state.offlineStatus, exitCode == 0 ? "Interpolation complete." : "Interpolation failed.");
             }
             return 0;
         }
 
-        case WM_DESTROY:
+        case WM_TRAIN_PROGRESS: {
+            std::string* progress = reinterpret_cast<std::string*>(lParam);
+            if (progress) {
+                SetWindowTextA(g_state.trainingStatus, progress->c_str());
+                delete progress;
+            }
+            return 0;
+        }
+
+        case WM_TRAIN_COMPLETE: {
+            const DWORD exitCode = static_cast<DWORD>(wParam);
+            std::string* result = reinterpret_cast<std::string*>(lParam);
+            EnableWindow(g_state.trainButton, TRUE);
+            EnableWindow(g_state.captureButton, TRUE);
+            EnableWindow(g_state.offlineButton, TRUE);
+            const bool modelSaved = result && result->rfind("Model saved", 0) == 0;
+            if (exitCode == 0 || modelSaved) {
+                SendMessageA(g_state.useTrainedModel, BM_SETCHECK, BST_CHECKED, 0);
+                SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 2, 0);
+                InvalidateRect(g_state.useTrainedModel, nullptr, FALSE);
+            }
+            if (result) {
+                SetWindowTextA(g_state.trainingStatus, result->c_str());
+                delete result;
+            }
+            return 0;
+        }
+
+        case WM_DESTROY: {
+            MSG queued = {};
+            while (PeekMessageA(&queued, hwnd, WM_TRAIN_COMPLETE, WM_TRAIN_COMPLETE, PM_REMOVE))
+                delete reinterpret_cast<std::string*>(queued.lParam);
+            while (PeekMessageA(&queued, hwnd, WM_TRAIN_PROGRESS, WM_TRAIN_PROGRESS, PM_REMOVE))
+                delete reinterpret_cast<std::string*>(queued.lParam);
+            if (g_state.captureStopEvent) {
+                SetEvent(g_state.captureStopEvent);
+                CloseHandle(g_state.captureStopEvent);
+                g_state.captureStopEvent = nullptr;
+            }
             g_state.hwnd = nullptr;
             PostQuitMessage(0);
             return 0;
+        }
     }
     return DefWindowProcA(hwnd, message, wParam, lParam);
 }
@@ -1072,7 +1416,7 @@ int runGuiApplication() {
         windowClass.lpszClassName,
         "Motion Enhancer",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 900, 748,
+        CW_USEDEFAULT, CW_USEDEFAULT, 900, 820,
         nullptr, nullptr, instance, nullptr
     );
     if (!window) return 1;

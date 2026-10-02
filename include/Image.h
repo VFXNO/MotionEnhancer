@@ -54,7 +54,7 @@ public:
     // Downsample by factor of 2 (with boundary safety)
     Image downsample2x() const;
 
-    // Load from disk (PNG, JPG, BMP)
+    // Load a still image as RGB (stb_image, then installed Windows WIC codecs).
     static Image load(const std::string& path);
 
     // Save to disk as PNG (8-bit per channel)

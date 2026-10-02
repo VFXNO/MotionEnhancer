@@ -1,5 +1,5 @@
-// Layout must match ShaderConstants in include/D3D11Context.h exactly
-// (three 16-byte rows).
+// Layout must match ShaderConstants in include/GraphicsDevice.h exactly
+// (thirty-nine 16-byte rows).
 cbuffer PipelineConstants : register(b0)
 {
     uint Width;          // full-resolution frame size
@@ -15,7 +15,14 @@ cbuffer PipelineConstants : register(b0)
     float TimeT;         // interpolation time in [0,1]: 0 = frame0, 1 = frame1
     float SmoothnessWeight;
     uint ParentBlockSize;
-    uint Pad1;
+    float FlowScale;      // explicit scale/sign for flow conversion passes
+
+    float4 NetWeights[24]; // 10 inputs x 8 units, 3 rows (12 floats) per unit
+    float4 NetBias[2];
+    float4 NetOut[2];
+    float4 NetControl; // x score bias, y model enabled, z temporal, w anchor margin
+    float4 FeatureWeights[6]; // two learned 3x3 image filters (padded)
+    float4 FeatureControl; // xy learned feature biases, zw parent gains
 };
 
 SamplerState LinearClamp : register(s0);

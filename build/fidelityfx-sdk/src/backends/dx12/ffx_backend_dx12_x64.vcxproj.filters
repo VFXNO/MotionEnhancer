@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_DebugPacing.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\ffx_dx12.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\ffx_shader_blobs.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_assert.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_message.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.cpp">
+      <Filter>private_source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_DebugPacing.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_Helpers.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDX12_UiComposition.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDebugPacingPS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainDebugPacingVS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPremulPS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionPremulVS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\FrameInterpolationSwapchain\FrameInterpolationSwapchainUiCompositionVS.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\ffx_shader_blobs.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\shared\ffx_breadcrumbs_list.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\shared\blob_accessors\ffx_opticalflow_shaderblobs.h">
+      <Filter>private_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\backends\dx12\d3dx12.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\host\backends\dx12\ffx_dx12.h">
+      <Filter>public_source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_luminance_pyramid_pass.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_optical_flow_advanced_pass_v5.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_compute_scd_divergence_pass.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_filter_optical_flow_pass_v5.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_generate_scd_histogram_pass.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_prepare_luma_pass.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\shaders\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_pass_v5.hlsl">
+      <Filter>private_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_callbacks_glsl.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_callbacks_hlsl.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_common.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_luminance_pyramid.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_optical_flow_v5.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_compute_scd_divergence.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_filter_optical_flow_v5.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_generate_scd_histogram.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_prepare_luma.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_resources.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\include\FidelityFX\gpu\opticalflow\ffx_opticalflow_scale_optical_flow_advanced_v5.h">
+      <Filter>public_shaders</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vfxno\Documents\GitHub\Motion enhancer\third_party\FidelityFX-SDK-v1.1.4\src\backends\dx12\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="private_shaders">
+      <UniqueIdentifier>{759696C6-9CCA-3994-99FD-B898166EC9FF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private_source">
+      <UniqueIdentifier>{5DCB762F-0C7D-37D1-A6C0-C6A1BB307820}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public_shaders">
+      <UniqueIdentifier>{6BE11D1A-9183-33A7-A1C9-F31D78B55145}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public_source">
+      <UniqueIdentifier>{3411D418-6F9A-3425-B1EC-DD009B368572}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

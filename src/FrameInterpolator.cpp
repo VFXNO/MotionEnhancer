@@ -15,41 +15,6 @@ static const float GAUSSIAN_5TAP[5] = {
     1.0f / 16.0f
 };
 
-Image FrameInterpolator::computeOcclusionMask(
-    const FlowField& forwardFlow,
-    const FlowField& backwardFlow,
-    float threshold
-) {
-    int W = forwardFlow.width;
-    int H = forwardFlow.height;
-    Image mask(W, H, 1, 1.0f);
-
-    #pragma omp parallel for schedule(static)
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            const MotionVector& fv = forwardFlow.get(x, y);
-            float targetX = static_cast<float>(x) + fv.vx;
-            float targetY = static_cast<float>(y) + fv.vy;
-
-            MotionVector bv = backwardFlow.sampleBilinear(targetX, targetY);
-
-            // Forward-backward consistency error: |fv + bv|
-            float errX = fv.vx + bv.vx;
-            float errY = fv.vy + bv.vy;
-            float consistencyErr = std::sqrt(errX * errX + errY * errY);
-
-            if (consistencyErr <= threshold) {
-                mask.set(x, y, 0, 1.0f);
-            } else {
-                float conf = std::exp(-(consistencyErr - threshold) / 2.0f);
-                mask.set(x, y, 0, std::clamp(conf, 0.0f, 1.0f));
-            }
-        }
-    }
-
-    return mask;
-}
-
 Image FrameInterpolator::extractDetailLayer(const Image& img) {
     Image base = img.convolve5(GAUSSIAN_5TAP);
     Image detail(img.width, img.height, img.channels);
@@ -62,80 +27,12 @@ Image FrameInterpolator::extractDetailLayer(const Image& img) {
     return detail;
 }
 
-void FrameInterpolator::inpaintMotionHoles(
-    std::vector<float>& accumVx,
-    std::vector<float>& accumVy,
-    std::vector<float>& accumWeight,
-    std::vector<float>& accumConf0,
-    std::vector<float>& accumConf1,
-    const FlowField& fallbackFlow,
-    int W, int H,
-    int searchRadius
-) {
-    #pragma omp parallel for schedule(dynamic, 16)
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            size_t idx = static_cast<size_t>(y) * W + x;
-            if (accumWeight[idx] >= 1e-3f) continue; // Not a hole
-
-            float fillVx = 0.0f, fillVy = 0.0f;
-            float fillC0 = 0.0f, fillC1 = 0.0f;
-            float fillW = 0.0f;
-
-            for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
-                int ny = y + dy;
-                if (ny < 0 || ny >= H) continue;
-
-                for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
-                    int nx = x + dx;
-                    if (nx < 0 || nx >= W) continue;
-
-                    size_t nidx = static_cast<size_t>(ny) * W + nx;
-                    float nw = accumWeight[nidx];
-                    if (nw < 1e-3f) continue;
-
-                    float distSq = static_cast<float>(dx * dx + dy * dy);
-                    float spatW = std::exp(-distSq / 8.0f);
-
-                    float nvx = accumVx[nidx] / nw;
-                    float nvy = accumVy[nidx] / nw;
-                    float mag = std::sqrt(nvx * nvx + nvy * nvy);
-
-                    // Prefer background vectors (smaller motion) in disocclusion zones
-                    float w = spatW * (1.0f / (1.0f + 0.08f * mag));
-                    fillVx += nvx * w;
-                    fillVy += nvy * w;
-                    fillC0 += (accumConf0[nidx] / nw) * w;
-                    fillC1 += (accumConf1[nidx] / nw) * w;
-                    fillW += w;
-                }
-            }
-
-            if (fillW > 1e-4f) {
-                accumVx[idx] = fillVx / fillW;
-                accumVy[idx] = fillVy / fillW;
-                accumConf0[idx] = fillC0 / fillW;
-                accumConf1[idx] = fillC1 / fillW;
-                accumWeight[idx] = 1.0f;
-            } else {
-                const MotionVector& fv = fallbackFlow.get(x, y);
-                accumVx[idx] = fv.vx;
-                accumVy[idx] = fv.vy;
-                accumConf0[idx] = 0.5f;
-                accumConf1[idx] = 0.5f;
-                accumWeight[idx] = 1.0f;
-            }
-        }
-    }
-}
-
 Image FrameInterpolator::interpolate(
     const Image& frame0,
     const Image& frame1,
     float t,
     FlowField* outForwardFlow,
-    FlowField* outBackwardFlow,
-    Image* outOcclusionMask
+    FlowField* outBackwardFlow
 ) const {
     if (frame0.empty() || frame1.empty()) {
         std::cerr << "Error: empty input frames provided to interpolator\n";
@@ -169,22 +66,15 @@ Image FrameInterpolator::interpolate(
         }
     }
 
-    // 3. Occlusion masks via consistency checking
-    Image occ0 = computeOcclusionMask(forwardFlow, backwardFlow, params.occlusionThreshold);
-    Image occ1 = computeOcclusionMask(backwardFlow, forwardFlow, params.occlusionThreshold);
-
     if (outForwardFlow) *outForwardFlow = forwardFlow;
     if (outBackwardFlow) *outBackwardFlow = backwardFlow;
-    if (outOcclusionMask) *outOcclusionMask = occ0;
 
-    // 4. Construct intermediate motion field at time t via splatting
+    // 3. Construct intermediate motion field at time t via splatting. Both
+    // fields contribute in proportion to how close time t is to their own
+    // frame; nothing else weights them.
     std::vector<float> accumVx(static_cast<size_t>(W) * H, 0.0f);
     std::vector<float> accumVy(static_cast<size_t>(W) * H, 0.0f);
     std::vector<float> accumWeight(static_cast<size_t>(W) * H, 0.0f);
-    std::vector<float> accumConf0(static_cast<size_t>(W) * H, 0.0f);
-    std::vector<float> accumW0(static_cast<size_t>(W) * H, 0.0f);
-    std::vector<float> accumConf1(static_cast<size_t>(W) * H, 0.0f);
-    std::vector<float> accumW1(static_cast<size_t>(W) * H, 0.0f);
 
     // Splat forward flow from frame0 into intermediate frame t
     for (int y0 = 0; y0 < H; ++y0) {
@@ -192,8 +82,7 @@ Image FrameInterpolator::interpolate(
             const MotionVector& mv = forwardFlow.get(x0, y0);
             float xt = static_cast<float>(x0) + t * mv.vx;
             float yt = static_cast<float>(y0) + t * mv.vy;
-            float c0 = occ0.get(x0, y0, 0);
-            float baseW = (1.0f - t) * (0.2f + 0.8f * c0);
+            float baseW = 1.0f - t;
 
             int ix = static_cast<int>(std::floor(xt));
             int iy = static_cast<int>(std::floor(yt));
@@ -214,8 +103,6 @@ Image FrameInterpolator::interpolate(
                     size_t idx = static_cast<size_t>(qy) * W + qx;
                     accumVx[idx] += mv.vx * w;
                     accumVy[idx] += mv.vy * w;
-                    accumConf0[idx] += c0 * w;
-                    accumW0[idx] += w;
                     accumWeight[idx] += w;
                 }
             }
@@ -230,8 +117,7 @@ Image FrameInterpolator::interpolate(
             float fvy = -mv.vy;
             float xt = static_cast<float>(x1) + (1.0f - t) * mv.vx;
             float yt = static_cast<float>(y1) + (1.0f - t) * mv.vy;
-            float c1 = occ1.get(x1, y1, 0);
-            float baseW = t * (0.2f + 0.8f * c1);
+            float baseW = t;
 
             int ix = static_cast<int>(std::floor(xt));
             int iy = static_cast<int>(std::floor(yt));
@@ -252,17 +138,10 @@ Image FrameInterpolator::interpolate(
                     size_t idx = static_cast<size_t>(qy) * W + qx;
                     accumVx[idx] += fvx * w;
                     accumVy[idx] += fvy * w;
-                    accumConf1[idx] += c1 * w;
-                    accumW1[idx] += w;
                     accumWeight[idx] += w;
                 }
             }
         }
-    }
-
-    // Artifact Refinement: Inpaint disocclusion holes in the motion field
-    if (params.enableHoleInpainting) {
-        inpaintMotionHoles(accumVx, accumVy, accumWeight, accumConf0, accumConf1, forwardFlow, W, H, 3);
     }
 
     // Artifact Refinement: Extract high-frequency detail layers if enabled
@@ -272,7 +151,7 @@ Image FrameInterpolator::interpolate(
         detail1 = extractDetailLayer(frame1);
     }
 
-    // 5. Synthesize target intermediate frame with artifact refinement
+    // 4. Synthesize target intermediate frame
     Image result(W, H, C);
 
     #pragma omp parallel for schedule(dynamic, 16)
@@ -283,20 +162,15 @@ Image FrameInterpolator::interpolate(
 
             float vx = 0.0f;
             float vy = 0.0f;
-            float conf0 = 1.0f;
-            float conf1 = 1.0f;
 
             if (totalW > 1e-4f) {
                 vx = accumVx[idx] / totalW;
                 vy = accumVy[idx] / totalW;
-                conf0 = (accumW0[idx] > 1e-4f) ? (accumConf0[idx] / accumW0[idx]) : occ0.get(x, y, 0);
-                conf1 = (accumW1[idx] > 1e-4f) ? (accumConf1[idx] / accumW1[idx]) : occ1.get(x, y, 0);
             } else {
+                // Nothing splatted here: keep the frame0 vector.
                 const MotionVector& fv = forwardFlow.get(x, y);
                 vx = fv.vx;
                 vy = fv.vy;
-                conf0 = occ0.get(x, y, 0);
-                conf1 = occ1.get(x, y, 0);
             }
 
             // Continuous sample locations in frame0 and frame1
@@ -314,54 +188,25 @@ Image FrameInterpolator::interpolate(
                 val1[c] = frame1.sampleBilinear(src1X, src1Y, c);
             }
 
-            // Initial blend weights based on temporal position and occlusion confidence
-            float w0 = (1.0f - t) * (std::clamp(conf1, 0.02f, 1.0f));
-            float w1 = t * (std::clamp(conf0, 0.02f, 1.0f));
-
-            // Artifact Refinement 1: Photometric-Aware Occlusion Gating
-            if (params.enablePhotometricGating) {
-                float colorDistSq = 0.0f;
-                for (int c = 0; c < C; ++c) {
-                    float diff = val0[c] - val1[c];
-                    colorDistSq += diff * diff;
-                }
-                float colorDist = std::sqrt(colorDistSq);
-
-                if (colorDist > params.photoGateThreshold) {
-                    float excess = colorDist - params.photoGateThreshold;
-                    float invSigma = 1.0f / params.photoGateSigma;
-                    float suppress = std::exp(-(excess * excess * invSigma * invSigma * 0.5f));
-
-                    // Check which source is more confident:
-                    if (conf0 > conf1 + 0.10f) {
-                        // Frame 0 is valid; Frame 1 is occluded -> suppress Frame 1
-                        w1 *= suppress;
-                    } else if (conf1 > conf0 + 0.10f) {
-                        // Frame 1 is valid; Frame 0 is occluded -> suppress Frame 0
-                        w0 *= suppress;
-                    }
-                }
-            }
-
-            float normW = w0 + w1;
-            if (normW < 1e-5f) normW = 1.0f;
+            // Blend weights are the temporal position and nothing else.
+            const float w0 = 1.0f - t;
+            const float w1 = t;
 
             float blended[4] = { 0.0f };
             for (int c = 0; c < C; ++c) {
-                blended[c] = (w0 * val0[c] + w1 * val1[c]) / normW;
+                blended[c] = w0 * val0[c] + w1 * val1[c];
             }
 
-            // Artifact Refinement 2: High-Frequency Detail Restoration (Laplacian Detail Transfer)
+            // Artifact Refinement 1: High-Frequency Detail Restoration (Laplacian Detail Transfer)
             if (params.enableDetailRestoration) {
                 for (int c = 0; c < C; ++c) {
                     float d0 = detail0.sampleBilinear(src0X, src0Y, c);
                     float d1 = detail1.sampleBilinear(src1X, src1Y, c);
-                    float blendedDetail = (w0 * d0 + w1 * d1) / normW;
-                    blended[c] += params.detailStrength * blendedDetail;
+                    blended[c] += params.detailStrength * (w0 * d0 + w1 * d1);
                 }
             }
 
-            // Artifact Refinement 3: Local Color Bounding Box Clamping
+            // Artifact Refinement 2: Local Color Bounding Box Clamping
             if (params.enableColorClamping) {
                 int s0x = static_cast<int>(std::round(src0X));
                 int s0y = static_cast<int>(std::round(src0Y));

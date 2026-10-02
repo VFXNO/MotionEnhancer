@@ -191,16 +191,22 @@ void RealtimePresenter::revealOutput() {
     m_outputVisible = true;
 }
 
-std::vector<int> RealtimePresenter::sortedReadySlots() const {
-    std::vector<int> result;
+size_t RealtimePresenter::sortedReadySlots(int (&out)[kSlotCount]) const {
+    size_t count = 0;
     for (size_t i = 0; i < m_slots.size(); ++i) {
-        if (m_slots[i].state == SlotState::Ready) result.push_back(static_cast<int>(i));
+        if (m_slots[i].state != SlotState::Ready) continue;
+        // Insertion sort into the caller-owned fixed array (max 3 entries).
+        const int64_t ts = m_slots[i].timestamp100ns;
+        size_t j = count;
+        while (j > 0 &&
+               m_slots[static_cast<size_t>(out[j - 1])].timestamp100ns > ts) {
+            out[j] = out[j - 1];
+            --j;
+        }
+        out[j] = static_cast<int>(i);
+        ++count;
     }
-    std::sort(result.begin(), result.end(), [&](int left, int right) {
-        return m_slots[static_cast<size_t>(left)].timestamp100ns <
-               m_slots[static_cast<size_t>(right)].timestamp100ns;
-    });
-    return result;
+    return count;
 }
 
 size_t RealtimePresenter::queueDepth() const {
@@ -212,11 +218,13 @@ size_t RealtimePresenter::queueDepth() const {
 }
 
 void RealtimePresenter::retireConsumedFrames(
-    const std::vector<int>& sorted,
+    const int* sorted,
+    size_t count,
     int currentSlot
 ) {
-    if (sorted.size() < 3) return;
-    for (int slotIndex : sorted) {
+    if (count < kSlotCount) return;
+    for (size_t i = 0; i < count; ++i) {
+        const int slotIndex = sorted[i];
         if (slotIndex == currentSlot) break;
         if (slotIndex == m_cachedPreviousSlot || slotIndex == m_cachedCurrentSlot ||
             slotIndex == m_pendingPreviousSlot || slotIndex == m_pendingCurrentSlot) {
@@ -268,12 +276,14 @@ bool RealtimePresenter::prefetchPair(GPUInterpolator& interpolator) {
         return true;
     }
 
-    auto sorted = sortedReadySlots();
-    if (sorted.size() < 2 || m_targetPresentationTimestamp == 0) return false;
+    int sorted[kSlotCount];
+    const size_t readyCount = sortedReadySlots(sorted);
+    if (readyCount < 2 || m_targetPresentationTimestamp == 0) return false;
 
-    int previous = sorted.front();
+    int previous = sorted[0];
     int current = -1;
-    for (int slotIndex : sorted) {
+    for (size_t i = 0; i < readyCount; ++i) {
+        const int slotIndex = sorted[i];
         const auto& slot = m_slots[static_cast<size_t>(slotIndex)];
         if (slot.timestamp100ns <= m_targetPresentationTimestamp) previous = slotIndex;
         // At an exact source timestamp presentation shows that source frame,
@@ -302,9 +312,10 @@ bool RealtimePresenter::prefetchPair(GPUInterpolator& interpolator) {
 }
 
 bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
-    auto sorted = sortedReadySlots();
-    const char* mode = sorted.empty() ? "E" : nullptr;
-    if (sorted.empty()) {
+    int sorted[kSlotCount];
+    const size_t readyCount = sortedReadySlots(sorted);
+    const char* mode = readyCount == 0 ? "E" : nullptr;
+    if (readyCount == 0) {
         // A consumed latency signal must always be paired with Present or the
         // waitable swapchain will not produce another presentation slot.
         // Presenting an unrendered back buffer flashes stale/black content, so
@@ -323,12 +334,13 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
 
     if (m_targetPresentationTimestamp == 0) {
         m_targetPresentationTimestamp =
-            m_slots[static_cast<size_t>(sorted.front())].timestamp100ns;
+            m_slots[static_cast<size_t>(sorted[0])].timestamp100ns;
     }
 
-    int previous = sorted.front();
+    int previous = sorted[0];
     int current = -1;
-    for (int slotIndex : sorted) {
+    for (size_t i = 0; i < readyCount; ++i) {
+        const int slotIndex = sorted[i];
         const auto& slot = m_slots[static_cast<size_t>(slotIndex)];
         if (slot.timestamp100ns <= m_targetPresentationTimestamp) previous = slotIndex;
         if (slot.timestamp100ns >= m_targetPresentationTimestamp) {
@@ -339,7 +351,7 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
 
     bool holdTimeline = false;
     if (current < 0) {
-        current = sorted.back();
+        current = sorted[readyCount - 1];
         previous = current;
         // Keep the target timestamp when the next source frame has not
         // arrived yet. Advancing here skips the next interpolation midpoint.
@@ -433,7 +445,7 @@ bool RealtimePresenter::presentNext(GPUInterpolator& interpolator) {
         // presentation deadline instead of discovering the pair at that tick.
         prefetchPair(interpolator);
     }
-    retireConsumedFrames(sorted, current);
+    retireConsumedFrames(sorted, readyCount, current);
     logPacing(mode ? mode : (previous != current ? "I" : "P"));
     return true;
 }

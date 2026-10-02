@@ -2,12 +2,63 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <limits>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <wincodec.h>
+#include <wrl/client.h>
+#endif
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+#ifdef _WIN32
+namespace {
+Image loadWithWic(const std::string& path) {
+    // WIC exposes the image codecs installed in Windows (TIFF, GIF, WebP/
+    // HEIF when their extensions are installed, etc.). Use the first frame
+    // of an animated image, just as an ordinary still-image input does.
+    const HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(com) && com != RPC_E_CHANGED_MODE) return {};
+    Image result;
+    do {
+        const int count = MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, nullptr, 0);
+        if (count <= 0) break;
+        std::wstring wide(static_cast<size_t>(count), L'\0');
+        if (!MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, wide.data(), count)) break;
+        Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
+        Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
+        Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+        Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+        if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+                                    IID_PPV_ARGS(&factory))) ||
+            FAILED(factory->CreateDecoderFromFilename(wide.c_str(), nullptr, GENERIC_READ,
+                                                      WICDecodeMetadataCacheOnDemand, &decoder)) ||
+            FAILED(decoder->GetFrame(0, &frame)) ||
+            FAILED(factory->CreateFormatConverter(&converter)) ||
+            FAILED(converter->Initialize(frame.Get(), GUID_WICPixelFormat24bppRGB,
+                                         WICBitmapDitherTypeNone, nullptr, 0.0,
+                                         WICBitmapPaletteTypeCustom))) break;
+        UINT w = 0, h = 0;
+        if (FAILED(converter->GetSize(&w, &h)) || w == 0 || h == 0 ||
+            w > 16384 || h > 16384 ||
+            static_cast<uint64_t>(w) * h * 3 > std::numeric_limits<UINT>::max()) break;
+        const UINT stride = w * 3;
+        std::vector<uint8_t> pixels(static_cast<size_t>(stride) * h);
+        if (FAILED(converter->CopyPixels(nullptr, stride, static_cast<UINT>(pixels.size()), pixels.data()))) break;
+        result = Image(static_cast<int>(w), static_cast<int>(h), 3);
+        for (size_t i = 0; i < pixels.size(); ++i) result.data[i] = static_cast<float>(pixels[i]);
+    } while (false);
+    if (SUCCEEDED(com)) CoUninitialize();
+    return result;
+}
+} // namespace
+#endif
 
 Image::Image(int w, int h, int c)
     : width(w), height(h), channels(c), data(static_cast<size_t>(w) * h * c, 0.0f) {}
@@ -116,14 +167,21 @@ Image Image::downsample2x() const {
 
 Image Image::load(const std::string& path) {
     int w = 0, h = 0, c = 0;
-    unsigned char* raw = stbi_load(path.c_str(), &w, &h, &c, 0);
+    // Canonical three-channel RGB input. GPU uploads and ground-truth results
+    // are RGB; leaving an alpha channel on PNG inputs makes PSNR return zero
+    // simply because the channel counts differ.
+    unsigned char* raw = stbi_load(path.c_str(), &w, &h, &c, 3);
     if (!raw) {
+#ifdef _WIN32
+        Image decoded = loadWithWic(path);
+        if (!decoded.empty()) return decoded;
+#endif
         std::cerr << "Error: failed to load image from " << path << " (" << stbi_failure_reason() << ")\n";
         return Image();
     }
 
-    Image img(w, h, c);
-    size_t totalPixels = static_cast<size_t>(w) * h * c;
+    Image img(w, h, 3);
+    size_t totalPixels = static_cast<size_t>(w) * h * 3;
     for (size_t i = 0; i < totalPixels; ++i) {
         img.data[i] = static_cast<float>(raw[i]);
     }

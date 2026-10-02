@@ -1,6 +1,6 @@
-﻿# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
+# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
 
-A C++17 frame interpolation application implementing an **8-level Gaussian pyramid** with **Zero-mean Normalized Cross-Correlation (ZNCC)** block matching motion estimation, multi-candidate spatial predictors (EPZS), 2D Gaussian block weighting, direct quarter-pel bilinear refinement, and **advanced artifact refinement** (photometric-aware occlusion gating, bilateral hole inpainting, Laplacian detail restoration, and color bounding box clamping).
+A C++17 frame interpolation application implementing an **8-level Gaussian pyramid** with **Zero-mean Normalized Cross-Correlation (ZNCC)** block matching motion estimation, multi-candidate spatial predictors (EPZS), 2D Gaussian block weighting, direct quarter-pel bilinear refinement, and **advanced artifact refinement** (Laplacian detail restoration and color bounding box clamping). Interpolation itself is unconditional: no occlusion mask, no confidence weighting, no gating.
 
 ## Features & Improvements
 
@@ -10,9 +10,8 @@ A C++17 frame interpolation application implementing an **8-level Gaussian pyram
 - **Direct Quarter-Pel & Half-Pel Subpixel Refinement**: Directly maximizes ZNCC in the continuous image domain using bilinear sampling at $0.5\text{ px}$ and $0.25\text{ px}$ candidate steps.
 - **Level-Adaptive Block Sizing**: Dynamically scales block sizes across the 8 levels ($14\times 14$ on coarse levels down to $6\times 6$ on fine levels).
 - **Color-Guided Edge-Preserving Vector Median Filter**: Prevents foreground motion from bleeding into background by weighting neighbors by RGB color similarity.
+- **Unconditional Interpolation**: no occlusion mask, no confidence weighting, no gating. Every output pixel is the time blend of its two warped samples, so nothing can suppress a source frame or fall back to one (the price is a soft ghost where content exists in one frame only).
 - **Artifact Refinement Suite**:
-  - **Photometric-Aware Occlusion Gating**: Measures color discrepancy $\|I_0(\mathbf{s}_0) - I_1(\mathbf{s}_1)\|$ and soft-suppresses occluded sources to eliminate ghosting contours.
-  - **Bilateral Motion Hole Inpainting**: Propagates surrounding background motion into disocclusion gaps to prevent smearing.
   - **High-Frequency Detail Restoration (Laplacian Detail Transfer)**: Injects warped high-frequency detail layers back into synthesized pixels to compensate for bilinear resampling blur.
   - **Local Color Bounding Box Clamping**: Constrains synthesized pixels within the local color bounds of the source samples, preventing ringing spikes and color fringing.
 - **Multi-Core Acceleration**: Multi-threaded block matching and synthesis with OpenMP.
@@ -30,7 +29,7 @@ Motion enhancer/
 â”‚   â”œâ”€â”€ Pyramid.h              # 8-level Gaussian pyramid builder
 â”‚   â”œâ”€â”€ MotionVector.h         # Flow field, color-guided median filter, flow visualizer
 â”‚   â”œâ”€â”€ ZNCCMatcher.h          # Coarse-to-fine ZNCC solver with EPZS & sub-pel search
-â”‚   â””â”€â”€ FrameInterpolator.h   # Bidirectional flow, occlusion detection & artifact refinement
+â”‚   â””â”€â”€ FrameInterpolator.h   # Bidirectional flow, splatting & detail refinement (offline path)
 â”œâ”€â”€ src/
 â”‚   â”œâ”€â”€ Image.cpp
 â”‚   â”œâ”€â”€ Pyramid.cpp
@@ -65,16 +64,17 @@ The executable will be generated at `build/Release/motion_enhancer.exe`.
 
 The repository includes AMD FidelityFX SDK v1.1.4 and its `FidelityFX_SC.exe`
 shader compiler under `third_party/FidelityFX-SDK-v1.1.4`. The default build
-enables native D3D12 Optical Flow without a separate AMD SDK download:
+    enables optional native D3D12 Optical Flow without a separate AMD SDK download:
 
 ```powershell
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 ```
 
-The integration invokes AMD's supplied `tools/binary_store/FidelityFX_SC.exe`
-through the SDK CMake targets. It retains one temporal context and falls back
-to the native MSAD graph if AMD initialization or dispatch fails. SDK v1.1.4
+The optional FFX integration invokes AMD's supplied `tools/binary_store/FidelityFX_SC.exe`
+through the SDK CMake targets. SAD is the default runtime engine; when FFX is
+selected it retains one temporal context and falls back to native SAD if
+AMD initialization or dispatch fails. SDK v1.1.4
 suppresses vectors through temporal frame index 5 after a reset, so a stream
 is primed once and every sequential pair thereafter submits only its new
 current frame. A changed source texture resets and re-primes the history.
@@ -105,17 +105,27 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 | `--no-spatial-pred` | Flag | Off | Disable spatial predictor evaluation (EPZS) |
 | `--no-gaussian-weight` | Flag | Off | Disable Gaussian window block weighting |
 | `--no-adaptive-block` | Flag | Off | Disable level-adaptive block sizing |
-| `--no-bidirectional` | Flag | Off | Disable backward flow and occlusion checking |
-| `--no-photo-gate` | Flag | Off | Disable photometric-aware occlusion gating |
-| `--no-hole-inpaint` | Flag | Off | Disable disocclusion motion hole inpainting |
+| `--no-bidirectional` | Flag | Off | Disable backward flow estimation |
 | `--no-detail-restore` | Flag | Off | Disable high-frequency detail restoration |
 | `--no-color-clamp` | Flag | Off | Disable local color bounding box clamping |
 | `--detail-strength <flt>` | Float | `0.65` | Detail restoration strength in $[0.0, 1.0]$ |
 | `--save-flow <path>` | String | None | Export forward flow visualization to PNG |
-| `--save-occ <path>` | String | None | Export occlusion confidence mask to PNG |
 | `--test` | Flag | Off | Run synthetic benchmark with ground truth |
 | `--list-windows` | Flag | Off | List active desktop windows available for WGC capture |
 | `--capture-window <title>`| String | None | Real-time GPU frame interpolation overlay on target window |
+
+### Convolutional estimator options
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `--flow-engine <sad\|ffx\|neural>` | String | `sad` | Flow engine; `neural` needs a trained model |
+| `--gpu-coarse-radius <0-8>` | Integer | `4` | Search radius above the finest level |
+| `--gpu-refine-radius <0-8>` | Integer | `6` | Search radius at the finest level |
+| `--train-neural <model.bin>` | String | None | Train the estimator on the positional image/video sources |
+| `--neural-epochs <n>` | Integer | `24` | Training epochs |
+| `--neural-gradient-check` | Flag | Off | Verify the analytic gradient against finite differences |
+| `--neural-parity-check <f0> <f1>` | Flag | Off | Verify the shaders compute the trained model's function |
+
+`MOTION_ENHANCER_NEURAL_MODEL` points `--flow-engine neural` and `--neural-parity-check` at a model file.
 
 ---
 
@@ -129,8 +139,10 @@ Launch the executable without arguments (or pass `--gui`) to open the native Win
 .\build\Release\motion_enhancer.exe
 ```
 
-- **Live Capture** lists capturable desktop windows and starts the GPU overlay for the selected window.
+- **Live Capture** lists capturable desktop windows and starts the GPU overlay for the selected window. **Start Capture** becomes **Stop Capture** while running; stopping signals the capture process to release its resources and exit normally. Its **Train Neural Flow** panel accepts one or more video files or images (up to 16 files). It samples up to 12 consecutive frames per video for synthetic warm-up, then streams every decoded frame for real-frame training without creating intermediate PNGs. Images can be PNG, JPEG, BMP, TIFF, GIF, TGA, PSD, or any format supported by an installed Windows Imaging Component codec (including WebP/HEIF where available). Choose a `.bin` output path and click Train; the separate process keeps the GUI responsive. If validation accepts the model, the GUI selects the **Neural motion estimator** engine and checks **Use model on next capture**. With no accepted model, the SAD engine remains available. Stopping capture does not train or save weights: the `.bin` is saved when a separate Train run finishes and passes validation. Video formats depend on the codecs installed in Windows (Media Foundation).
 - **Offline Interpolation** provides file pickers, interpolation timing, and direct controls for every matcher and synthesis option.
+
+Image input uses stb_image with Windows Imaging Component as a fallback, so the pickers accept common formats such as PNG, JPEG, BMP, GIF, TIFF and WebP; additional formats such as HEIF depend on installed Windows codecs. Alpha is discarded for consistent RGB matching. Interpolated output is still saved as PNG.
 
 For live capture, **Source FPS** defaults to `Auto`, which estimates WGC frame cadence and stabilizes it to `24`, `30`, or `60` FPS. You can select a fixed rate when the content cadence is known. Motion Enhancer accepts source frames at that cadence, then generates timestamp-correct intermediate positions at the display refresh rate.
 
@@ -138,7 +150,7 @@ For live capture, **Source FPS** defaults to `Auto`, which estimates WGC frame c
 
 Quality presets have been replaced by explicit advanced settings. Live capture exposes pyramid levels, the finest searched level, coarse and refinement radii, and predictor smoothness. Offline interpolation additionally exposes block sizing, grid spacing, subpixel mode, consistency and photometric thresholds, detail strength, and all algorithm feature toggles. Values are validated before processing starts.
 
-The corresponding live command-line options are `--gpu-levels`, `--gpu-min-refine`, `--gpu-coarse-radius`, `--gpu-refine-radius`, and `--gpu-smoothness`. The optical flow engine is selected at runtime with `--flow-engine <ffx|msad>`: `ffx` uses the bundled AMD FidelityFX Optical Flow (default, with automatic MSAD fallback on dispatch failure) and `msad` forces the project's own coarse-to-fine block-matching shader. The active engine is shown at startup and reported per interval in the overlay status line. Offline controls use the algorithm options shown by `--help`.
+The corresponding live command-line options are `--gpu-levels`, `--gpu-min-refine`, `--gpu-coarse-radius`, `--gpu-refine-radius`, and `--gpu-smoothness`. Choose `--flow-engine <sad|ffx|neural>`: `sad` is the current default, `ffx` is optional AMD FidelityFX Optical Flow, and `neural` requires a trained MNFN model at `MOTION_ENHANCER_NEURAL_MODEL` (see `--train-neural`). The neural engine does not read SAD costs. Older model formats are rejected rather than misread. The active engine is shown at startup and reported per interval in the overlay status line.
 Live source cadence is available with `--source-fps <auto|24|30|60>`.
 Output multiplication is available with `--multiplier <2|3|4|max>`.
 
@@ -148,52 +160,129 @@ Motion Enhancer can run directly as a real-time GPU-accelerated video/game frame
 
 ```
 [Target App Window (e.g. YouTube, Player, Game)]
-              â”‚
-              â–¼ (Zero-Copy GPU Capture via WGC)
-    [Direct3D 11 VRAM Texture from WGC]
-               â”‚
-               â–¼
-    [Shared capture texture + fence -> D3D12 queue]
-               â”‚
-               â–¼
-    [DXC HLSL 7-Level Luminance Pyramid] (PyramidCS.hlsl)
-              â”‚
-              â–¼
-   [Fixed 32x32 Block / 64x64 Support Candidate Search] (MotionSearchCS.hlsl)
-              â”‚
-              â–¼
-   [Coarse-to-Fine Block Search + Spatial Filtering] (MotionSearchCS/FilterFlowCS.hlsl)
-              â”‚
-              â–¼
-   [Timestamp-Driven Single-Source Motion Warp] (InterpolateCS.hlsl)
-              â”‚
-              â–¼
-   [Paced Click-Through DXGI/DWM Presenter] (50-120+ FPS)
+              |  WGC (D3D11 surface, timestamp)
+              v
+    [Capture thread: copy -> slot ring, luma diff, cadence classify]
+              |  shared NT-handle texture + capture-ready fence
+              v
+    [Flow queue: FFX Optical Flow  (or SAD pyramid search)]
+              |  flow ring entry + flow fence
+              v
+    [Frame timeline: media clock = display time - offset - latency budget]
+              |  pair (t0, t1), alpha
+              v
+    [Present queue: InterpolateCS -> flip swap chain, Present(1)]
+              |  paced by the DWM compositor clock (one frame per refresh)
+              v
+    [Click-through overlay window]
 ```
 
-The real-time GPU path uses two native devices on the same adapter: a D3D12 device and direct command queue own all compute and presentation, while an independent D3D11 device serves Windows Graphics Capture''s `ID3D11Texture2D` contract. `D3D12Context` owns native D3D12 pyramid, flow, and output resources; SRV/UAV descriptors; a shared root signature; per-pass compute PSOs; command recording; explicit state barriers; and fence synchronization. Luminance, pyramid reduction, bidirectional MotionSearch/MSAD, FilterFlow, InterpolateCS, and PresentFrameCS are dispatched natively, and presentation targets a native D3D12 flip-model swap chain. Captured frames cross into D3D12 through NT-handle shared textures created on the D3D11 capture device (`MISC_SHARED | MISC_SHARED_NTHANDLE`, no keyed mutex), with two shared timeline fences ordering access: D3D11 signals a capture-ready fence after each copy and the D3D12 queue waits on it before consuming; a second shared fence orders any D3D11 consumption of native results (offline readback). Release configuration compiles the HLSL with DXC (`cs_5_0`) into `.cso` artifacts; the DXC artifact is consumed directly by the native D3D12 pipeline, while the D3D11 compatibility path logs a warning and recompiles DXBC with the Windows compiler when the artifact is DXIL. Forward and backward flow are estimated independently with the same coarse-to-fine hierarchy, using swapped reference and candidate frames. Native resources are retained for synthesis and flow is cached per source pair.
+The real-time path is D3D12-only for compute and presentation; a D3D11 device on the same adapter exists solely to satisfy Windows Graphics Capture's `ID3D11Texture2D` contract. It is organised as five components:
 
-This is not AMD AFMF 2, which remains proprietary driver software. The default
-build uses the bundled AMD FidelityFX Optical Flow implementation and falls
-back to the project's native MSAD shader pipeline if FFX cannot initialize or
-dispatch. The FFX path supplies a current-to-previous 8x8 `R16G16_SINT` vector field.
+| Component | Thread | Role |
+|---|---|---|
+| `GraphicsDevice` | – | D3D12 device, a **present queue** and a separate **flow queue**, the D3D11 capture device, and the shared NT-handle textures/fences that order D3D11 → D3D12 access. |
+| `CaptureEngine` | capture (producer) | WGC callback only queues frames. The producer thread copies each into a slot ring, runs a sparse GPU luma diff against the newest frame (rejects identical repaints, flags scene cuts), classifies the frame against the source cadence, and submits its flow. |
+| `FlowEngine` | capture | AMD FidelityFX Optical Flow (native SAD graph as fallback) into a 16-entry flow ring on the flow queue. Nothing here ever blocks the render thread. |
+| `FrameTimeline` | shared | Cadence lock, timestamp regularisation, the media clock, and the adaptive latency budget. |
+| `Presenter` | render | 3-buffer flip-model swap chain, `Present(1)`, one command list per refresh, GPU-side fence waits only. |
+
+Release builds compile the HLSL with DXC (`cs_5_0`) into `.cso` artifacts loaded by the D3D12 pipelines; the D3D11 luma-diff kernel is a tiny embedded shader compiled at runtime.
+
+This is not AMD AFMF 2, which remains proprietary driver software. Native SAD
+is the default flow engine. The build also includes AMD FidelityFX Optical Flow;
+when selected, it falls back to the native SAD shader pipeline if it cannot
+initialize or dispatch. The FFX path supplies a current-to-previous 8x8 `R16G16_SINT` vector field.
 It is used as the backward field; the forward field is an explicit negated
 approximation produced by the conversion shader. Normal capture has no FFX
-flow readback or per-frame FFX logging. On the supplied 320x240 test pair with
-+16,+8 px motion, the persistent-context offline run measured 32.95 dB PSNR
-versus 25.36 dB for a naive blend.
+flow readback or per-frame FFX logging.
 
-### Queue and Synchronization
 
-The renderer uses three application-owned source slots and a two-buffer flip-discard swapchain. WGC copies end with GPU event queries; only completed slots enter the ordered queue. The queue never grows beyond three frames and never overwrites a source texture referenced by cached flow.
+### Native SAD matcher (`--flow-engine sad`)
 
-Presentation requires both a high-resolution refresh deadline and an available swapchain frame-latency slot. Exactly one frame is submitted per combined signal. There are no sleeps, `DwmFlush` calls, immediate midpoint/source bursts, or retained back-buffer references.
+`MotionSearchCS.hlsl` uses ordinary per-pixel SAD: sum `abs(reference - candidate)` over all 64 luma pixels of each 8×8 block, with equal weight for every pixel. Its coarse-to-fine search runs on an 8-level pyramid with a ±6 window. Packed luma stores four bytes per word to reduce memory loads, but the shader unpacks and compares each pixel individually; it does not invoke `msad4`. The vectors go directly into the frame-pair flow field, without a post-processing/refiner dispatch.
 
-For presentation timestamp $T$ bracketed by source timestamps $t_0$ and $t_1$, interpolation uses:
+**No displacement is ever penalised for its magnitude or for its distance from the predictor.** The matching cost is SAD alone. The smoothness term that used to be subtracted from every candidate's score was doing two jobs: it broke ties between near-equal minima (useful) and it pulled real minima back toward the coarse level's guess (not useful — a 16 px object read 13 px at every level because of it). It is replaced by `RankKey`, which buckets the score by one luma level and, *within a bucket only*, prefers the candidate nearest a reference vector — the previous pair's vector at that block when the temporal chain is bound, the coarse predictor otherwise. A candidate a full luma level better always wins whatever its distance, so nothing is held back; inside one bucket the measurement cannot separate the candidates anyway, and choosing consistently is what stops a block flickering between two equally good alias peaks. Removing the penalty *without* that replacement cost 12 dB at 1080p, so the two changes only make sense together.
 
-$$\alpha = \operatorname{clamp}\left(\frac{T-t_0}{t_1-t_0}, 0, 1\right)$$
+### Convolutional estimator (`--flow-engine neural`)
 
-The synthesis shader motion-warps both source frames according to $\alpha$ and blends them with forward/backward consistency weighting. It does not run a separate occlusion pass.
+A trained convolutional flow estimator, in `NeuralFlow.h` / `NeuralFlow.cpp` (inference reference), `NeuralFlowTrain.cpp` (training), `LearnedFeaturesCS.hlsl` (feature extractor) and the neural branch of `MotionSearchCS.hlsl` (cost volume and soft-argmax). 238 weights, file magic `MNFN`.
+
+- **Feature extractor**: 3×3 → 6 channels with ReLU, then 3×3 → 2 channels plus a learned gain on the next coarser level's features, then `tanh`. A 5×5 receptive field with a hidden nonlinearity. Built once per captured frame and cached per capture slot.
+- **Cost volume**: for each candidate displacement, 16 samples at stride 2 inside the 8×8 block give the squared feature distance, summarised as six descriptors — the block mean, the centre mean and one mean per quadrant. The quadrants cost no extra reads and are what let the head notice that a block straddles a motion boundary, where one mean cannot separate "matches everywhere badly" from "matches half the block perfectly".
+- **Head**: 6 → 8 ReLU → 1, times a learned temperature. **Appearance only.** No geometry is an input.
+- **Estimate**: the softmax-weighted mean of every displacement in a dense 9×9 window — differentiable, which is what makes the whole thing trainable.
+- **Anchors**: the same eleven candidates the classical centre stage scores (predictor, temporal, eight parent neighbours, zero), ranked on learned cost with the same bucketed tie-break. Reach comes from the pyramid.
+
+**Capacity is in the extractor, not in the channel count.** The matcher reads 16 samples of both feature maps for every one of 81 candidates, so a third or fourth channel multiplies the bandwidth of the pass that is already bandwidth-bound at 1080p. The extractor runs once per frame per pixel, so depth there is nearly free.
+
+**Training** — `--train-neural <model.bin> <video.mp4|image.png> [more files...]`, `--neural-epochs <n>` (default 24). Supervised on frames warped by known piecewise-constant flow fields (a global translation plus up to two independently moving rectangles), so the truth is exact except on blocks that straddle a region boundary, which are excluded rather than supervised toward a value no estimator should produce. Optimised with Adam on the **analytic gradient** of a Charbonnier end-point error, cosine-decayed. Every pyramid level is supervised against the truth it is responsible for with the coarser level's predictor fed in **detached**, so the recursion is never differentiated through but every level trains on the predictor distribution it actually meets at inference.
+
+Two tests keep the four implementations of this one function honest, and both are worth running after any change to either side:
+
+- `--neural-gradient-check` compares the analytic gradient with a central finite difference, one representative weight per group. It replays the detached parent flow and parent features into both evaluations, so the numeric side differentiates the same truncated objective; without that it disagrees by 25–60% for a correct gradient. The trainer runs it before training and refuses to start if it fails.
+- `--neural-parity-check <f0.png> <f1.png>` compares the shaders with the CPU reference on a real pair: the level-0 feature map, then each pyramid level's flow given the GPU's own features *and* its own predictor. It reports two populations separately — blocks where both sides searched the same window, which must agree to ~1e-3 px and is the bound with teeth, and blocks whose near-tied anchor tipped, which cannot be bit-equal because the host compiles with `/fp:fast` and the GPU reassociates freely. This is the test that found a clamp-ordering bug (the shader clamps a sample into the level *before* adding the displacement; letting `Image::get` clamp afterwards samples a different candidate pixel on every block that overhangs a level edge) and a radius-schedule mismatch between the CPU and the GPU.
+
+**This engine is not the default and on the synthetic suite it does not beat the SAD engine.** The architecture is deliberately small enough to fit the latency budget alongside everything else, and what limits it now is capacity, not the training objective. Train it on your own footage before judging it: the model shipped by a training run on synthetic sources has only ever seen those statistics.
+
+- **Pyramids per frame, not per pair**: each captured frame's luma pyramid is cached in its capture slot. Native SAD also caches packed luma; the neural path instead computes and caches coarse-to-fine learned feature maps. FFX keeps the previous frame's pyramid the same way.
+- **Scalar SAD**: the candidate window is staged as packed luma words in shared memory, then each of its 8×8 pixels contributes its absolute luma difference. Black pixels participate normally; zero is not a mask value.
+- **Learned features**: in neural mode, the image filters generate appearance/structure features before motion inference. SAD and its edge diagnostic are not computed or supplied to the neural network.
+- **Temporal prediction**: the estimated flow of every level is double-buffered, and the previous pair's flow *at the same level* is a candidate for every block (valid while the frame chain is unbroken).
+- **Filling what was never measured (`FillFlowCS`)**: a block only constrains the component of its vector along which its own content changes — a flat block constrains neither, and a vertical line constrains x while saying nothing about y. On a noise-like background that is a rounding error (89% of blocks measure both axes exactly). On a page of charts and anti-aliased text, **77% of blocks measure nothing at all**, and they used to emit whatever the inheritance chain handed them, which starts at zero: 9.7% of blocks correct, 57% wrong by more than 8 px, the wrong ones overwhelmingly `(x, 0)`. Bilinearly blending that zero against a textured neighbour's real vector is what dragged the background beside text and smeared glyph edges. The matcher now reports a per-axis confidence (the diagonal of the block's luma structure tensor) and a fill pass writes the unmeasured components from the neighbours that did measure them, weighted by their confidence, their distance, **and how close their vector is to this block's own** — the last term is what stops a small object's flat interior being flooded by the larger, equally confident background around it. Measured components pass through; nothing is penalised, vetoed or zeroed. It runs after *every* level, because the filled field is the next level's predictor — and therefore the CPU reference and the trainer run it too, so the neural weights are fitted inside the recursion they are deployed in.
+- **Candidates**: eleven centres — the parent predictor, the temporal predictor, the eight neighbouring parents (EPZS) and zero — are each scored once on plain SAD, then one ±radius window is searched around the winner. Zero is in that list so a coarse level that locked onto a wrong vector can always be abandoned, and it must win by a full luma level, so ties go to motion rather than to a stall. There is no second window: zero used to get a whole ±8 window of its own whenever it fell outside the first, which on a camera pan is *every* block and cost 2.1 ms of 6.6 at 1080p. Blocks with too few edge samples pick among the centres only.
+- **Ambiguity (repeating/dense textures)**: near-equal SAD minima are alias peaks, and picking between them arbitrarily makes the warp pop. Candidates within one luma level of the best are not separable by this measurement, so the one nearest a reference vector wins. The key is packed into one float so the *group-wide* reduction resolves ties too; resolving them per thread left the choice to whichever lane happened to hold the maximum. No subsequent filter changes or zeroes the estimated vectors.
+- **Which reference, and when (this is what the temporal chain gets wrong)**: the reference is the coarse predictor, replaced by the previous pair's vector at that block **only on axes the block can actually measure**. The two are not the same kind of thing — the predictor is this pair's own evidence, measured from these two frames one level up, while the previous pair's vector is a prior about a frame that is gone. Letting a prior settle a block with no current evidence is what makes it stick: a featureless block has every candidate tied, takes the previous vector, and then keeps it for as long as it stays featureless. Measured on two **identical** frames with the chain primed by a moving pair — true flow exactly zero, copying either frame scores a perfect 99 dB — the engine reported motion on **61.5% of blocks** and the output scored 37.5 dB. On a mostly static page that is continuous invented motion. Gating only the stale half fixes it without giving up what the chain is for: dropping both references costs 6–8 dB on moving content (pan 42.6 → 34.6 dB), dropping neither costs 15 dB on the frames after motion stops.
+- **Radius**: `--gpu-refine-radius` at the finest level (default **6**) and `--gpu-coarse-radius` above it (default **4**), tapered to +-4 and +-3 at the two coarsest levels.
+  - Six at the finest level, not eight, for speed: the matcher spreads a window's candidate columns over its 64 threads, so a span of 13 (radius 6) is one pass of the inner SAD loop per thread and a span of 17 (radius 8) is two. **The cost is a step function of the radius**, and 8 sits just past the step for no measured gain - at 1080p, 8/8 took 4.67 ms and 6/6 takes 3.06 ms with equal or better PSNR everywhere. Keep every level's span at or below 13.
+  - Four above it, for accuracy. A coarse level's pixels each cover a large area of screen, so a wide window there is a long way to look for a match the level cannot really resolve - and on periodic content it finds one. The bar-chart page (bars on a 46 px pitch, text rows on 20 px) locked onto those aliases and handed them down as predictors: **18.80 dB at radius 6 against 47.69 dB at radius 3**, and the live symptom was artifacts around text. Four also improved the 160 px motion case and the pan case. It costs 4.6 dB on the synthetic `circle` test, whose sinusoidal background is diagonally translation-invariant and whose 21 px texture period makes -5 an alias of +16 - the case this README already says not to judge objects on; the noise-background equivalents are unchanged.
+  - Reach still compounds down the pyramid: 6 + 4*(2+4+8+16+32) + 4*64 + 3*128 = 896 px over eight levels, and a global -48,-24 px motion is found exactly.
+- **Subpixel**: the window returns a whole number of pixels, and a parabola through the SAD at the winner and its four axis neighbours recovers the fraction for five more block comparisons (~3% of the window). The fit is used only where those three samples are convex. A browser scrolls by a fractional number of pixels per frame, and rounding every block to the nearest pixel turns a smooth scroll into a shimmer.
+
+`tools\make_flow_tests.ps1` regenerates the 320×240 verification pairs. Measured on an RTX 3050 Ti laptop, scalar SAD: the −12 px and −10 px global shifts 50.42 and 51.52 dB PSNR, the (16,8) cel and textured-circle cases 31.89 and 35.56 dB, a global −48,−24 px motion found exactly.
+
+**1080p flow latency** (best of 40 back-to-back submissions; a single timestamp on a laptop GPU is meaningless because the clocks ramp):
+
+| case | SAD | FFX | neural |
+|---|---|---|---|
+| static background, (16,8) object | 2.88 ms | 2.65 ms | 2.21 ms |
+| global pan, (−12,−6) | 2.89 ms | 2.65 ms | 2.22 ms |
+
+The SAD engine was 4.41 ms and 6.59 ms before the radius and zero-window changes above. Judge quality on PSNR rather than the centre-block vector: in the `cs` and `cel` cases that block sits inside a flat cel-shaded interior where no block-local vector is recoverable and the number is whatever propagated into it.
+
+**Measure the temporal chain with `--gpu-offline-sequence <prefix>`, not with a frame pair.** Every single-pair path runs with the temporal predictor *unbound*: `--gpu-offline-prev` primes only one pair back, and `MOTION_ENHANCER_BENCH_ITERS` re-submits the same pair, which breaks the chain after the first iteration. Anything that accumulates, latches or feeds back across frames is invisible to them, and the two defects above were. The sequence mode replays `<prefix>_f000.png, _f001.png, …` as consecutive pairs through one engine and reports PSNR per step against `<prefix>_m000.png` and so on. Build sequences where motion **starts and stops**, not only constant-velocity ones — a steady scroll is the easiest possible case for a temporal predictor, and it hid a 15 dB loss on the frames after a stop. `MOTION_ENHANCER_NO_TEMPORAL=1` unbinds the chain for an A/B; `MOTION_ENHANCER_SAD_DEBUG=1|3|5|6` exposes matcher stages (edge counts, parent flow, skip window, skip centres).
+
+**Check the GPU is not power-limited before trusting any timing.** On this laptop, unplugging it drops the GPU to a 25 W enforced limit where it bounces between 210 MHz and its 2100 MHz maximum and never holds boost; the same unchanged FFX path measures 2.63 ms on AC and 4.6 ms on battery. `nvidia-smi --query-gpu=clocks.sm,clocks.max.sm,enforced.power.limit,pstate --format=csv` says which state you are in. Keep one engine you have not modified in the table as a control — a change that appears to slow down code you did not touch is the machine, not the code.
+
+Shader staleness used to be a trap here and is now fixed: the compiled `.cso` copy is a POST_BUILD step on `motion_enhancer_shaders` as well as on the executable, so editing only an `.hlsl` reaches `Release\shaders` instead of leaving the previous shader next to the binary.
+
+### Pacing and Synchronization
+
+**Output clock.** The render loop is woken by the DWM compositor clock (`DCompositionWaitForCompositorClock`), i.e. once per vsync; the swap chain's frame-latency object is used only as non-blocking back-pressure. A phase-locked loop on the wake times predicts the display time of the frame being rendered, so consecutive frames are exactly one refresh apart even when the wake-up itself jitters, and it resyncs only on a genuinely missed refresh.
+
+**Media clock.** Source frames carry WGC timestamps $t_i$. The timeline tracks the minimum capture offset $O$ between wall clock and $t$, and maps a predicted display time $T$ to media time
+
+$$m = T - O - D$$
+
+where $D$ is a latency budget that starts at one source period plus two refreshes and adapts: it grows whenever a needed pair was not ready (starvation) and decays while pairs have been ready with margin. For the pair $t_0 \le m < t_1$ the blend factor is $\alpha = (m - t_0)/(t_1 - t_0)$. Because $m$ advances with the wall clock, a missed refresh skips media time instead of slowing it, and motion always plays at 1x.
+
+**Source cadence.** The period is estimated from every non-duplicate WGC arrival (mean of the middle half of the last 16 intervals) and locks when three quarters of them agree. Once locked, a frame arriving far off the cadence grid is held for 0.7 periods: if a newer frame supersedes it (a UI repaint between video frames) it is dropped, otherwise it is accepted late and the grid resyncs. Two frames closer than 0.3 periods are treated as one (the later replaces the earlier). Accepted timestamps are regularised onto the grid with a slow phase correction, which removes the ±8 ms jitter of a 24 fps video repainted at 60 Hz. Identical repaints (fewer than 0.05 % of sampled pixels changed) never enter the timeline; pairs classified as scene cuts are presented as a hard switch rather than interpolated.
+
+**GPU ordering.** All ordering is on the GPU: the present queue waits on the capture-ready fence for both source frames and on the flow-queue fence for the pair, then interpolates. Shared capture textures are simultaneous-access resources read through implicit COMMON-state promotion, so no transition barriers are recorded on them from either queue. Slots and flow-ring entries are recycled only after the fences of every queue that read them have passed.
+
+**Synthesis (`InterpolateCS`).** Flow is one vector per 8×8 block, and each pixel's warp is the bilinear blend of the four nearest block vectors. That is the whole pass — no occlusion mask, no confidence, no gating, no per-pixel choice between candidate vectors, so interpolation is never suppressed and no pixel can snap to a source frame.
+
+Two things about *where* the field is read, both of which were wrong and are worth +0.7 dB on the SAD engine at 1080p:
+
+**The field is read along the trajectory, not at the destination.** `ForwardFlow` is defined on frame0's grid, so the point visible at pixel $x$ at time $t$ is the $p$ with $p + t F(p) = x$ — a fixed point, not a direct lookup. Reading $F(x)$ and stopping there asks the field for the motion at the point's *destination*: on a 16 px motion at $t = 0.5$ that samples 8 px away, so the vector an object's own block voted for gets applied to the background beside it and vice versa, which is what tears object edges. Two Picard iterations converge wherever the field is Lipschitz below $1/t$, and each costs four loads of a texture 64× smaller than the frame.
+
+**The two engines do not use the same field convention, and the warp has to know.** The SAD and neural graphs run two independent searches, so `forward` is on frame0's grid and `backward` on frame1's. FFX only estimates current→previous, so its "forward" is exactly `-backward` and *both* are indexed on frame1's grid — there is a single trajectory, and solving the frame0-grid fixed point for a field that is not on frame0's grid is simply the wrong equation. It cost 1.3 dB on a pure global shift until `FlowEngine::Entry::singleField` carried the distinction; `setInterpolationConstants` is now the only way to fill those constants, because a site that sets the block size and the timestamp by hand and forgets the convention produces a plausible-looking frame from the wrong maths.
+
+Three sharper schemes were built here and removed, and are worth not rediscovering. **Per-pixel vector selection** (every pixel scoring the surrounding blocks' vectors photometrically and keeping the best) sharpens boundaries — 1–16 dB on the synthetic object cases — but has no answer where the photometric error is degenerate: in blown highlights and flat saturated regions every candidate scores alike, so noise picks the winner per pixel. On real footage (a fast arm crossing a clipped lantern) that tore the frame into 8 px chunks with the highlight smeared along the arm. **Choosing the visible side per pixel in occlusion bands** (from forward/backward round-trip errors, or any other local test) flips chaotically right at the boundary, where both sides score alike, and shreds the uncovered band. **Splatting the block vectors to their time-$\alpha$ positions** (resolving overlaps with an `InterlockedMin` on a packed coverage/speed key) is the textbook answer to both, gained 5–6 dB on pans and 2 dB on the object case, and still did not fix the artifacts on real footage — which is the evidence that what fails there is upstream of synthesis.
+
+Diagnosing that: `MOTION_ENHANCER_DUMP_FRAMES=<prefix>` writes the first eight frames the capture *accepts* (duplicates already rejected — exactly the frames the flow runs between) as `<prefix>_000.png`, `_001.png`, … Consecutive files are a real pair, so `--gpu-offline <a> <b> out.png --save-flow flow.png` replays offline precisely what the live path saw, and the flow visualization shows whether the vectors were already wrong before anything was synthesised.
+
+Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predicted display time, media time, pair, alpha); `MOTION_ENHANCER_D3D_DEBUG=1` enables the D3D12/D3D11 debug layers and prints validation messages with the 2-second status line; `MOTION_ENHANCER_DUMP_FRAMES=<prefix>` saves the accepted capture frames as described above.
 
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)
@@ -229,8 +318,7 @@ The synthesis shader motion-warps both source frames according to $\alpha$ and b
 .\build\Release\motion_enhancer.exe frame0.png frame1.png interpolated_0.5.png `
     --time 0.5 `
     --levels 8 `
-    --save-flow flow.png `
-    --save-occ occlusion.png
+    --save-flow flow.png
 ```
 
 ### 3. Built-in Ground Truth Verification Benchmark
