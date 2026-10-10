@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="motion_enhancer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6163f5c5-b103-30d0-8111-f87debc9ae0f">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj"/>
+		<BuildDependency Project="fidelityfx-sdk/src/backends/dx12/ffx_backend_dx12_x64.vcxproj"/>
+		<BuildDependency Project="fidelityfx-sdk/src/components/opticalflow/ffx_opticalflow_x64.vcxproj"/>
+		<BuildDependency Project="motion_enhancer_shaders.vcxproj"/>
+	</Project>
+	<Project Path="motion_enhancer_shaders.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7b657e06-ae9a-33bc-85ac-f6cc447f0f3a">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Folder Name="/Backends/">
+		<Project Path="fidelityfx-sdk/src/backends/dx12/ffx_backend_dx12_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="06fa6a4b-2271-3664-9b6f-817bbb35405b">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj"/>
+			<BuildDependency Project="fidelityfx-sdk/src/backends/dx12/ffx_shader_permutations_dx12.vcxproj"/>
+		</Project>
+		<Project Path="fidelityfx-sdk/src/backends/dx12/ffx_shader_permutations_dx12.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2120566f-15d0-3335-b1f1-ab1617ec43b5">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/CMakePredefinedTargets/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ad872021-491a-3877-bfaf-a28f454c9e37" DefaultStartup="true">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="motion_enhancer.vcxproj"/>
+			<BuildDependency Project="motion_enhancer_shaders.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="50df7238-a337-3641-bab5-ce4cfa1622ec"/>
+	</Folder>
+	<Folder Name="/Components/">
+		<Project Path="fidelityfx-sdk/src/components/opticalflow/ffx_opticalflow_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="730e13f2-e70a-304f-ac0b-55654479843d">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/CopyTargets/">
+		<Project Path="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="10db7d75-6985-3044-8f0f-be005ea8297a">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+</Solution>

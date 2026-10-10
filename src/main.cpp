@@ -37,7 +37,8 @@ static void printUsage(const char* progName) {
               << "  " << progName << " --neural-epochs <n>                 # Training epochs (default: 24)\n"
               << "  " << progName << " --neural-gradient-check             # Verify the analytic gradient\n"
               << "  " << progName << " --neural-parity-check <f0.png> <f1.png>  # Verify the shaders match the model\n"
-              << "  " << progName << " --gpu-offline-sequence <prefix>     # Replay <prefix>_f000.png... as a temporal chain\n\n"
+              << "  " << progName << " --gpu-offline-sequence <prefix>     # Replay <prefix>_f000.png... as a temporal chain\n"
+              << "  " << progName << " --gpu-flow-eval <prefix>...         # Per-level vector error vs <prefix>_flow.bin\n\n"
               << "Real-Time GPU Overlay Options:\n"
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
@@ -47,7 +48,8 @@ static void printUsage(const char* progName) {
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 4)\n"
               << "  --gpu-refine-radius <0-8>   Finest-level search radius (default: 6)\n"
               << "  --gpu-smoothness <0-0.1>    Predictor smoothness weight (default: 0.0005)\n"
-              << "  --flow-engine <sad|ffx|neural>  Engine (default: sad; neural needs a model)\n"
+              << "  --flow-engine <dis|sad|ffx|neural>  Engine (default: dis = Dense Inverse Search)\n"
+              << "  --no-ui-mask             Interpolate static UI too (default: HUD/subtitles kept sharp)\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
@@ -241,6 +243,7 @@ int main(int argc, char** argv) {
     bool neuralGradientCheck = false;
     bool neuralParityCheck = false;
     std::string sequencePrefix;
+    bool flowEval = false;   // --gpu-flow-eval <prefix>...: positional prefixes
 
     std::vector<std::string> positionalArgs;
 
@@ -255,6 +258,8 @@ int main(int argc, char** argv) {
             d3d12SelfTest = true;
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
+        } else if (arg == "--gpu-flow-eval") {
+            flowEval = true;
         } else if (arg == "--neural-parity-check") {
             neuralParityCheck = true;
         } else if (arg == "--train-neural" && i + 1 < argc) {
@@ -300,23 +305,20 @@ int main(int argc, char** argv) {
             gpuSettings.coarseSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
         } else if (arg == "--gpu-refine-radius" && i + 1 < argc) {
             gpuSettings.refineSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
+        } else if (arg == "--no-ui-mask") {
+            gpuSettings.uiMask = false;
         } else if (arg == "--gpu-smoothness" && i + 1 < argc) {
             gpuSettings.smoothnessWeight = std::clamp(std::stof(argv[++i]), 0.0f, 0.1f);
         } else if (arg == "--flow-engine" && i + 1 < argc) {
             std::string engine = argv[++i];
             std::transform(engine.begin(), engine.end(), engine.begin(),
                            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-            if (engine == "ffx" || engine == "amd") {
-                gpuSettings.preferFfxOpticalFlow = true;
-                gpuSettings.neuralFlow = false;
-            } else if (engine == "neural") {
-                gpuSettings.preferFfxOpticalFlow = false;
-                gpuSettings.neuralFlow = true;
-            } else if (engine == "sad" || engine == "msad" || engine == "native") {
-                gpuSettings.preferFfxOpticalFlow = false;
-                gpuSettings.neuralFlow = false;
-            } else {
-                throw std::invalid_argument("flow engine must be 'sad', 'ffx', or 'neural'");
+            gpuSettings.preferFfxOpticalFlow = engine == "ffx" || engine == "amd";
+            gpuSettings.neuralFlow = engine == "neural";
+            gpuSettings.disFlow = engine == "dis";
+            if (!gpuSettings.preferFfxOpticalFlow && !gpuSettings.neuralFlow && !gpuSettings.disFlow &&
+                engine != "sad" && engine != "msad" && engine != "native") {
+                throw std::invalid_argument("flow engine must be 'sad', 'dis', 'ffx', or 'neural'");
             }
         } else if (arg == "--adapter" && i + 1 < argc) {
             std::string adapter = argv[++i];
@@ -436,6 +438,16 @@ int main(int argc, char** argv) {
 
     if (!neuralModelPath.empty()) {
         return trainNeuralFlowModel(positionalArgs, neuralModelPath, neuralEpochs);
+    }
+
+    if (flowEval) {
+        if (positionalArgs.empty()) {
+            std::cerr << "--gpu-flow-eval needs one or more <prefix> (for _a.png, _b.png, _flow.bin)\n";
+            return 1;
+        }
+        gpuSettings.minRefineLevel = std::clamp(
+            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
+        return runFlowLevelEval(positionalArgs, gpuSettings, adapterPreference);
     }
 
     if (!sequencePrefix.empty()) {

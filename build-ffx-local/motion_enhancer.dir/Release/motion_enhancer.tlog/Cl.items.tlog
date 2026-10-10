@@ -1,0 +1,17 @@
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\main.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\main.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Image.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\Image.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Pyramid.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\Pyramid.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\ZNCCMatcher.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\ZNCCMatcher.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FrameInterpolator.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\FrameInterpolator.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GraphicsDevice.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\GraphicsDevice.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\ComputeKernels.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\ComputeKernels.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FlowEngine.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\FlowEngine.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FrameTimeline.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\FrameTimeline.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\CaptureEngine.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\CaptureEngine.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Presenter.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\Presenter.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\RealtimeSession.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\RealtimeSession.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\NeuralFlow.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\NeuralFlow.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\NeuralFlowTrain.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\NeuralFlowTrain.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\TrainingVideo.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\TrainingVideo.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\WindowHelper.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\WindowHelper.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\GuiApp.obj

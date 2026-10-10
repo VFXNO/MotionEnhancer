@@ -15,6 +15,11 @@ enum class Kernel : int {
     PackLuma,
     LearnedFeatures,
     FillFlow,
+    UiMask,
+    FrameStats,
+    DisPatch,
+    DisDensify,
+    DisToRing,
     Count
 };
 

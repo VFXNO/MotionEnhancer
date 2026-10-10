@@ -383,8 +383,7 @@ Image flowLevel(const NeuralFlowModel& m, const Image& luma, const Image& ref,
             const int count = blockAnchors(parentFlow, bx, by, anchors);
             const int originX = bx * kBlock, originY = by * kBlock;
             // Anchor 0 is the predictor, which is the reference a tie falls
-            // back to. (There is no temporal chain on this path; the shader
-            // uses the previous pair's vector when it has one.)
+            // back to - on the GPU too.
             const std::array<float, 2> reference = anchors[0];
             int bestAnchor = 0;
             float bestScore = -1e30f;

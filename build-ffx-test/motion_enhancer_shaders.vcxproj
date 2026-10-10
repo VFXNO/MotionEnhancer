@@ -1,0 +1,1176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{742C64E3-A420-3C6A-94B7-5FE0144ED755}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>motion_enhancer_shaders</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>Staging compiled shaders next to the executable</Message>
+      <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/Debug/shaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>Staging compiled shaders next to the executable</Message>
+      <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/Release/shaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>Staging compiled shaders next to the executable</Message>
+      <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/MinSizeRel/shaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>Staging compiled shaders next to the executable</Message>
+      <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/RelWithDebInfo/shaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DisDensifyCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DisDensifyCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisDensifyCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisDensifyCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisDensifyCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DisDensifyCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisDensifyCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisDensifyCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisDensifyCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DisDensifyCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisDensifyCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisDensifyCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisDensifyCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DisDensifyCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisDensifyCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisDensifyCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisDensifyCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DisPatchCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DisPatchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisPatchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisPatchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisPatchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DisPatchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisPatchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisPatchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisPatchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DisPatchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisPatchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisPatchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisPatchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DisPatchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisPatchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisPatchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisPatchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DisToRingCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DisToRingCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisToRingCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DisToRingCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisToRingCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DisToRingCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisToRingCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DisToRingCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DisToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DisToRingCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\FfxFlowConvertCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FfxFlowConvertCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxFlowConvertCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxFlowConvertCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FfxFlowConvertCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxFlowConvertCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxFlowConvertCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FfxFlowConvertCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxFlowConvertCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxFlowConvertCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/FfxFlowConvertCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FfxFlowConvertCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxFlowConvertCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxFlowConvertCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\FillFlowCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/FillFlowCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FillFlowCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FillFlowCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FillFlowCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/FillFlowCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FillFlowCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FillFlowCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FillFlowCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/FillFlowCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FillFlowCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FillFlowCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FillFlowCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/FillFlowCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FillFlowCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FillFlowCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FillFlowCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\FrameStatsCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/FrameStatsCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FrameStatsCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FrameStatsCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FrameStatsCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/FrameStatsCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FrameStatsCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FrameStatsCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FrameStatsCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/FrameStatsCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FrameStatsCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FrameStatsCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FrameStatsCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/FrameStatsCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/FrameStatsCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FrameStatsCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FrameStatsCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\InterpolateCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/InterpolateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/InterpolateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/InterpolateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\InterpolateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/InterpolateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/InterpolateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/InterpolateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\InterpolateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/InterpolateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/InterpolateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/InterpolateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\InterpolateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/InterpolateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/InterpolateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/InterpolateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\InterpolateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\LearnedFeaturesCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/LearnedFeaturesCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LearnedFeaturesCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LearnedFeaturesCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LearnedFeaturesCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/LearnedFeaturesCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LearnedFeaturesCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LearnedFeaturesCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LearnedFeaturesCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/LearnedFeaturesCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LearnedFeaturesCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LearnedFeaturesCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LearnedFeaturesCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/LearnedFeaturesCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LearnedFeaturesCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LearnedFeaturesCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LearnedFeaturesCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\LuminanceCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/LuminanceCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LuminanceCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LuminanceCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LuminanceCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/LuminanceCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LuminanceCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LuminanceCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LuminanceCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/LuminanceCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LuminanceCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LuminanceCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LuminanceCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/LuminanceCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/LuminanceCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LuminanceCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\LuminanceCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\MotionSearchCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/MotionSearchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/MotionSearchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/MotionSearchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\MotionSearchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/MotionSearchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/MotionSearchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/MotionSearchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\MotionSearchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/MotionSearchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/MotionSearchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/MotionSearchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\MotionSearchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/MotionSearchCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/MotionSearchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/MotionSearchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\MotionSearchCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\PackLumaCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PackLumaCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PackLumaCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PackLumaCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PackLumaCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PackLumaCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PackLumaCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PackLumaCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PackLumaCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PackLumaCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/PackLumaCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PackLumaCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PackLumaCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PackLumaCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\PresentFrameCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/PresentFrameCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PresentFrameCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PresentFrameCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PresentFrameCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/PresentFrameCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PresentFrameCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PresentFrameCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PresentFrameCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/PresentFrameCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PresentFrameCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PresentFrameCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PresentFrameCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/PresentFrameCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PresentFrameCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PresentFrameCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PresentFrameCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\PyramidCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/PyramidCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PyramidCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PyramidCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PyramidCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/PyramidCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PyramidCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PyramidCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PyramidCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/PyramidCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PyramidCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PyramidCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PyramidCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/PyramidCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/PyramidCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PyramidCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\PyramidCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\UiMaskCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/UiMaskCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/UiMaskCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiMaskCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\UiMaskCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/UiMaskCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/UiMaskCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiMaskCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\UiMaskCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/UiMaskCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/UiMaskCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiMaskCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\UiMaskCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/UiMaskCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/UiMaskCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiMaskCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\UiMaskCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\c3a97a8e6fe16ff4e19763693bd317dd\motion_enhancer_shaders.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</VerifyInputsAndOutputsExist>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\WindowsPaths.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeCXXCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeRCCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\WindowsPaths.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeCXXCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeRCCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\WindowsPaths.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeCXXCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeRCCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Platform\WindowsPaths.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeCXXCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeRCCompiler.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\4.4.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders">
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\ZERO_CHECK.vcxproj">
+      <Project>{894FD199-7B41-3D7D-AFF4-866653D9BC0E}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

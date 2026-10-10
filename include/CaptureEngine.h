@@ -143,3 +143,7 @@ private:
     mutable std::mutex m_statsMutex;
     Stats m_stats;
 };
+
+// Arms a dump of the next accepted frames to <MOTION_ENHANCER_DUMP_FRAMES or
+// motion_dump>_NNN.png (overlay hotkey Ctrl+Alt+F2).
+void requestFrameDump();

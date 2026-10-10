@@ -132,9 +132,10 @@ if(WIN32)
         DOC "DirectX Shader Compiler")
     if(DXC_EXECUTABLE)
         set(DXC_OUTPUTS)
-        set(MOTION_ENHANCER_SHADERS Common.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
+        set(MOTION_ENHANCER_SHADERS Common.hlsli Synthesis.hlsli Photometric.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
-                                      FillFlowCS.hlsl)
+                                      FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
+                                      DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl)
         endif()
@@ -144,7 +145,7 @@ if(WIN32)
                 # DXC emits DXIL (SM 6.0) for every profile; the matcher uses
                 # wave intrinsics, which need the 6.0 profile explicitly.
                 set(SHADER_PROFILE cs_5_0)
-                if(SHADER STREQUAL "MotionSearchCS.hlsl")
+                if(SHADER STREQUAL "MotionSearchCS.hlsl" OR SHADER STREQUAL "DisPatchCS.hlsl")
                     set(SHADER_PROFILE cs_6_0)
                 endif()
                 add_custom_command(
@@ -157,6 +158,8 @@ if(WIN32)
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"
                     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Common.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Synthesis.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Photometric.hlsli"
                     VERBATIM)
                 list(APPEND DXC_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}")
             endif()

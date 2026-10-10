@@ -5,17 +5,18 @@
 // (flowWidth, flowHeight, 1) groups, so groupId.xy is the flow block
 // coordinate at this level.
 //
-//   RefImage        frame0 luma at this level (R16_FLOAT, 0..255 scale)
-//   CandPacked      frame1 luma at this level, 4 quantized bytes per texel
-//                   (PackLumaCS): one load per word
+//   RefImage        frame0 luma at this level (R16_FLOAT, 0..255 scale):
+//                   gradients, edge mask and confidence only
+//   CandPacked      frame1 at this level as PackLumaCS bytes - luma
+//                   normalised to its local mean and contrast, 4 per texel:
+//                   one load per word
+//   RefPacked       frame0 the same way: the SAD compares these bytes
 //   CoarsePredictor estimated flow of the coarser level (unbound at the
 //                   coarsest level)
-//   TemporalFlow    estimated flow of the previous frame pair at THIS level
-//                   (same units; bound when FlowScale > 0)
 //   OutputFlow      best vector, in this level's pixels
 //
 //   * Match cost is the ordinary sum of |reference - candidate| over all
-//     64 quantized luma pixels, with equal weight for every pixel.
+//     64 bytes of the block, with equal weight for every pixel.
 //   * Packed luma is only a storage/read optimization: bytes are unpacked
 //     and compared individually, with no msad4 instruction.
 //   * Edge-only SAD is an additional neural feature, never a weighting of
@@ -27,23 +28,30 @@
 //     it must not spend.
 //
 // Candidates:
-//   1. Centre selection: the parent predictor, the temporal predictor, the
-//      eight neighbouring parent vectors (EPZS) and zero are each scored
-//      once, on plain SAD. Zero is in that list so a bad coarse inheritance
+//   1. Centre selection: the parent predictor, the eight neighbouring
+//      parent vectors (EPZS) and zero are each scored once, on plain SAD. Zero is in that list so a bad coarse inheritance
 //      can always return to "did not move", and it wins only when it is
 //      *strictly* better by kZeroMargin: on ambiguous content ties go to
 //      motion, never to a stall.
 //   2. A +-SearchRadius window around the winning centre. One window, not
 //      two: zero used to get a whole second +-8 window of its own whenever
 //      it fell outside the first one, which on a camera pan is *every*
-//      block, and cost 2.1 ms of 6.6 at 1080p for a recovery that eleven
+//      block, and cost 2.1 ms of 6.6 at 1080p for a recovery that ten
 //      scored centres already provide. Whichever centre wins, the window
 //      around it still explores the full radius.
 //   Blocks with few edge samples pick among the centres only.
+//
+// Each pair is estimated from its own two frames only. There used to be a
+// temporal predictor - the previous pair's vector at this block, offered as
+// a centre and used to break ties - and it was removed: a vector about a
+// frame that is gone kept steering blocks after the motion under them had
+// changed, which showed as ghosting, and on the synthetic sequences every
+// case measured equal or better without it (a fast object over a static
+// texture +1.2 dB).
 Texture2D<float> RefImage : register(t0);
 Texture2D<uint> CandPacked : register(t1);
 Texture2D<float4> CoarsePredictor : register(t2);
-Texture2D<float4> TemporalFlow : register(t3);
+Texture2D<uint> RefPacked : register(t3);
 Texture2D<float2> RefFeature : register(t4);
 Texture2D<float2> CandFeature : register(t5);
 RWTexture2D<float4> OutputFlow : register(u0);
@@ -60,17 +68,15 @@ static const int kQuadGroupsMax = (kSpanMax + 3 + 3) / 4; // 5
 static const int kStripRows = kSpanMax - 1 + kBlock;      // 24
 static const int kStripWords = kQuadGroupsMax + kQuads + 1; // 8 packed words per row
 static const int kTile = kBlock + 2;                      // reference block with a 1 px halo
-static const int kCentres = 11;              // parent, temporal, 8 neighbours, zero
+static const int kCentres = 10;              // parent, 8 neighbours, zero
 static const int kZeroCentre = kCentres - 1;
 // Repeating or dense textures produce several near-equal SAD minima (alias
 // peaks); a block on such content measures several "equally right" motions.
-// While the temporal chain is bound (FlowScale > 0), candidates within this
-// band of the best score count as ambiguous and the one closest to the
-// previous pair's vector wins: the decision stays stable across pairs, so
-// the warp interpolates smoothly instead of popping between alias peaks.
-// Vectors are never suppressed by ambiguity - only disambiguated. Without
-// a temporal chain there is nothing to disambiguate with, and the plain
-// minimum is kept.
+// Candidates within this band of the best score count as ambiguous and the
+// one closest to the coarse predictor wins, so the choice follows this
+// pair's own evidence one level up rather than whichever lane happened to
+// hold the maximum. Vectors are never suppressed by ambiguity - only
+// disambiguated.
 static const float kAmbiguityBand = 1.0f / kLumaScale;
 static const int kMinEdgeSamples = 6;
 // The band inside which two centre candidates are "too close to call", in
@@ -88,10 +94,10 @@ static const uint kCentreBand = (uint)(kBlock * kBlock) * 16u;
 // of the textured neighbours that actually measured one, which is a direct
 // answer to the same problem rather than a thumb on the scale.
 //
-// Left positive it is actively harmful, because the tie-break reference is
-// the previous pair's vector: a block with no texture has no evidence
-// either way, the bias pushes it off zero, and it then keeps whatever it
-// last had forever. Measured on two **identical** frames with the chain
+// Left positive it was actively harmful while the tie-break reference was
+// the previous pair's vector (the temporal predictor, since removed): a
+// block with no texture has no evidence either way, the bias pushed it off
+// zero, and it then kept whatever it last had forever. Measured on two **identical** frames with the chain
 // primed by a moving pair - where the true flow is exactly zero and copying
 // either frame scores a perfect 99 dB - the engine reported motion on 61.5%
 // of blocks (23.9% still at the stale vector, 22.1% at twice it) and the
@@ -101,8 +107,7 @@ static const uint kCentreBand = (uint)(kBlock * kBlock) * 16u;
 // Zero, so "did not move" competes on equal terms and an unresolvable tie
 // is settled by the reference like any other. Making zero actively *win*
 // ties was tried too and measured no better anywhere while costing the
-// moving-object cases; what fixed the latch was gating the stale reference
-// (see `reference` in CSMain), not thumbing this scale the other way.
+// moving-object cases.
 static const int kZeroBiasFixed = 0;
 static const float kMinGradient = 2.0f;
 static const float kGradientFraction = 0.5f;
@@ -110,11 +115,6 @@ static const float kGradientFraction = 0.5f;
 // central difference of 25 over the block, an rms gradient of five luma
 // levels. See the confidence computation in CSMain.
 static const float kStructureHalf = 25.0f;
-// Confidence an axis needs before the tie-break consults its reference
-// vector at all. The half-point of kStructureHalf: a block whose content
-// changes by less than an rms five luma levels along an axis is not
-// choosing between alias peaks on that axis, it simply has no information.
-static const float kReferenceConfidence = 0.5f;
 
 groupshared float  RefTile[kTile][kTile];                  // luma with halo (gradients)
 groupshared uint   RefBytes[kBlock][kBlock];
@@ -133,12 +133,6 @@ groupshared uint   WaveSumU[kMaxWaves];
 groupshared float  WaveBest[kMaxWaves];
 groupshared float2 WaveBestVector[kMaxWaves];
 groupshared float2 Predictor;
-groupshared float2 Temporal;
-
-uint QuantizeLuma(float v)
-{
-    return min(255u, (uint)(clamp(v, 0.0f, kLumaScale) + 0.5f));
-}
 
 uint PackWord(uint b0, uint b1, uint b2, uint b3)
 {
@@ -352,7 +346,7 @@ int2 NeuralRound(float2 v)
 // stage would blend displacements that close, and a whole-window anchor
 // decision should not be made on a difference that small either.
 //
-// Without it the anchor stage is a bare argmax over eleven often near-tied
+// Without it the anchor stage is a bare argmax over ten often near-tied
 // candidates, so the last bit of a float decides which window is searched.
 // Measured against the CPU reference on identical inputs, 2-5% of blocks
 // picked a different anchor purely from reassociation - and on video that
@@ -578,7 +572,6 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
     const int2 packedMax = int2((int)((LevelWidth + 3) / 4) - 1, (int)LevelHeight - 1);
     const int radius = clamp(SearchRadius, 0, kMaxRadius);
     const int2 blockOrigin = int2(groupId.xy) * kBlock;
-    const bool haveTemporal = FlowScale > 0.0f;
     const uint waveLanes = WaveGetLaneCount();
     const uint wave = li / waveLanes;
     const uint waveCount = (kThreads + waveLanes - 1) / waveLanes;
@@ -589,7 +582,6 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
         Predictor = (LevelIndex < TotalLevels - 1)
             ? SampleParentFlow(CoarsePredictor, float2(groupId.xy))
             : float2(0.0f, 0.0f);
-        Temporal = haveTemporal ? TemporalFlow.Load(int3(groupId.xy, 0)).xy : float2(0.0f, 0.0f);
     }
     // Reference block with a 1 px halo, for the gradients.
     [loop]
@@ -630,7 +622,13 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
     // drops out; in a fully textured block most samples stay.
     const float threshold = max(kMinGradient, kGradientFraction * gradientMean);
     const bool edge = gradient >= threshold;
-    RefBytes[tid.y][tid.x] = QuantizeLuma(refValue);
+    {
+        // The SAD bytes come from the packed pyramid, the same locally
+        // normalised luma the candidates are read from (see PackLumaCS) -
+        // the raw luma above is only for the gradients and the confidence.
+        const int2 p = clamp(blockOrigin + int2(tid.xy), int2(0, 0), levelMax);
+        RefBytes[tid.y][tid.x] = (RefPacked.Load(int3(p.x >> 2, p.y, 0)) >> ((uint)(p.x & 3) * 8u)) & 255u;
+    }
     EdgeMask[tid.y][tid.x] = edge ? 1u : 0u;
     const uint edgeCount = GroupSumU(edge ? 1u : 0u, wave, waveCount);   // barrier: bytes visible
     if (li < (uint)(kBlock * kQuads))
@@ -652,52 +650,11 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
     GroupMemoryBarrierWithGroupSync();
 
     const float2 predictor = Predictor;
-    const float2 temporal = Temporal;
-    // What an unresolvable tie falls back to: the previous pair's vector at
-    // this block when the temporal chain is bound, otherwise the coarse
-    // predictor. Only ties consult it; it never competes with a measurably
-    // better match.
-    //
-    // **Scaled, per axis, by how much this block can measure that axis.**
-    // The tie-break exists to settle *alias peaks* - several genuinely good
-    // matches on textured content - and keeping that decision stable across
-    // pairs is what stops a repeating texture flickering between them. A
-    // block with no texture is not choosing between alias peaks; it has no
-    // information at all, every candidate ties, and handing it the previous
-    // vector means it keeps that vector for as long as it stays
-    // featureless. On two identical frames with the chain primed by a
-    // moving pair - true flow exactly zero, copying either frame scores a
-    // perfect 99 dB - that latch put 61.5% of blocks at a large motion and
-    // the output at 37.5 dB. Continuous invented motion on static content.
-    //
-    // Dropping the reference where the block knows nothing makes an
-    // unresolvable tie fall to the least-motion explanation, and a flat
-    // region that really is moving gets its vector from FillFlowCS, out of
-    // the textured neighbours that actually measured one. Nothing is
-    // suppressed: a block with evidence keeps its full reference, and no
-    // candidate is ever penalised for being large.
-    //
-    // The gate is a step, not a fade. Scaling the reference vector itself
-    // by confidence was tried and is worse than either extreme: it does not
-    // make the tie-break weaker, it aims it somewhere new, so a
-    // half-confident block tie-breaks toward half the previous vector and
-    // settles on an intermediate displacement that no candidate supports.
-    // A cliff is tolerable here precisely because this only runs when the
-    // data cannot distinguish the candidates at all.
-    //
-    // Only the *temporal* reference is gated, and the fallback is the
-    // predictor rather than zero. The distinction is what each one is: the
-    // coarse predictor is this pair's own evidence, measured from these two
-    // frames a level up, and a block with no detail of its own should still
-    // inherit it. The previous pair's vector is a prior about a frame that
-    // is gone, and letting a prior decide a block that has no current
-    // evidence is what makes it stick. Dropping both costs 6-8 dB on moving
-    // content (pan 42.6 -> 34.6); dropping neither costs 15 dB on the
-    // frames after motion stops. Dropping only the stale one keeps both.
-    const float2 referenceGate = step(kReferenceConfidence, confidence);
-    const float2 reference = haveTemporal
-        ? lerp(predictor, temporal, referenceGate)
-        : predictor;
+    // What an unresolvable tie falls back to: the coarse predictor, this
+    // pair's own evidence measured from these two frames one level up. Only
+    // ties consult it; it never competes with a measurably better match,
+    // and no candidate is ever penalised for being large.
+    const float2 reference = predictor;
 
     // Diagnostics (MOTION_ENHANCER_SAD_DEBUG=n sets SmoothnessWeight = -n):
     //   1: report the edge count and threshold instead of a vector
@@ -733,33 +690,28 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
         // below, with the learned cost in place of SAD, which is what makes
         // the two directly comparable.
         //
-        // Eleven anchors - predictor, temporal, eight parent neighbours, zero
+        // Ten anchors - predictor, eight parent neighbours, zero
         // - and no more. The previous version also offered a 5x5 grid of
         // +-16 px jumps around the predictor; with a nearly flat cost those
         // were selected by noise and produced -35 px vectors on a 10 px
         // motion. Reach comes from the pyramid, the same place the classical
         // engine gets it, where it demonstrably finds a 48 px motion.
-        // One candidate per thread: 11 serialized scores on lane 0 would also
-        // be 176 feature loads with 63 lanes idle.
+        // One candidate per thread: 10 serialized scores on lane 0 would also
+        // be 160 feature loads with 63 lanes idle.
         float anchorScore = -1e30f;
         float2 anchorVector = predictor;
         if (li < (uint)kCentres)
         {
             float2 candidate = predictor;
             bool valid = true;
-            if (li == 1u)
-            {
-                candidate = temporal;
-                valid = haveTemporal;
-            }
-            else if (li == (uint)kZeroCentre)
+            if (li == (uint)kZeroCentre)
             {
                 candidate = float2(0.0f, 0.0f);
             }
-            else
+            else if (li != 0u)
             {
                 // Neighbouring parent vectors (EPZS).
-                const int n = (int)li - 2;
+                const int n = (int)li - 1;
                 const int idx = n < 4 ? n : n + 1;            // skip the centre
                 valid = LevelIndex < TotalLevels - 1;
                 if (valid)
@@ -792,12 +744,7 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
     {
         float2 candidate = predictor;
         bool valid = true;
-        if (li == 1)
-        {
-            candidate = temporal;
-            valid = haveTemporal;
-        }
-        else if (li == (uint)kZeroCentre)
+        if (li == (uint)kZeroCentre)
         {
             // "Did not move", scored on the same SAD as every other
             // candidate. Always offered, so a coarse level that locked onto
@@ -805,11 +752,15 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
             // second full window around zero later.
             candidate = float2(0.0f, 0.0f);
         }
-        else
+        else if (li != 0u)
         {
             // Neighbouring parent blocks (EPZS): an object that straddles
             // blocks at the coarse level is often carried by a neighbour.
-            const int n = (int)li - 2;
+            //
+            // Slot 0 is the predictor itself. It used to fall through to
+            // this branch with n = -2, which sampled a parent three blocks
+            // away instead, so the predictor was never scored as a centre.
+            const int n = (int)li - 1;
             const int idx = n < 4 ? n : n + 1;                 // skip the centre
             const int2 offset = int2(idx % 3 - 1, idx / 3 - 1);
             valid = LevelIndex < TotalLevels - 1;
@@ -822,7 +773,7 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
         CentreEdgeSad[li] = 0u;
     }
     GroupMemoryBarrierWithGroupSync();
-    // 88 tasks: (candidate, reference row); each compares eight luma
+    // 80 tasks: (candidate, reference row); each compares eight luma
     // pixels with ordinary scalar SAD, plus an edge-only neural feature.
     [loop]
     for (int t = (int)li; t < kCentres * kBlock; t += kThreads)

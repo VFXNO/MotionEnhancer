@@ -121,13 +121,13 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
 
 void FlowEngine::setSettings(const FlowSettings& settings) {
     const bool engineChanged = settings.preferFfxOpticalFlow != m_settings.preferFfxOpticalFlow ||
-                               settings.neuralFlow != m_settings.neuralFlow;
+                               settings.neuralFlow != m_settings.neuralFlow ||
+                               settings.disFlow != m_settings.disFlow;
     m_settings = settings;
     if (engineChanged) {
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
         m_ffxLastId = UINT64_MAX;
 #endif
-        m_lastSadCurrentId = UINT64_MAX;
         m_usingFfx = false;
     }
 }
@@ -156,7 +156,7 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         std::lock_guard<std::mutex> lock(m_ringMutex);
         for (auto& entry : m_ring) entry = {};
     }
-    m_lastSadCurrentId = UINT64_MAX;
+    m_uiChain = {};
 
     int levels = std::clamp(m_settings.pyramidLevels, 1, kMaxLevels);
     while (levels > 1 && (std::min(width, height) >> (levels - 1)) < kMinCoarsestExtent) --levels;
@@ -164,7 +164,9 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
 
     for (auto& pyramid : m_pyramids) pyramid = {};
     for (int l = 0; l < kMaxLevels; ++l) {
-        for (auto& dir : m_estimatedFlow) for (auto& parity : dir) parity[l].Reset();
+        for (auto& dir : m_disPatch) dir[l].Reset();
+        for (auto& dir : m_disDense) dir[l].Reset();
+        for (auto& dir : m_estimatedFlow) dir[l].Reset();
         for (auto& dir : m_searchFlow) dir[l].Reset();
     }
     for (int l = 0; l < levels; ++l) {
@@ -187,24 +189,43 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                                         D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                         D3D12_RESOURCE_STATE_COMMON, pyramid.packed[l], L"PackedLuma")))
                 return false;
+            if (l == 0 && !m_neuralModelLoaded &&
+                FAILED(m_device->createTexture2D(1, 1, DXGI_FORMAT_R32G32_FLOAT,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, pyramid.stats, L"FrameStats")))
+                return false;
         }
         for (auto& dir : m_estimatedFlow) {
-            for (auto& parity : dir) {
-                if (FAILED(m_device->createTexture2D(fw, fh, kFlowFormat,
-                                                      D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-                                                      D3D12_RESOURCE_STATE_COMMON, parity[l], L"EstimatedFlow"))) return false;
-            }
+            if (FAILED(m_device->createTexture2D(fw, fh, kFlowFormat,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, dir[l], L"EstimatedFlow"))) return false;
         }
         for (auto& dir : m_searchFlow) {
             if (FAILED(m_device->createTexture2D(fw, fh, kFlowFormat,
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                  D3D12_RESOURCE_STATE_COMMON, dir[l], L"SearchFlow"))) return false;
         }
+        if (disActive()) {
+            // Patch origins every kDisStride pixels up to the last whole
+            // patch, which DisPatchCS pulls inside the level.
+            const uint32_t pw = lw > 8 ? (lw - 8 + kDisStride - 1) / kDisStride + 1 : 1;
+            const uint32_t ph = lh > 8 ? (lh - 8 + kDisStride - 1) / kDisStride + 1 : 1;
+            for (int d = 0; d < 2; ++d) {
+                if (FAILED(m_device->createTexture2D(pw, ph, DXGI_FORMAT_R32G32_FLOAT,
+                                                     D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                     D3D12_RESOURCE_STATE_COMMON, m_disPatch[d][l], L"DisPatch")) ||
+                    FAILED(m_device->createTexture2D(lw, lh, DXGI_FORMAT_R32G32_FLOAT,
+                                                     D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                     D3D12_RESOURCE_STATE_COMMON, m_disDense[d][l], L"DisDense")))
+                    return false;
+            }
+        }
     }
 
-    // Ring entries hold the finest-level 8x8 grid (both engines); the
-    // consumer indexes by the entry's block size.
-    const uint32_t ringBlock = sadBlockSize(0);
+    // Ring entries hold the engine's finest grid - SAD's 8x8 blocks, or
+    // DIS's per-pixel field reduced to kDisRingBlock; the consumer indexes
+    // by the entry's block size.
+    const uint32_t ringBlock = disActive() ? kDisRingBlock : sadBlockSize(0);
     const uint32_t ringW = (width + ringBlock - 1) / ringBlock;
     const uint32_t ringH = (height + ringBlock - 1) / ringBlock;
     for (auto& entry : m_ring) {
@@ -214,7 +235,12 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
             FAILED(m_device->createTexture2D(ringW, ringH, kFlowFormat,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.backward, L"RingBackward"))) return false;
+        if (m_settings.uiMask &&
+            FAILED(m_device->createTexture2D(width, height, DXGI_FORMAT_R8_UNORM,
+                                             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                             D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
     }
+
 
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
@@ -344,12 +370,16 @@ bool FlowEngine::recordPyramid(const FlowInput& frame, Pyramid& pyramid) {
             ok &= m_dispatch.dispatch(list, *m_kernels, Kernel::Pyramid, in, pyramid.level[l].Get(), c,
                                       (c.levelWidth + 15) / 16, (c.levelHeight + 15) / 16);
         }
-        if (!m_neuralModelLoaded) {
-            // Packed bytes keep the classical scalar SAD reads coalesced.
-            in = {pyramid.level[l].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
-            ok &= m_dispatch.dispatch(list, *m_kernels, Kernel::PackLuma, in, pyramid.packed[l].Get(), c,
-                                      ((c.levelWidth + 3) / 4 + 15) / 16, (c.levelHeight + 15) / 16);
-        }
+    }
+    // Whole-frame brightness statistics, once per frame, for matching the
+    // brightness of each pair it takes part in (PackLumaCS).
+    if (ok && !m_neuralModelLoaded) {
+        const int s = statsLevel();
+        c.levelWidth = std::max(1u, m_width >> s);
+        c.levelHeight = std::max(1u, m_height >> s);
+        c.levelIndex = s;
+        in = {pyramid.level[s].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+        ok &= m_dispatch.dispatch(list, *m_kernels, Kernel::FrameStats, in, pyramid.stats.Get(), c, 1, 1);
     }
     // Learned features carry context from the next coarser level, so build
     // them coarse-to-fine after the entire luma pyramid exists.
@@ -367,6 +397,29 @@ bool FlowEngine::recordPyramid(const FlowInput& frame, Pyramid& pyramid) {
     return ok;
 }
 
+// The SAD bytes of one frame for one pair: every level of its luma mapped
+// onto the brightness the pair has in common (see PackLumaCS). They depend
+// on the partner, so they are rewritten for every pair, unlike the luma
+// pyramid itself; the flow queue runs the pairs in order, so the previous
+// pair has finished reading them by the time this one rewrites them.
+bool FlowEngine::recordPack(Pyramid& frame, const Pyramid& partner) {
+    ShaderConstants c = {};
+    c.width = m_width;
+    c.height = m_height;
+    c.totalLevels = m_levels;
+    bool ok = true;
+    for (int l = 0; ok && l < m_levels; ++l) {
+        c.levelWidth = std::max(1u, m_width >> l);
+        c.levelHeight = std::max(1u, m_height >> l);
+        c.levelIndex = l;
+        std::array<ID3D12Resource*, 6> in = {frame.level[l].Get(), frame.stats.Get(), partner.stats.Get(),
+                                             nullptr, nullptr, nullptr};
+        ok &= m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::PackLuma, in, frame.packed[l].Get(), c,
+                                  ((c.levelWidth + 3) / 4 + 15) / 16, (c.levelHeight + 15) / 16);
+    }
+    return ok;
+}
+
 bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, Entry& out) {
     ID3D12GraphicsCommandList* list = m_list.Get();
     const int levels = m_levels;
@@ -379,22 +432,8 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
     if (&prevPyramid == &currPyramid) return false;
     if (prevPyramid.id != previous.id) ok &= recordPyramid(previous, prevPyramid);
     if (ok && currPyramid.id != current.id) ok &= recordPyramid(current, currPyramid);
+    if (ok && !m_neuralModelLoaded) ok = recordPack(prevPyramid, currPyramid) && recordPack(currPyramid, prevPyramid);
 
-    // Temporal predictor: the previous pair's estimated flow at every level,
-    // valid only while the chain is unbroken (that pair ended on this
-    // pair's first frame).
-    //
-    // MOTION_ENHANCER_NO_TEMPORAL=1 unbinds it, which is the only way to A/B
-    // what the chain contributes: every other offline path runs a single
-    // pair, where it is unbound anyway.
-    static const bool noTemporal = [] {
-        char buffer[8] = {};
-        return GetEnvironmentVariableA("MOTION_ENHANCER_NO_TEMPORAL", buffer, sizeof(buffer)) > 0 &&
-               buffer[0] != '0';
-    }();
-    const bool temporalValid = !noTemporal && m_lastSadCurrentId == previous.id;
-    const int parity = m_flowParity;
-    const int previousParity = 1 - parity;
 
     ShaderConstants c = {};
     c.width = m_width;
@@ -405,8 +444,7 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
     for (int direction = 0; ok && direction < 2; ++direction) {
         const Pyramid& ref = direction == 0 ? prevPyramid : currPyramid;
         const Pyramid& cand = direction == 0 ? currPyramid : prevPyramid;
-        auto& estimated = m_estimatedFlow[static_cast<size_t>(direction)][static_cast<size_t>(parity)];
-        auto& temporal = m_estimatedFlow[static_cast<size_t>(direction)][static_cast<size_t>(previousParity)];
+        auto& estimated = m_estimatedFlow[static_cast<size_t>(direction)];
         for (int l = levels - 1; ok && l >= 0; --l) {
             c.levelWidth = std::max(1u, m_width >> l);
             c.levelHeight = std::max(1u, m_height >> l);
@@ -438,12 +476,11 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
             }();
             // MotionSearchCS diagnostics (1: edge counts, 3: parent flow, 5/6: skip stages).
             if (sadDebug) c.smoothnessWeight = -static_cast<float>(sadDebug);
-            c.flowScale = temporalValid ? 1.0f : 0.0f;   // "temporal predictor bound"
             const uint32_t fw = (c.levelWidth + block - 1) / block;
             const uint32_t fh = (c.levelHeight + block - 1) / block;
             in = {ref.level[l].Get(), m_neuralModelLoaded ? nullptr : cand.packed[l].Get(),
                    l < levels - 1 ? estimated[l + 1].Get() : nullptr,
-                   temporalValid ? temporal[l].Get() : nullptr,
+                   m_neuralModelLoaded ? nullptr : ref.packed[l].Get(),
                    m_neuralModelLoaded ? ref.feature[l].Get() : nullptr,
                    m_neuralModelLoaded ? cand.feature[l].Get() : nullptr};
             // One 8x8 group per flow block, into the scratch field.
@@ -504,13 +541,98 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
             }
         }
     }
-    if (ok) {
-        m_flowParity = previousParity;
-        m_lastSadCurrentId = current.id;
-    }
     out.blockSize = sadBlockSize(0);
     out.singleField = false;   // direction 0 and 1 are independent searches
     return ok;
+}
+
+// ------------------------------------------------------------------ DIS
+
+// Dense Inverse Search, coarse to fine, in both directions: per level, the
+// overlapping patches' motion (DisPatchCS, started from the coarser level's
+// dense field) and then a vector per pixel (DisDensifyCS); the finest
+// level's dense field is reduced to the ring grid (DisToRingCS).
+bool FlowEngine::recordDis(const FlowInput& previous, const FlowInput& current, Entry& out) {
+    ID3D12GraphicsCommandList* list = m_list.Get();
+    const int levels = m_levels;
+    bool ok = true;
+    Pyramid& prevPyramid = m_pyramids[static_cast<size_t>(std::clamp(previous.slot, 0, m_slotCount - 1))];
+    Pyramid& currPyramid = m_pyramids[static_cast<size_t>(std::clamp(current.slot, 0, m_slotCount - 1))];
+    if (&prevPyramid == &currPyramid || !m_disDense[0][0]) return false;
+    if (prevPyramid.id != previous.id) ok &= recordPyramid(previous, prevPyramid);
+    if (ok && currPyramid.id != current.id) ok &= recordPyramid(current, currPyramid);
+
+    ShaderConstants c = {};
+    c.width = m_width;
+    c.height = m_height;
+    c.totalLevels = levels;
+    for (int direction = 0; ok && direction < 2; ++direction) {
+        const Pyramid& ref = direction == 0 ? prevPyramid : currPyramid;
+        const Pyramid& cand = direction == 0 ? currPyramid : prevPyramid;
+        auto& patch = m_disPatch[static_cast<size_t>(direction)];
+        auto& dense = m_disDense[static_cast<size_t>(direction)];
+        for (int l = levels - 1; ok && l >= 0; --l) {
+            c.levelWidth = std::max(1u, m_width >> l);
+            c.levelHeight = std::max(1u, m_height >> l);
+            c.levelIndex = l;
+            c.blockSize = kDisStride;
+            c.searchRadius = kDisIterations;
+            const D3D12_RESOURCE_DESC patchDesc = patch[l]->GetDesc();
+            std::array<ID3D12Resource*, 6> in = {ref.level[l].Get(), cand.level[l].Get(),
+                                                 l + 1 < levels ? dense[l + 1].Get() : nullptr,
+                                                 ref.stats.Get(), cand.stats.Get(), nullptr};
+            ok &= m_dispatch.dispatch(list, *m_kernels, Kernel::DisPatch, in, patch[l].Get(), c,
+                                      static_cast<UINT>(patchDesc.Width), patchDesc.Height);
+            in = {ref.level[l].Get(), cand.level[l].Get(), patch[l].Get(), ref.stats.Get(), cand.stats.Get(), nullptr};
+            ok = ok && m_dispatch.dispatch(list, *m_kernels, Kernel::DisDensify, in, dense[l].Get(), c,
+                                           (c.levelWidth + 15) / 16, (c.levelHeight + 15) / 16);
+        }
+        c.blockSize = static_cast<int32_t>(kDisRingBlock);
+        const uint32_t gw = (m_width + kDisRingBlock - 1) / kDisRingBlock;
+        const uint32_t gh = (m_height + kDisRingBlock - 1) / kDisRingBlock;
+        std::array<ID3D12Resource*, 6> in = {dense[0].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+        ok = ok && m_dispatch.dispatch(list, *m_kernels, Kernel::DisToRing, in,
+                                       direction == 0 ? out.forward.Get() : out.backward.Get(), c,
+                                       (gw + 15) / 16, (gh + 15) / 16);
+    }
+    out.blockSize = kDisRingBlock;
+    out.singleField = false;   // two independent directions, each on its own frame's grid
+    return ok;
+}
+
+// ------------------------------------------------------------ static UI
+
+// Updates the static-UI evidence for this pair from the previous pair's, by
+// testing the warp this very entry's flow will produce (UiMaskCS). Engine
+// independent: it reads only the finished ring fields and their convention.
+bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex,
+                              Entry& out) {
+    out.hasUiMask = false;
+    if (!m_settings.uiMask || !out.uiMask) return true;
+    // The evidence carries over only along an unbroken frame chain - after
+    // a cut, a gap or a resize every pixel has to earn it again. Also never
+    // read the entry being written: the ring hands back a chain entry only
+    // when every other one is still in flight.
+    ID3D12Resource* prior = nullptr;
+    for (const UiLink& link : m_uiChain) {
+        if (link.frameId != previous.id || link.entry < 0 || link.entry == entryIndex) continue;
+        const Entry& chain = m_ring[static_cast<size_t>(link.entry)];
+        if (chain.hasUiMask) prior = chain.uiMask.Get();
+        break;
+    }
+    ShaderConstants c = {};
+    c.width = c.levelWidth = m_width;
+    c.height = c.levelHeight = m_height;
+    setInterpolationConstants(c, out, 0.5f);
+    std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, out.forward.Get(),
+                                         out.backward.Get(), prior, nullptr};
+    // Inputs 0-1 are the shared capture textures; input 4, the chain entry,
+    // may be read by the present queue at this moment, so it is promoted
+    // implicitly too instead of being transitioned from two queues at once.
+    if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::UiMask, in, out.uiMask.Get(), c,
+                             (m_width + 15) / 16, (m_height + 15) / 16, 0x13)) return false;
+    out.hasUiMask = true;
+    return true;
 }
 
 // ------------------------------------------------------------ submission
@@ -598,7 +720,9 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     }
 #endif
     m_usingFfx = ok;
-    if (!ok) ok = recordSad(previous, current, scratch);
+    m_usingDis = !ok && disActive();
+    if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
+    if (ok) ok = recordUiMask(previous, current, entryIndex, scratch);
     if (!ok) {
         m_list->Close();
         return result;
@@ -611,8 +735,18 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         Entry& e = m_ring[static_cast<size_t>(entryIndex)];
         e.blockSize = scratch.blockSize;
         e.singleField = scratch.singleField;
+        e.hasUiMask = scratch.hasUiMask;
         e.flowFence = fenceValue;
         e.valid = true;
+    }
+    // Only a submitted pair extends the static-UI chain; any failure above
+    // returned first and leaves it pointing at frames no pair starts from.
+    // A link whose entry this pair just overwrote is gone.
+    if (scratch.hasUiMask) {
+        m_uiChain[1] = m_uiChain[0].entry == entryIndex ? UiLink{} : m_uiChain[0];
+        m_uiChain[0] = {entryIndex, current.id};
+    } else {
+        m_uiChain = {};
     }
     result.entry = entryIndex;
     result.fence = fenceValue;

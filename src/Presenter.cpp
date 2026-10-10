@@ -215,9 +215,11 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         c.timeT = std::clamp(job.alpha, 0.0f, 1.0f);
         c.flowScale = job.singleFlowField ? 1.0f : 0.0f;
         std::array<ID3D12Resource*, 6> in = {job.frame0, job.frame1, job.forwardFlow, job.backwardFlow,
-                                             nullptr, nullptr};
+                                             job.uiMask, nullptr};
+        // The UI mask is promoted implicitly: the flow queue may be reading
+        // it at the same moment as the next pair's prior evidence.
         ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::Interpolate, in, m_output.Get(), c,
-                                 (m_width + 15) / 16, (m_height + 15) / 16, 0x3);
+                                 (m_width + 15) / 16, (m_height + 15) / 16, 0x13);
     }
     if (!ok) {
         m_list->Close();

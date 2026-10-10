@@ -34,8 +34,8 @@ struct ShaderConstants {
     float    smoothnessWeight = 0.0005f;
     uint32_t parentBlockSize = 8;
     // Overloaded per pass, and every pass that reads it sets it explicitly:
-    // MotionSearchCS treats > 0 as "temporal predictor bound",
-    // FfxFlowConvertCS as a sign, InterpolateCS as the field convention.
+    // FfxFlowConvertCS treats it as a sign, InterpolateCS and UiMaskCS as
+    // the field convention.
     // Defaulted off so a site that forgets it gets the conservative branch.
     float    flowScale = 0.0f;
 

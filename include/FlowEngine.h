@@ -53,7 +53,16 @@ struct FlowSettings {
     float smoothnessWeight = 0.0005f;
     bool preferFfxOpticalFlow = false;
     bool neuralFlow = false; // requires a validated learned-feature model
+    // DIS (Dense Inverse Search): overlapping patches refined by inverse
+    // compositional Lucas-Kanade and densified per pixel, instead of the SAD
+    // block search. See DisPatchCS.hlsl. The default: on the rendered test
+    // pairs it measured 45.7 dB against SAD's 44.6, ahead on 9 of 10, and
+    // 48.3 against 37.5 on the CS2-style sequence.
+    bool disFlow = true;
     bool allowTrainedModel = true; // false while gathering offline training examples
+    // Keep screen-fixed UI (HUD, subtitles, logos) out of the warp. Per
+    // pixel and confirmed over several pairs; see UiMaskCS.hlsl.
+    bool uiMask = true;
 };
 
 // A frame's contribution to the flow queue: the shared capture texture and
@@ -80,6 +89,12 @@ public:
     static constexpr int kRingSize = 16;
     static constexpr UINT kListsInFlight = 4;
     static constexpr int kMaxSlots = 16;
+    // DIS: 8x8 patches every kDisStride pixels at every level, kDisIterations
+    // Lucas-Kanade steps each, and a ring grid of kDisRingBlock pixels - the
+    // densified field is per pixel, so the ring can be finer than SAD's.
+    static constexpr int kDisStride = 4;
+    static constexpr int kDisIterations = 12;
+    static constexpr uint32_t kDisRingBlock = 4;
 
     struct Entry {
         // R32G32B32A32_FLOAT per block: xy = vector in full-resolution
@@ -97,6 +112,14 @@ public:
         // not cosmetic. False for the SAD and neural graphs, which search
         // both directions independently.
         bool singleField = false;
+        // R8_UNORM at full resolution: the static-UI evidence after this
+        // pair (UiMaskCS). Allocated only when FlowSettings::uiMask is on;
+        // hasUiMask says whether this pair actually wrote it.
+        ComPtr<ID3D12Resource> uiMask;
+        bool hasUiMask = false;
+        // What InterpolateCS binds at t4: null reads as "no UI anywhere",
+        // which is exactly the plain warp.
+        ID3D12Resource* uiMaskInput() const { return hasUiMask ? uiMask.Get() : nullptr; }
         uint64_t flowFence = 0;            // flow-queue value completing this entry
         uint64_t presentFence = 0;         // last present-queue value that read it
         bool valid = false;
@@ -136,6 +159,7 @@ public:
 
     bool usingFfx() const { return m_usingFfx; }
     bool usingNeural() const { return m_neuralModelLoaded && !m_usingFfx; }
+    bool usingDis() const { return m_usingDis; }
     bool ffxAvailable() const { return m_ffxReady; }
     uint32_t width() const { return m_width; }
     uint32_t height() const { return m_height; }
@@ -150,7 +174,16 @@ public:
     }
     ID3D12Resource* trainingFlow(int level) const {
         if (level < 0 || level >= m_levels) return nullptr;
-        return m_estimatedFlow[0][1 - m_flowParity][static_cast<size_t>(level)].Get();
+        if (disActive()) return m_disDense[0][static_cast<size_t>(level)].Get();
+        return m_estimatedFlow[0][static_cast<size_t>(level)].Get();
+    }
+    // The forward matcher's raw output at a level, before FillFlowCS: with
+    // trainingFlow it separates what the search measured from what the fill
+    // changed (--gpu-flow-eval).
+    ID3D12Resource* searchFlow(int level) const {
+        if (level < 0 || level >= m_levels) return nullptr;
+        if (disActive()) return m_disPatch[0][static_cast<size_t>(level)].Get();
+        return m_searchFlow[0][static_cast<size_t>(level)].Get();
     }
 
 private:
@@ -162,6 +195,7 @@ private:
         std::array<ComPtr<ID3D12Resource>, kMaxLevels> level;    // R16_FLOAT luma
         std::array<ComPtr<ID3D12Resource>, kMaxLevels> packed;   // R32_UINT, 4 bytes per texel
         std::array<ComPtr<ID3D12Resource>, kMaxLevels> feature;  // R16_FLOAT learned descriptor
+        ComPtr<ID3D12Resource> stats;   // 1x1 R32G32_FLOAT: whole-frame luma mean, deviation
         uint64_t id = UINT64_MAX;   // frame whose luma it holds
     };
 
@@ -170,11 +204,21 @@ private:
     int acquireEntry();
     bool recordPyramid(const FlowInput& frame, Pyramid& pyramid);
     bool recordSad(const FlowInput& previous, const FlowInput& current, Entry& out);
+    bool recordPack(Pyramid& frame, const Pyramid& partner);
+    bool recordDis(const FlowInput& previous, const FlowInput& current, Entry& out);
+    int statsLevel() const { return std::max(0, m_levels - 3); }
+    // DIS runs unless a learned model is loaded (the neural estimator is
+    // built on the SAD graph) or FFX is selected (FFX fills an 8x8 ring and
+    // falls back to SAD, which fills the same grid).
+    bool disActive() const {
+        return m_settings.disFlow && !m_neuralModelLoaded && !m_settings.preferFfxOpticalFlow;
+    }
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     bool createFfx();
     void destroyFfx();
     bool recordFfx(const FlowInput& previous, const FlowInput& current, Entry& out);
 #endif
+    bool recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex, Entry& out);
     void readTimestamps(UINT set);
 
     GraphicsDevice* m_device = nullptr;
@@ -201,20 +245,38 @@ private:
     int m_levels = 0;
     // SAD resources. Luma pyramids are cached per capture slot so a frame's
     // pyramid is built once, when it first takes part in a pair (AMD's
-    // optical flow keeps the previous frame's pyramid the same way). The
-    // estimated flow of every level is double-buffered per submission: the
-    // previous pair's flow at a level is that level's temporal predictor.
+    // optical flow keeps the previous frame's pyramid the same way). Each
+    // pair's flow is estimated from that pair alone: no previous pair's
+    // vectors are carried into the search.
     std::array<Pyramid, kMaxSlots> m_pyramids;
     int m_slotCount = 0;
-    std::array<std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2>, 2> m_estimatedFlow; // [dir][parity][level]
+    std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_estimatedFlow; // [dir][level]
     // Raw matcher output, before FillFlowCS writes the filled field into
     // m_estimatedFlow. Single-buffered: produced and consumed inside one
     // command list, and the COMMON<->UAV transitions around each dispatch
     // order it against any other submission on the queue.
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_searchFlow;  // [dir][level]
 
-    int m_flowParity = 0;
-    uint64_t m_lastSadCurrentId = UINT64_MAX;   // temporal chain: previous pair's current frame
+    // Static-UI chain: the entries holding the last two pairs' evidence,
+    // each with the frame its pair ended on; [0] is the newest. A pair's
+    // prior is the link that ended on the pair's first frame. Two deep
+    // because the timeline can replace its newest frame (a repaint between
+    // video frames): the replacement pair starts one frame back, and its
+    // prior is the evidence from before the replaced pair, not nothing.
+    struct UiLink {
+        int entry = -1;
+        uint64_t frameId = UINT64_MAX;
+    };
+    std::array<UiLink, 2> m_uiChain;
+
+    // DIS, per direction and level: the patch grid and the densified
+    // per-pixel field (both R32G32_FLOAT, in that level's pixels). Kept per
+    // direction so the forward field survives the backward pass for
+    // --gpu-flow-eval.
+    std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_disPatch;   // [dir][level]
+    std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_disDense;
+    bool m_usingDis = false;
+
 
     // GPU timestamps for the status line.
     ComPtr<ID3D12QueryHeap> m_queryHeap;

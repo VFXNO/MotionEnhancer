@@ -28,6 +28,9 @@ constexpr float kCutMeanDiff = 48.0f;
 // exactly what the live path saw -- the only way to tell a synthesis
 // artifact from a flow that was already wrong.
 constexpr int kDumpFrameCount = 8;
+// Ctrl+Alt+F2 in the overlay arms a dump of the next kDumpFrameCount
+// accepted frames, so a moment mid-game can be replayed offline.
+std::atomic<int> g_dumpArmed{0};
 
 std::string dumpPrefix() {
     char buffer[MAX_PATH] = {};
@@ -491,10 +494,21 @@ void CaptureEngine::acceptFrame(const PendingFrame& pending) {
 }
 
 // Producer thread: stages one accepted slot through D3D11 and writes it out.
+void requestFrameDump() {
+    g_dumpArmed.store(kDumpFrameCount);
+    std::cout << "[Capture] saving the next " << kDumpFrameCount << " frames" << std::endl;
+}
+
 void CaptureEngine::dumpFrame(int slot) {
-    static const std::string prefix = dumpPrefix();
+    static const std::string envPrefix = dumpPrefix();
     static int written = 0;
-    if (prefix.empty() || written >= kDumpFrameCount || slot < 0) return;
+    if (slot < 0) return;
+    const bool fromEnv = !envPrefix.empty() && written < kDumpFrameCount;
+    if (!fromEnv) {
+        if (g_dumpArmed.load() <= 0) return;
+        g_dumpArmed.fetch_sub(1);
+    }
+    const std::string prefix = envPrefix.empty() ? std::string("motion_dump") : envPrefix;
 
     ID3D11Device* device = m_device->captureDevice();
     ID3D11DeviceContext* ctx = m_device->captureContext();

@@ -33,7 +33,8 @@ bool loadBytecode(const char* name, std::vector<uint8_t>& bytes) {
 const char* kShaderFiles[] = {
     "LuminanceCS.cso", "PyramidCS.cso", "MotionSearchCS.cso",
     "InterpolateCS.cso", "PresentFrameCS.cso", "FfxFlowConvertCS.cso", "PackLumaCS.cso",
-    "LearnedFeaturesCS.cso", "FillFlowCS.cso"};
+    "LearnedFeaturesCS.cso", "FillFlowCS.cso", "UiMaskCS.cso", "FrameStatsCS.cso",
+    "DisPatchCS.cso", "DisDensifyCS.cso", "DisToRingCS.cso"};
 }
 
 bool ComputeKernels::load(ID3D12Device* device) {
@@ -184,8 +185,7 @@ bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKer
         } else {
             D3D12_SHADER_RESOURCE_VIEW_DESC nullSrv = {};
                         // Matches the flow textures, which are the slots most often
-            // left unbound (the coarsest level has no parent predictor, and
-            // the temporal predictor is absent on a first pair).
+            // left unbound (the coarsest level has no parent predictor).
             nullSrv.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
             nullSrv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             nullSrv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

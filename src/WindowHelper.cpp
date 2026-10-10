@@ -1,4 +1,5 @@
 #include "WindowHelper.h"
+#include "CaptureEngine.h"
 #include <iostream>
 #include <algorithm>
 #include <thread>
@@ -157,6 +158,9 @@ static LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                 if (self) self->isRunning = false;
                 PostQuitMessage(0);
                 return 0;
+            } else if (key == VK_F2) {
+                requestFrameDump();
+                return 0;
             } else if (key == VK_F1) {
                 // Toggle overlay visibility
                 BOOL visible = IsWindowVisible(hwnd);
@@ -169,6 +173,7 @@ static LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
         case WM_DESTROY: {
             UnregisterHotKey(hwnd, 1);
             UnregisterHotKey(hwnd, 2);
+            UnregisterHotKey(hwnd, 3);
             if (self) self->isRunning = false;
             PostQuitMessage(0);
             return 0;
@@ -253,6 +258,7 @@ bool OverlayWindow::create(HWND target, const std::string& windowTitle) {
 
     RegisterHotKey(hwnd, 1, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F1);
     RegisterHotKey(hwnd, 2, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_ESCAPE);
+    RegisterHotKey(hwnd, 3, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F2);
 
 #ifndef WDA_EXCLUDEFROMCAPTURE
 #define WDA_EXCLUDEFROMCAPTURE 0x00000011

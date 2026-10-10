@@ -23,7 +23,8 @@ int runRealtimeSession(const RealtimeOptions& options);
 // Runs the real-time GPU pipeline on two PNGs (verification / tuning).
 // previousPath, when given, is the frame before frame0: the pair
 // (previous, frame0) is submitted first so the timed pair runs with the
-// temporal predictor chain primed, as in a live stream.
+// cross-pair state primed (FFX's history, the static-UI evidence), as in a
+// live stream.
 int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string& frame1Path,
                                const std::string& outputPath, const std::string& flowOutputPath,
                                const std::string& groundTruthPath, float t,
@@ -34,12 +35,17 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
 int runD3D12SelfTest(GraphicsAdapterPreference adapter);
 
 // Replays <prefix>_f000.png, _f001.png, ... as consecutive pairs through one
-// engine, so each estimate becomes the next pair's temporal predictor the way
-// the live overlay builds it. Reports PSNR per step against <prefix>_m000.png
-// and so on. Every other offline path measures a single pair with the chain
-// unbound, which cannot see anything that accumulates across frames.
+// engine, carrying cross-pair state (FFX's history, the static-UI evidence)
+// the way the live overlay does. Reports PSNR per step against
+// <prefix>_m000.png and so on. Every other offline path measures a single
+// pair, which cannot see anything that accumulates across frames.
 int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& settings,
                           GraphicsAdapterPreference adapter);
+
+// Scores the forward field at every pyramid level, raw and filled, against
+// the known motion in <prefix>_flow.bin for each <prefix>_a.png/_b.png pair.
+int runFlowLevelEval(const std::vector<std::string>& prefixes, const FlowSettings& settings,
+                     GraphicsAdapterPreference adapter);
 
 // Checks that the shaders compute the same function the model was trained
 // against, on one frame pair. Reads the model from MOTION_ENHANCER_NEURAL_MODEL.

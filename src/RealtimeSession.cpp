@@ -270,7 +270,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
         }
         timeline.configure(options.sourceFps, presenter.refreshRate(), options.outputMultiplier);
 
-        const char* engine = options.flow.neuralFlow ? "neural learned-feature flow" : options.flow.preferFfxOpticalFlow
+        const char* engine = options.flow.neuralFlow ? "neural learned-feature flow"
+            : options.flow.disFlow ? "DIS (Dense Inverse Search) optical flow" : options.flow.preferFfxOpticalFlow
             ? (flow.ffxAvailable() ? "AMD FidelityFX Optical Flow (SAD fallback on failure)"
                                    : "native SAD graph (FFX unavailable)")
             : "native SAD graph (selected)";
@@ -366,6 +367,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.backwardFlow = entry.backward.Get();
                     job.flowBlockSize = entry.blockSize;
                     job.singleFlowField = entry.singleField;
+                    job.uiMask = entry.uiMaskInput();
                     job.flowFence = flow.fence();
                     job.flowFenceValue = sel.f1.flowFence;
                     mode = "I";
@@ -472,7 +474,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << " | wgc " << cs.arrivals << " dup " << cs.duplicates << " acc " << cs.accepted
                           << " def " << ts.deferred << " drop " << ts.dropped + cs.queueDrops << " rep " << ts.replaced
                           << " cut " << cs.sceneCuts
-                           << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingNeural() ? "neural " : "SAD ") << std::setprecision(2)
+                           << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames << "\n";
                 log.write(status.str());
@@ -533,8 +535,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     if (!offline.initialize(&device, &kernels)) return 1;
     FlowEngine flow;
     // The priming pair always searches at the full radius; the caller's
-    // radii apply to the timed pair only, so a radius of 0 isolates what
-    // the temporal predictor alone contributes.
+    // radii apply to the timed pair only.
     FlowSettings primeSettings = settings;
     primeSettings.coarseSearchRadius = primeSettings.refineSearchRadius = FlowSettings{}.coarseSearchRadius;
     if (!flow.initialize(&device, &kernels, nullptr, previous.empty() ? settings : primeSettings) ||
@@ -555,7 +556,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     FlowInput in1{tex1.texture12.Get(), ready1, 2, 1};
     // Warm-up so the timed run reports steady-state GPU time. With a
     // previous frame the warm-up is the pair (previous, frame0) instead,
-    // which primes the temporal predictor chain for the timed pair.
+    // which primes the cross-pair state for the timed pair.
     SharedTexture texPrev;
     FlowEngine::Result r;
     if (!previous.empty()) {
@@ -564,7 +565,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
         FlowInput inPrev{texPrev.texture12.Get(), readyPrev, 0, 2};
         r = flow.submitPair(inPrev, in0);
         flow.setSettings(settings);
-        std::cout << "  Temporal chain primed with " << previousPath << "\n";
+        std::cout << "  Cross-pair state primed with " << previousPath << "\n";
     } else {
         r = flow.submitPair(in0, in1);
     }
@@ -601,9 +602,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     setInterpolationConstants(c, entry, t);
     if (!offline.begin()) return 1;
     std::array<ID3D12Resource*, 6> in = {tex0.texture12.Get(), tex1.texture12.Get(),
-                                         entry.forward.Get(), entry.backward.Get(), nullptr, nullptr};
+                                         entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), nullptr};
     if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in, output.texture12.Get(), c,
-                                     (width + 15) / 16, (height + 15) / 16, 0x3)) return 1;
+                                     (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
     uint64_t computeDone = 0;
     if (!offline.execute(flow.fence(), r.fence, &computeDone)) {
         std::cerr << "Error: interpolate dispatch failed\n";
@@ -631,7 +632,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
               << bestGpuMs << " ms GPU" << (benchIterations > 1 ? " (best of " + std::to_string(benchIterations) + ")" : "")
               << ", " << elapsedMs << " ms wall incl. readback -> " << outputPath << "\n"
               << "  Flow estimator: " << (flow.usingFfx() ? "AMD FidelityFX Optical Flow" :
-                                             flow.usingNeural() ? "neural learned-feature flow" : "native SAD shader graph")
+                                             flow.usingNeural() ? "neural learned-feature flow" : flow.usingDis() ? "DIS optical flow" : "native SAD shader graph")
               << " (" << entry.blockSize << "x" << entry.blockSize << " blocks)\n";
 
     if (!flowOutputPath.empty()) {
@@ -683,16 +684,16 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
 
 
 // ======================================================================
-// Sequence replay: the temporal chain as the live path actually builds it
+// Sequence replay: the frame chain as the live path actually builds it
 // ======================================================================
 //
-// Every other offline measurement in this project runs a single frame pair
-// with the temporal predictor *unbound* - `--gpu-offline-prev` primes only
-// one pair back, and MOTION_ENHANCER_BENCH_ITERS re-submits the same pair,
-// which breaks the chain after the first iteration. The live overlay runs a
-// continuous chain, where each pair's estimate becomes the next pair's
-// temporal predictor, so a whole class of behaviour - anything that
-// accumulates, latches or feeds back across frames - was never measured.
+// Every other offline measurement in this project runs a single frame pair:
+// `--gpu-offline-prev` primes only one pair back, and
+// MOTION_ENHANCER_BENCH_ITERS re-submits the same pair, which breaks the
+// chain after the first iteration. The live overlay runs a continuous chain
+// - FFX keeps its own history and the static-UI evidence is carried from
+// pair to pair - so anything that accumulates, latches or feeds back across
+// frames is invisible to a single pair.
 //
 // This replays N frames as consecutive pairs through one engine instance,
 // interpolates each midpoint and reports PSNR per step. A defect that only
@@ -749,8 +750,8 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
 
     std::cout << "Sequence replay: " << frames.size() << " frames at " << width << "x" << height
               << ", " << flow.searchedLevels() << " levels, engine "
-              << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : "sad") << "\n"
-              << "  pair   PSNR dB   blend dB   centre vector\n";
+              << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n"
+              << "  pair   PSNR dB   blend dB   UI px %   centre vector\n";
 
     double first = 0.0, last = 0.0;
     int measured = 0;
@@ -769,10 +770,10 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         std::array<ID3D12Resource*, 6> in = {textures[i].texture12.Get(),
                                              textures[i + 1].texture12.Get(),
                                              entry.forward.Get(), entry.backward.Get(),
-                                             nullptr, nullptr};
+                                             entry.uiMaskInput(), nullptr};
         if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in,
                                          output.texture12.Get(), c,
-                                         (width + 15) / 16, (height + 15) / 16, 0x3)) return 1;
+                                         (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
         uint64_t done = 0;
         if (!offline.execute(flow.fence(), result.fence, &done)) return 1;
 
@@ -819,8 +820,31 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
             vx = v[0];
             vy = v[1];
         }
+        // Static-UI mask after this pair: <prefix>_ui000.png, white where
+        // the pixel is confirmed UI (InterpolateCS shows it unwarped).
+        double uiPercent = 0.0;
+        if (ID3D12Resource* uiMask = entry.uiMaskInput()) {
+            std::vector<uint8_t> maskBytes;
+            UINT mw = 0, mh = 0, mpitch = 0;
+            if (offline.readback(uiMask, maskBytes, mpitch, mw, mh)) {
+                // Stored as count/4 in R8_UNORM; confirmed from a count of 3.
+                constexpr uint8_t kConfirmed = 191;
+                Image mask(static_cast<int>(mw), static_cast<int>(mh), 1);
+                size_t confirmed = 0;
+                for (UINT y = 0; y < mh; ++y)
+                    for (UINT x = 0; x < mw; ++x) {
+                        const bool ui = maskBytes[static_cast<size_t>(y) * mpitch + x] >= kConfirmed;
+                        confirmed += ui ? 1 : 0;
+                        mask.set(static_cast<int>(x), static_cast<int>(y), 0, ui ? 255.0f : 0.0f);
+                    }
+                uiPercent = 100.0 * static_cast<double>(confirmed) / (static_cast<double>(mw) * mh);
+                char maskName[MAX_PATH];
+                std::snprintf(maskName, sizeof(maskName), "%s_ui%03d.png", prefix.c_str(), static_cast<int>(i));
+                mask.savePNG(maskName);
+            }
+        }
         std::cout << "  " << std::setw(4) << i << std::fixed << std::setprecision(2)
-                  << std::setw(10) << psnr << std::setw(11) << blendPsnr
+                  << std::setw(10) << psnr << std::setw(11) << blendPsnr << std::setw(10) << uiPercent
                   << "   (" << vx << ", " << vy << ")\n";
     }
     if (measured >= 2) {
@@ -829,6 +853,246 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
                   << (last < first - 1.0 ? "   <- the chain is losing ground\n" : "\n");
     }
     device.dumpInfoQueue("sequence");
+    return 0;
+}
+
+// ======================================================================
+// Per-level vector accuracy against known motion
+// ======================================================================
+//
+// PSNR of the interpolated frame says whether the output looks right, not
+// which pyramid level got the motion wrong, and a coarse level's error is
+// usually hidden by the finer levels' search until a motion is large enough
+// to leave their windows. This reads the forward field back at every level -
+// both the matcher's raw answer and the filled field the next level inherits
+// - and scores each block against the true motion of the pixels it covers.
+//
+// Input per case: <prefix>_a.png, <prefix>_b.png and <prefix>_flow.bin
+// (int32 width, int32 height, then float32 dx, dy per pixel: where each
+// pixel of a goes in b). Only blocks whose footprint moves uniformly (within
+// a quarter pixel) and stays inside the frame are scored, so a block
+// straddling a motion boundary - which no single vector can describe - is
+// not counted against the level.
+int runFlowLevelEval(const std::vector<std::string>& prefixes, const FlowSettings& settings,
+                     GraphicsAdapterPreference adapter) {
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+
+    for (const std::string& prefix : prefixes) {
+        const Image frame0 = Image::load(prefix + "_a.png");
+        const Image frame1 = Image::load(prefix + "_b.png");
+        std::ifstream truthFile(prefix + "_flow.bin", std::ios::binary);
+        int32_t tw = 0, th = 0;
+        if (frame0.empty() || frame1.empty() || !truthFile ||
+            !truthFile.read(reinterpret_cast<char*>(&tw), sizeof(tw)) ||
+            !truthFile.read(reinterpret_cast<char*>(&th), sizeof(th)) ||
+            tw != frame0.width || th != frame0.height ||
+            frame1.width != tw || frame1.height != th) {
+            std::cerr << "Flow eval: cannot read " << prefix << "_a/_b.png and _flow.bin of one size\n";
+            return 1;
+        }
+        std::vector<float> truth(static_cast<size_t>(tw) * th * 2);
+        if (!truthFile.read(reinterpret_cast<char*>(truth.data()),
+                            static_cast<std::streamsize>(truth.size() * sizeof(float)))) {
+            std::cerr << "Flow eval: truncated " << prefix << "_flow.bin\n";
+            return 1;
+        }
+
+        const uint32_t width = static_cast<uint32_t>(tw);
+        const uint32_t height = static_cast<uint32_t>(th);
+        FlowEngine flow;
+        if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, 2)) return 1;
+        SharedTexture tex0, tex1;
+        uint64_t ready0 = 0, ready1 = 0;
+        if (!uploadFrame(device, frame0, tex0, ready0) || !uploadFrame(device, frame1, tex1, ready1)) return 1;
+        const auto result = flow.submitPair({tex0.texture12.Get(), ready0, 1, 0},
+                                            {tex1.texture12.Get(), ready1, 2, 1});
+        if (result.entry < 0 || !flow.waitFence(result.fence)) {
+            std::cerr << "Flow eval: flow submission failed for " << prefix << "\n";
+            return 1;
+        }
+
+        // Frame a's luma pyramid (2x box reduce), only to tell textured
+        // blocks from flat ones the way the matcher does: the mean squared
+        // central difference along each axis over the block. A flat block
+        // has no measurable motion and a wrong vector there is invisible in
+        // the interpolated frame; the textured population is the one whose
+        // error shows.
+        std::vector<std::vector<float>> luma(static_cast<size_t>(flow.searchedLevels()));
+        std::vector<int> lumaW(luma.size()), lumaH(luma.size());
+        lumaW[0] = tw; lumaH[0] = th;
+        luma[0].resize(static_cast<size_t>(tw) * th);
+        for (int y = 0; y < th; ++y)
+            for (int x = 0; x < tw; ++x)
+                luma[0][static_cast<size_t>(y) * tw + x] =
+                    0.2126f * frame0.get(x, y, 0) + 0.7152f * frame0.get(x, y, 1) + 0.0722f * frame0.get(x, y, 2);
+        for (size_t l = 1; l < luma.size(); ++l) {
+            lumaW[l] = std::max(1, lumaW[l - 1] / 2);
+            lumaH[l] = std::max(1, lumaH[l - 1] / 2);
+            luma[l].resize(static_cast<size_t>(lumaW[l]) * lumaH[l]);
+            for (int y = 0; y < lumaH[l]; ++y)
+                for (int x = 0; x < lumaW[l]; ++x) {
+                    float s = 0.0f;
+                    for (int dy = 0; dy < 2; ++dy)
+                        for (int dx = 0; dx < 2; ++dx)
+                            s += luma[l - 1][static_cast<size_t>(std::min(2 * y + dy, lumaH[l - 1] - 1)) * lumaW[l - 1] +
+                                             std::min(2 * x + dx, lumaW[l - 1] - 1)];
+                    luma[l][static_cast<size_t>(y) * lumaW[l] + x] = 0.25f * s;
+                }
+        }
+
+        std::cout << prefix << " (" << width << "x" << height << ", engine "
+                  << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << ")\n"
+                  << "  level  scored textured |   textured: search  mean  >0.5px   >2px |  filled  mean  >0.5px   >2px"
+                  << " |  all filled mean   (errors in that level's pixels)\n";
+        // MOTION_ENHANCER_FLOW_EVAL_DUMP=1: every scored block's raw search
+        // vector, truth and texture to <prefix>_blocks.txt.
+        std::ofstream dump;
+        {
+            char buffer[8] = {};
+            if (GetEnvironmentVariableA("MOTION_ENHANCER_FLOW_EVAL_DUMP", buffer, sizeof(buffer)) > 0 &&
+                buffer[0] != '0')
+                dump.open(prefix + "_blocks.txt");
+        }
+        for (int level = flow.searchedLevels() - 1; level >= 0; --level) {
+            const int scale = 1 << level;
+            const int footprint = 8 * scale;   // a level block in full-resolution pixels
+            // Each field's own grid: SAD writes one texel per 8x8 block of
+            // the level, DIS a patch grid (8x8 patches every kDisStride
+            // pixels) and a dense per-pixel field. A field is scored on the
+            // level's 8x8 blocks, as the mean of its texels centred inside
+            // the block.
+            struct Field { std::vector<uint8_t> bytes; UINT pitch = 0, w = 0, h = 0, texel = 16; };
+            Field fields[2];
+            ID3D12Resource* sources[2] = {flow.searchFlow(level), flow.trainingFlow(level)};
+            bool ok = true;
+            for (int f = 0; f < 2; ++f) {
+                ok = ok && sources[f] &&
+                     offline.readback(sources[f], fields[f].bytes, fields[f].pitch, fields[f].w, fields[f].h);
+                if (ok) fields[f].texel = sources[f]->GetDesc().Format == DXGI_FORMAT_R32G32_FLOAT ? 8 : 16;
+            }
+            if (!ok) {
+                std::cerr << "Flow eval: level " << level << " readback failed\n";
+                return 1;
+            }
+            const std::vector<float>& lv = luma[static_cast<size_t>(level)];
+            const int lw = lumaW[static_cast<size_t>(level)], lh = lumaH[static_cast<size_t>(level)];
+            auto L = [&](int x, int y) {
+                return lv[static_cast<size_t>(std::clamp(y, 0, lh - 1)) * lw + std::clamp(x, 0, lw - 1)];
+            };
+            // Texel centre, in this level's pixels, of texel i of a field.
+            auto texelCentre = [&](const Field& fd, int i, int extent) {
+                if (static_cast<int>(fd.w) == lw && static_cast<int>(fd.h) == lh) return static_cast<double>(i);   // dense
+                if (flow.usingDis()) return std::min(i * FlowEngine::kDisStride, std::max(0, extent - 8)) + 3.5;
+                return i * 8 + 3.5;
+            };
+            auto texelStride = [&](const Field& fd) {
+                if (static_cast<int>(fd.w) == lw && static_cast<int>(fd.h) == lh) return 1;
+                return flow.usingDis() ? FlowEngine::kDisStride : 8;
+            };
+            auto blockEstimate = [&](const Field& fd, int bx, int by, double& ex, double& ey) {
+                ex = ey = 0.0;
+                int n = 0;
+                const int stride = texelStride(fd);
+                const int i0 = std::max(0, (bx * 8 - 8) / stride - 1), i1 = std::min(static_cast<int>(fd.w) - 1, (bx * 8 + 8) / stride + 1);
+                const int j0 = std::max(0, (by * 8 - 8) / stride - 1), j1 = std::min(static_cast<int>(fd.h) - 1, (by * 8 + 8) / stride + 1);
+                // The last DIS patches are pulled inside the level, so their
+                // centres can land in an earlier block: include them.
+                const int jLast = static_cast<int>(fd.h) - 1, iLast = static_cast<int>(fd.w) - 1;
+                for (int j = j0; j <= std::max(j1, jLast); j = (j == j1 && j1 < jLast) ? jLast : j + 1) {
+                    const double cy = texelCentre(fd, j, lh);
+                    if (cy < by * 8 || cy >= by * 8 + 8) continue;
+                    for (int i = i0; i <= std::max(i1, iLast); i = (i == i1 && i1 < iLast) ? iLast : i + 1) {
+                        const double cx = texelCentre(fd, i, lw);
+                        if (cx < bx * 8 || cx >= bx * 8 + 8) continue;
+                        const float* v = reinterpret_cast<const float*>(
+                            fd.bytes.data() + static_cast<size_t>(j) * fd.pitch + static_cast<size_t>(i) * fd.texel);
+                        ex += v[0]; ey += v[1]; ++n;
+                    }
+                }
+                if (n == 0) return false;
+                ex /= n; ey /= n;
+                return true;
+            };
+            std::vector<double> errors[2], textured[2];
+            const int blocksW = (lw + 7) / 8, blocksH = (lh + 7) / 8;
+            for (int by = 0; by < blocksH; ++by) {
+                for (int bx = 0; bx < blocksW; ++bx) {
+                    const int x0 = static_cast<int>(bx) * footprint, y0 = static_cast<int>(by) * footprint;
+                    const int x1 = std::min(x0 + footprint, tw), y1 = std::min(y0 + footprint, th);
+                    if (x1 - x0 < footprint || y1 - y0 < footprint) continue;   // partial edge block
+                    double sx = 0.0, sy = 0.0;
+                    float minX = 1e30f, maxX = -1e30f, minY = 1e30f, maxY = -1e30f;
+                    for (int y = y0; y < y1; ++y)
+                        for (int x = x0; x < x1; ++x) {
+                            const float* v = &truth[(static_cast<size_t>(y) * tw + x) * 2];
+                            sx += v[0]; sy += v[1];
+                            minX = std::min(minX, v[0]); maxX = std::max(maxX, v[0]);
+                            minY = std::min(minY, v[1]); maxY = std::max(maxY, v[1]);
+                        }
+                    if (maxX - minX > 0.25f || maxY - minY > 0.25f) continue;   // motion boundary
+                    const double n = static_cast<double>(footprint) * footprint;
+                    const double tx = sx / n, ty = sy / n;
+                    if (x0 + tx < 0.0 || y0 + ty < 0.0 || x1 + tx > tw || y1 + ty > th) continue;   // leaves the frame
+                    // Textured = the smaller eigenvalue of the block's
+                    // structure tensor: both directions measurable. Per-axis
+                    // energy is not enough - a diagonal edge has plenty along
+                    // x and y and still says nothing about motion along it.
+                    double gxx = 0.0, gyy = 0.0, gxy = 0.0;
+                    for (int y = 0; y < 8; ++y)
+                        for (int x = 0; x < 8; ++x) {
+                            const int px = static_cast<int>(bx) * 8 + x, py = static_cast<int>(by) * 8 + y;
+                            const double gx = L(px + 1, py) - L(px - 1, py), gy = L(px, py + 1) - L(px, py - 1);
+                            gxx += gx * gx; gyy += gy * gy; gxy += gx * gy;
+                        }
+                    const double half = 0.5 * (gxx + gyy);
+                    const double lambdaMin = half - std::sqrt(0.25 * (gxx - gyy) * (gxx - gyy) + gxy * gxy);
+                    const bool isTextured = lambdaMin / 64.0 > 25.0;
+                    for (int f = 0; f < 2; ++f) {
+                        double e[2];
+                        if (!blockEstimate(fields[f], bx, by, e[0], e[1])) continue;
+                        const double ex = e[0] - tx / scale, ey = e[1] - ty / scale;
+                        const double err = std::sqrt(ex * ex + ey * ey);
+                        errors[f].push_back(err);
+                        if (isTextured) textured[f].push_back(err);
+                        if (f == 0 && dump)
+                            dump << level << ' ' << bx << ' ' << by << ' ' << e[0] << ' ' << e[1] << ' '
+                                 << tx / scale << ' ' << ty / scale << ' ' << (isTextured ? 1 : 0) << ' '
+                                 << lambdaMin / 64.0 << '\n';
+                    }
+                }
+            }
+            auto stats = [](const std::vector<double>& e, double& mean, double& over05, double& over2) {
+                mean = over05 = over2 = 0.0;
+                if (e.empty()) return;
+                for (double v : e) {
+                    mean += v;
+                    over05 += v > 0.5 ? 1.0 : 0.0;
+                    over2 += v > 2.0 ? 1.0 : 0.0;
+                }
+                mean /= static_cast<double>(e.size());
+                over05 *= 100.0 / static_cast<double>(e.size());
+                over2 *= 100.0 / static_cast<double>(e.size());
+            };
+            std::cout << "  " << std::setw(5) << level << std::setw(7) << errors[0].size()
+                      << std::setw(9) << textured[0].size() << " |";
+            for (int f = 0; f < 2; ++f) {
+                double mean, over05, over2;
+                stats(textured[f], mean, over05, over2);
+                std::cout << (f == 0 ? "                " : " |        ") << std::fixed << std::setprecision(3)
+                          << std::setw(6) << mean << std::setprecision(1) << std::setw(7) << over05 << "%"
+                          << std::setw(6) << over2 << "%";
+            }
+            double allMean, a05, a2;
+            stats(errors[1], allMean, a05, a2);
+            std::cout << " |  " << std::setprecision(3) << std::setw(14) << allMean << "\n";
+        }
+    }
+    device.dumpInfoQueue("flow eval");
     return 0;
 }
 
@@ -1064,9 +1328,9 @@ int runNeuralParityCheck(const std::string& frame0Path, const std::string& frame
             // explain the data about equally well, and which one wins is
             // decided in the last bits, where the host's /fp:fast and the
             // GPU's reassociation disagree. On the GPU that decision is at
-            // least *stable*, because the tie falls back to the previous
-            // pair's vector; the CPU reference has no temporal chain to fall
-            // back to, so it cannot reproduce the choice even in principle.
+            // least *stable*, because the tie falls back to the coarse
+            // predictor, but the host and the GPU can still round the two
+            // keys apart, so the choice cannot be bit-reproduced.
             const bool pass = agreedMean < 0.03 && tippedFraction < 0.10;
             ok = ok && pass;
             std::cout << "    level " << level << " (" << gpu.width << "x" << gpu.height
@@ -1170,7 +1434,7 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
     }
     device.dumpInfoQueue("self-test");
     std::cout << "D3D12 self-test: PASS (" << (flow.usingFfx() ? "FFX" :
-                                                flow.usingNeural() ? "neural" : "SAD") << ", "
+                                                flow.usingNeural() ? "neural" : flow.usingDis() ? "DIS" : "SAD") << ", "
               << std::fixed << std::setprecision(2) << flow.lastGpuTimeMs() << " ms flow)\n";
     return 0;
 }

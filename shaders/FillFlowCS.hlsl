@@ -96,10 +96,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // standing to reject neighbours for disagreeing with it - and ungated it
     // did exactly that, which made the fill unable to correct a wrong value
     // *because* it was wrong. The case that exposed it: when a scroll stops,
-    // an untextured block still holds the previous frame's vector (the
-    // temporal predictor is the tie-break reference and nothing in a
-    // featureless block outvotes it), its correct neighbours now read zero,
-    // and at a 12 px disagreement the ungated term weighted them 0.027. The
+    // an untextured block still held the previous frame's vector (the
+    // temporal predictor, since removed, was the tie-break reference and
+    // nothing in a featureless block outvoted it), its correct neighbours
+    // now read zero, and at a 12 px disagreement the ungated term weighted
+    // them 0.027. The
     // block kept warping static content, and the frames right after motion
     // stopped lost 15 dB.
     float2 weight = float2(0.0f, 0.0f);

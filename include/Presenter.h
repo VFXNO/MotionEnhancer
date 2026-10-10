@@ -16,6 +16,7 @@ struct RenderJob {
     ID3D12Resource* backwardFlow = nullptr;
     uint32_t flowBlockSize = 32;
     bool singleFlowField = false;      // FlowEngine::Entry::singleField
+    ID3D12Resource* uiMask = nullptr;  // FlowEngine::Entry::uiMaskInput(); null = no UI
     ID3D12Fence* flowFence = nullptr;   // GPU-side wait before the interpolate pass
     uint64_t flowFenceValue = 0;
     float alpha = 0.0f;

@@ -115,6 +115,7 @@ struct GuiState {
     HWND gpuCoarseRadius = nullptr;
     HWND gpuRefineRadius = nullptr;
     HWND gpuSmoothness = nullptr;
+    HWND uiMask = nullptr;
     HWND input0 = nullptr;
     HWND input1 = nullptr;
     HWND output = nullptr;
@@ -819,7 +820,8 @@ void startCapture() {
     }
 
     int flowSelection = static_cast<int>(SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0));
-    const char* flowEngineArg = flowSelection == 2 ? "neural" :
+    const char* flowEngineArg = flowSelection == 3 ? "dis" :
+                                flowSelection == 2 ? "neural" :
                                 flowSelection == 1 ? "sad" : "ffx";
     int adapterSelection = static_cast<int>(SendMessageA(g_state.liveAdapter, CB_GETCURSEL, 0, 0));
     const char* adapterArg = adapterSelection == 1 ? "igpu" :
@@ -859,19 +861,21 @@ void startCapture() {
         SetWindowTextA(g_state.liveStatus, "Could not create capture stop event.");
         return;
     }
-    if (!launchJob({
-            "--capture-window", title,
-            "--stop-event", stopName,
-            "--source-fps", lowercaseWindowText(g_state.liveSourceFps),
-            "--multiplier", lowercaseWindowText(g_state.liveMultiplier),
-            "--gpu-levels", getWindowText(g_state.gpuLevels),
-            "--gpu-min-refine", getWindowText(g_state.gpuMinRefine),
-            "--gpu-coarse-radius", getWindowText(g_state.gpuCoarseRadius),
-            "--gpu-refine-radius", getWindowText(g_state.gpuRefineRadius),
-            "--gpu-smoothness", getWindowText(g_state.gpuSmoothness),
-            "--flow-engine", flowEngineArg,
-            "--adapter", adapterArg
-        }, JobType::Live, true, modelPath)) {
+    std::vector<std::string> captureArgs = {
+        "--capture-window", title,
+        "--stop-event", stopName,
+        "--source-fps", lowercaseWindowText(g_state.liveSourceFps),
+        "--multiplier", lowercaseWindowText(g_state.liveMultiplier),
+        "--gpu-levels", getWindowText(g_state.gpuLevels),
+        "--gpu-min-refine", getWindowText(g_state.gpuMinRefine),
+        "--gpu-coarse-radius", getWindowText(g_state.gpuCoarseRadius),
+        "--gpu-refine-radius", getWindowText(g_state.gpuRefineRadius),
+        "--gpu-smoothness", getWindowText(g_state.gpuSmoothness),
+        "--flow-engine", flowEngineArg,
+        "--adapter", adapterArg
+    };
+    if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
+    if (!launchJob(captureArgs, JobType::Live, true, modelPath)) {
         CloseHandle(stopEvent);
         SetWindowTextA(g_state.liveStatus, "Could not start the capture process.");
         return;
@@ -1054,7 +1058,12 @@ void createControls() {
                  reinterpret_cast<LPARAM>("SAD block matching"));
     SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
                  reinterpret_cast<LPARAM>("Neural motion estimator"));
-    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 1, 0);
+    SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
+                 reinterpret_cast<LPARAM>("DIS optical flow"));
+    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 3, 0);   // DIS
+    // Static UI (HUD, subtitles, logos) is shown where it is instead of
+    // being dragged along by the motion underneath it. See UiMaskCS.hlsl.
+    g_state.uiMask = makeCheckbox("Keep static UI sharp (HUD, subtitles, logos)", 56, 326, 420, true);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 372, 180, 40, IDC_START_CAPTURE);
     HWND liveHelp = addControl(
@@ -1089,7 +1098,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.uiMask, g_state.captureButton, liveHelp, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
