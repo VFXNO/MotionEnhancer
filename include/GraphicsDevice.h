@@ -47,7 +47,7 @@ struct ShaderConstants {
     // relayout did silently write the temporal weight into a hidden unit.
     // Padded to 240 so the array is a whole number of 16-byte rows.
     float    neuralWeights[240] = {};   // rows 3-62
-    float    neuralControl[4] = {};     // row 63: x = model enabled, yzw spare
+    float    neuralControl[4] = {};     // row 63: x = model enabled, y = debug view (Presenter.h), zw spare
 };
 static_assert(sizeof(ShaderConstants) == 1024, "Shader constants must match HLSL rows");
 // A texture that lives in both APIs: written by the D3D11 capture device,

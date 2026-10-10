@@ -48,6 +48,20 @@ static const float kEdgeReach = 8.0f;
 static const float kFarReach = 24.0f;
 static const float kSwitchMargin = 0.25f;
 
+// Debug view 4: one arrow per kArrowCell pixels, drawn at a quarter of the
+// vector and capped below the cell size so arrows never run into each
+// other; a capped one keeps its direction.
+static const int kArrowCell = 16;
+static const float kArrowScale = 0.25f;
+static const float kArrowMaxLength = 14.0f;
+
+float SegmentDistance(float2 p, float2 a, float2 b)
+{
+    const float2 ab = b - a;
+    const float along = saturate(dot(p - a, ab) / max(dot(ab, ab), 1e-6f));
+    return length(p - (a + along * ab));
+}
+
 // Occlusion. Next to an object moving against the background, the
 // background point a pixel needs is hidden in one of the two frames - behind
 // the object - and in that frame no point of the field actually travels to
@@ -138,10 +152,13 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // on a trajectory that actually reaches this pixel.
     float valid0 = 1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv0, 0));
     float valid1 = 1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv1, 0));
+    float trust0 = 1.0f, trust1 = 1.0f;
     if (FlowScale == 0.0f)
     {
-        valid0 *= TrajectoryWeight(residual0);
-        valid1 *= TrajectoryWeight(residual1);
+        trust0 = TrajectoryWeight(residual0);
+        trust1 = TrajectoryWeight(residual1);
+        valid0 *= trust0;
+        valid1 *= trust1;
     }
     if (valid0 < 1.0f || valid1 < 1.0f)
     {
@@ -170,6 +187,77 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         const float3 still = lerp(Frame0.Load(int3(id.xy, 0)).rgb, Frame1.Load(int3(id.xy, 0)).rgb, t);
         color = lerp(color, still, uiHere);
+    }
+
+    const int view = DebugView();
+    if (view > 0)
+    {
+        const float3 grey = DebugGrey(color);
+        if (view == 1)
+        {
+            // The motion this pixel was interpolated along, frame0 -> frame1:
+            // hue = direction, strength = speed (full at 48 px per frame).
+            const float2 motion = from1 - from0;
+            const float hue = atan2(motion.y, motion.x) / 6.2831853f + 0.5f;
+            color = lerp(grey, DebugHue(hue), 0.85f * saturate(length(motion) / 48.0f));
+        }
+        else if (view == 2)
+        {
+            // Static-UI evidence: yellow while it builds, green once
+            // confirmed (light green where too isolated to be held).
+            const float count = DecodeUiCount(UiMask.Load(int3(id.xy, 0)));
+            if (count >= kUiConfirm) color = lerp(grey, float3(0.0f, 1.0f, 0.0f), uiHere > 0.0f ? 0.75f : 0.35f);
+            else if (count > 0.0f) color = lerp(grey, float3(1.0f, 0.85f, 0.0f), 0.5f);
+            else color = grey;
+        }
+        else if (view == 3)
+        {
+            // Occlusion: red where frame0's sample does not reach this
+            // pixel and is weighted down, blue the same for frame1.
+            const float3 tint = float3(1.0f - trust0, 0.0f, 1.0f - trust1);
+            color = saturate(lerp(grey, tint, 0.85f * max(tint.x, tint.z)));
+        }
+        else
+        {
+            // Vector arrows: the estimated field frame0 -> frame1, sampled
+            // at the centre of every kArrowCell cell and drawn from there,
+            // coloured by direction as in view 1. A pixel looks at the
+            // cells near enough for their arrow to reach it.
+            color = grey;
+            const int reach = (int)ceil(kArrowMaxLength / kArrowCell);
+            const int2 home = int2(id.xy) / kArrowCell;
+            float nearest = 1e30f;
+            float3 arrowColor = float3(0.0f, 0.0f, 0.0f);
+            for (int cy = -reach; cy <= reach; ++cy)
+            {
+                for (int cx = -reach; cx <= reach; ++cx)
+                {
+                    const float2 start = float2((home + int2(cx, cy)) * kArrowCell) + 0.5f * kArrowCell;
+                    float2 v = kArrowScale * (FlowScale != 0.0f ? -SampleFlow(BackwardFlow, start) : SampleFlow(ForwardFlow, start));
+                    const float speed = length(v);
+                    if (speed > kArrowMaxLength) v *= kArrowMaxLength / speed;
+                    const float2 tip = start + v;
+                    float d = length(pixel - start) - 1.0f;                  // the dot at the start
+                    if (speed > 0.5f)
+                    {
+                        const float2 back = -normalize(v) * min(4.0f, 0.5f * length(v) + 1.5f);
+                        const float2 side = float2(-back.y, back.x) * 0.5f;
+                        d = min(d, SegmentDistance(pixel, start, tip));
+                        d = min(d, SegmentDistance(pixel, tip, tip + back + side));
+                        d = min(d, SegmentDistance(pixel, tip, tip + back - side));
+                    }
+                    if (d < nearest)
+                    {
+                        nearest = d;
+                        arrowColor = speed > 0.5f ? DebugHue(atan2(v.y, v.x) / 6.2831853f + 0.5f) : float3(1.0f, 1.0f, 1.0f);
+                    }
+                }
+            }
+            if (nearest < 0.75f) color = arrowColor;
+            else if (nearest < 1.5f) color = float3(0.0f, 0.0f, 0.0f);   // outline, readable on any picture
+        }
+        const bool real = t < 0.01f || t > 0.99f;
+        color = DebugMarker(id.xy, color, real ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 1.0f));
     }
     Output[id.xy] = float4(color, 1.0f);
 }

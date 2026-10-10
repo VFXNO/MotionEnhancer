@@ -6,6 +6,14 @@
 #include <array>
 #include <cstdint>
 
+// Live debug view of the presented frames (see DebugView() in
+// Common.hlsli): 0 = off, 1 = motion, 2 = static-UI evidence, 3 = occlusion
+// trust, 4 = vector arrows. Ctrl+Alt+F3 in the overlay cycles it; read on
+// every frame.
+constexpr int kDebugViewCount = 5;
+void cycleDebugView();
+int debugView();
+
 // One interpolated (or pass-through) output frame.
 struct RenderJob {
     ID3D12Resource* frame0 = nullptr;

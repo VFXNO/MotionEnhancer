@@ -1068,7 +1068,7 @@ void createControls() {
     g_state.captureButton = makeButton("START CAPTURE", 36, 372, 180, 40, IDC_START_CAPTURE);
     HWND liveHelp = addControl(
         "STATIC",
-        "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay.",
+        "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay, Ctrl+Alt+F3 cycles debug views.",
         SS_LEFT, 36, 436, 760, 40, 0);
     setControlFont(liveHelp, g_fontLabel);
     g_state.liveStatus = addControl("STATIC", "", SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS,

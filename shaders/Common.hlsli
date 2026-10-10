@@ -21,7 +21,7 @@ cbuffer PipelineConstants : register(b0)
     // indexed through NeuralWeight() below with the same constants the C++
     // uses. 240 floats = 60 rows, of which 238 are the model.
     float4 NeuralWeights[60];
-    float4 NeuralControl;   // x = model enabled, yzw spare
+    float4 NeuralControl;   // x = model enabled, y = debug view (DebugView()), zw spare
 };
 
 // Indices into NeuralWeights, mirroring namespace NeuralFlowLayout in
@@ -53,6 +53,45 @@ float NeuralWeight(int index)
 
 SamplerState LinearClamp : register(s0);
 SamplerState PointClamp : register(s1);
+
+// ------------------------------------------------------------ debug views
+// Live diagnostics for the presented frames, cycled with Ctrl+Alt+F3 in the
+// overlay (Presenter sets NeuralControl.y; MOTION_ENHANCER_DEBUG_VIEW does
+// the same offline): 0 = off, 1 = motion, 2 = static-UI evidence,
+// 3 = occlusion trust, 4 = vector arrows. Every view greys the picture so the colours read, and
+// marks the top-left corner with what kind of frame this is - green a real
+// frame, magenta a generated one, yellow a frame shown with no
+// interpolation (held, a scene cut, startup) - followed by one white dot per
+// view number.
+int DebugView()
+{
+    return (int)NeuralControl.y;
+}
+
+float3 DebugGrey(float3 color)
+{
+    return (0.2f + 0.6f * dot(color, float3(0.299f, 0.587f, 0.114f))).xxx;
+}
+
+// A fully saturated colour for hue in [0, 1).
+float3 DebugHue(float hue)
+{
+    return saturate(abs(frac(hue + float3(0.0f, 2.0f / 3.0f, 1.0f / 3.0f)) * 6.0f - 3.0f) - 1.0f);
+}
+
+float3 DebugMarker(uint2 p, float3 color, float3 kind)
+{
+    if (p.y < 6 || p.y >= 30) return color;
+    if (p.x >= 6 && p.x < 30) return (p.x >= 8 && p.x < 28 && p.y >= 8 && p.y < 28) ? kind : float3(0.0f, 0.0f, 0.0f);
+    const int views = DebugView();
+    for (int k = 0; k < views; ++k)
+    {
+        const uint x0 = 36 + 12 * (uint)k;
+        if (p.x >= x0 && p.x < x0 + 8 && p.y >= 14 && p.y < 22) return float3(1.0f, 1.0f, 1.0f);
+        if (p.x >= x0 - 1 && p.x < x0 + 9 && p.y >= 13 && p.y < 23) return float3(0.0f, 0.0f, 0.0f);
+    }
+    return color;
+}
 
 // Flow block size is supplied per pyramid level through BlockSize.
 

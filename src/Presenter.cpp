@@ -1,6 +1,7 @@
 #include "Presenter.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <dwmapi.h>
 #include <iostream>
@@ -188,6 +189,23 @@ void Presenter::revealWindow() {
     m_revealed = true;
 }
 
+static std::atomic<int> g_debugView{0};
+
+void cycleDebugView() {
+    static const char* const names[kDebugViewCount] = {
+        "off", "motion (hue = direction, strength = speed)",
+        "static UI (yellow = evidence building, green = confirmed)",
+        "occlusion (red = frame0 sample distrusted, blue = frame1)",
+        "vector arrows (one per 16 px, quarter length, capped at 14 px, coloured by direction)"};
+    const int view = (g_debugView.load() + 1) % kDebugViewCount;
+    g_debugView.store(view);
+    std::cout << "[Overlay] debug view " << view << ": " << names[view] << std::endl;
+}
+
+int debugView() {
+    return g_debugView.load();
+}
+
 bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     presentFenceValue = 0;
     if (!job.frame0) return false;
@@ -203,6 +221,7 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     ShaderConstants c = {};
     c.width = c.levelWidth = m_width;
     c.height = c.levelHeight = m_height;
+    c.neuralControl[1] = static_cast<float>(debugView());
     bool ok;
     if (job.single || !job.frame1 || !job.forwardFlow || !job.backwardFlow) {
         ID3D12Resource* source = (job.alpha < 0.5f || !job.frame1) ? job.frame0 : job.frame1;

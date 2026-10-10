@@ -320,6 +320,13 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)
 - `[Ctrl+Alt+F2]`: Save the next 8 captured frames as `motion_dump_000.png …` (or `<MOTION_ENHANCER_DUMP_FRAMES>_000.png …`), to replay a moment offline
+- `[Ctrl+Alt+F3]`: Cycle the live debug views (the console prints which one is on). Each view greys the picture and marks the top-left corner with the kind of frame on screen — green a real frame, magenta a generated one, yellow a frame shown with no interpolation (held, a scene cut, startup), which is where stutter comes from — followed by one white dot per view number.
+  1. **Motion**: the motion each pixel was interpolated along; hue = direction, strength = speed (full at 48 px per frame).
+  2. **Static UI**: yellow where HUD evidence is building, green where a pixel is confirmed (light green where it is too isolated to be held).
+  3. **Occlusion**: red where the earlier frame's sample does not reach the pixel and is weighted down, blue the same for the later frame.
+  4. **Vector arrows**: the estimated motion (earlier → later frame) as one arrow per 16 px, drawn at a quarter of its length and capped at 14 px so arrows never overlap (a capped one keeps its direction), coloured by direction as in view 1; a white dot is a cell that did not move.
+
+  `MOTION_ENHANCER_DEBUG_VIEW=<1..4>` renders the same views in `--gpu-offline` and `--gpu-offline-sequence`.
 - `[Ctrl+Alt+Esc]`: Exit overlay and stop capture
 
 ### Quick Start for Real-Time Capture

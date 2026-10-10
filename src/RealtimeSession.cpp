@@ -185,6 +185,14 @@ private:
     DispatchContext m_dispatch;
 };
 
+// MOTION_ENHANCER_DEBUG_VIEW=n renders the live overlay's debug view n
+// (Presenter.h) in the offline paths instead of the picture.
+float offlineDebugView() {
+    char buffer[8] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_DEBUG_VIEW", buffer, sizeof(buffer)) == 0) return 0.0f;
+    return static_cast<float>(std::clamp(std::atoi(buffer), 0, kDebugViewCount - 1));
+}
+
 bool uploadFrame(GraphicsDevice& device, const Image& img, SharedTexture& texture, uint64_t& readyValue) {
     std::vector<uint8_t> pixels(static_cast<size_t>(img.width) * img.height * 4);
     for (int y = 0; y < img.height; ++y) {
@@ -600,6 +608,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     c.width = c.levelWidth = width;
     c.height = c.levelHeight = height;
     setInterpolationConstants(c, entry, t);
+    c.neuralControl[1] = offlineDebugView();
     if (!offline.begin()) return 1;
     std::array<ID3D12Resource*, 6> in = {tex0.texture12.Get(), tex1.texture12.Get(),
                                          entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), nullptr};
@@ -805,6 +814,7 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         c.width = c.levelWidth = width;
         c.height = c.levelHeight = height;
         setInterpolationConstants(c, entry, 0.5f);
+        c.neuralControl[1] = offlineDebugView();
         if (!offline.begin()) return 1;
         std::array<ID3D12Resource*, 6> in = {textures[i].texture12.Get(),
                                              textures[i + 1].texture12.Get(),

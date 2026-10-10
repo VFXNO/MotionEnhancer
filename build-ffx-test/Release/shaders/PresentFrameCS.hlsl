@@ -9,5 +9,9 @@ RWTexture2D<float4> Destination : register(u0);
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= Width || id.y >= Height) return;
-    Destination[id.xy] = float4(Source.Load(int3(id.xy, 0)).rgb, 1.0f);
+    float3 color = Source.Load(int3(id.xy, 0)).rgb;
+    // No motion, mask or trust here: a debug view only greys the picture
+    // and marks it as shown without interpolation.
+    if (DebugView() > 0) color = DebugMarker(id.xy, DebugGrey(color), float3(1.0f, 0.85f, 0.0f));
+    Destination[id.xy] = float4(color, 1.0f);
 }
