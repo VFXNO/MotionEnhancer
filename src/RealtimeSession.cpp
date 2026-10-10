@@ -84,9 +84,12 @@ HANDLE enterMmcss(const wchar_t* task) {
     return handle;
 }
 
-// Bytes per flow texel: R32G32B32A32_FLOAT, xy = vector, zw = per-axis
-// confidence. See FlowEngine's kFlowFormat.
-constexpr size_t kFlowTexelBytes = 16;
+// Bytes per texel of a flow texture read back: R32G32B32A32_FLOAT (xy =
+// vector, zw = per-axis confidence; FlowEngine's kFlowFormat) or, for DIS's
+// ring entries, R32G32_FLOAT (the vector only). xy come first either way.
+size_t flowTexelBytes(ID3D12Resource* texture) {
+    return texture->GetDesc().Format == DXGI_FORMAT_R32G32_FLOAT ? 8 : 16;
+}
 
 double computePsnr(const Image& a, const Image& b) {
     if (a.width != b.width || a.height != b.height || a.channels != b.channels) return 0.0;
@@ -695,7 +698,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
                 for (int x = 0; x < frame0.width; ++x) {
                     const uint32_t bx = std::min<uint32_t>(static_cast<uint32_t>(x) / block, gridW - 1);
                     const uint32_t by = std::min<uint32_t>(static_cast<uint32_t>(y) / block, gridH - 1);
-                    const float* v = reinterpret_cast<const float*>(flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * kFlowTexelBytes);
+                    const float* v = reinterpret_cast<const float*>(flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * flowTexelBytes(entry.forward.Get()));
                     field.set(x, y, MotionVector(v[0], v[1], 1.0f));
                 }
             }
@@ -705,7 +708,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
             std::ofstream txt(flowOutputPath + ".txt");
             for (uint32_t by = 0; by < gridH; ++by) {
                 for (uint32_t bx = 0; bx < gridW; ++bx) {
-                    const float* v = reinterpret_cast<const float*>(flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * kFlowTexelBytes);
+                    const float* v = reinterpret_cast<const float*>(flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * flowTexelBytes(entry.forward.Get()));
                     txt << static_cast<int>(std::lround(v[0])) << "," << static_cast<int>(std::lround(v[1]))
                         << (bx + 1 < gridW ? " " : "\n");
                 }
@@ -865,7 +868,7 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
             const uint32_t bx = (width / entry.blockSize) / 2;
             const uint32_t by = (height / entry.blockSize) / 2;
             const float* v = reinterpret_cast<const float*>(
-                flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * kFlowTexelBytes);
+                flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * flowTexelBytes(entry.forward.Get()));
             vx = v[0];
             vy = v[1];
         }
@@ -1316,7 +1319,7 @@ int runNeuralParityCheck(const std::string& frame0Path, const std::string& frame
             for (UINT by = 0; by < lh; ++by)
                 for (UINT bx = 0; bx < lw; ++bx) {
                     const float* v = reinterpret_cast<const float*>(
-                        levelBytes.data() + static_cast<size_t>(by) * levelPitch + bx * kFlowTexelBytes);
+                        levelBytes.data() + static_cast<size_t>(by) * levelPitch + bx * flowTexelBytes(texture));
                     out.set(static_cast<int>(bx), static_cast<int>(by), 0, v[0]);
                     out.set(static_cast<int>(bx), static_cast<int>(by), 1, v[1]);
                 }
@@ -1402,7 +1405,7 @@ int runNeuralParityCheck(const std::string& frame0Path, const std::string& frame
             for (UINT by = 1; by + 1 < gh && by + 1 < (UINT)cpuFlow.height; ++by)
                 for (UINT bx = 1; bx + 1 < gw && bx + 1 < (UINT)cpuFlow.width; ++bx) {
                     const float* v = reinterpret_cast<const float*>(
-                        bytes.data() + static_cast<size_t>(by) * pitch + bx * kFlowTexelBytes);
+                        bytes.data() + static_cast<size_t>(by) * pitch + bx * flowTexelBytes(flow.entry(result.entry).forward.Get()));
                     const float cx = cpuFlow.get(static_cast<int>(bx), static_cast<int>(by), 0);
                     const float cy = cpuFlow.get(static_cast<int>(bx), static_cast<int>(by), 1);
                     const double error = std::hypot(v[0] - cx, v[1] - cy);

@@ -48,12 +48,12 @@ static const float kEdgeReach = 8.0f;
 static const float kFarReach = 24.0f;
 static const float kSwitchMargin = 0.25f;
 
-// Debug view 4: one arrow per kArrowCell pixels, drawn at half the vector
-// (the move to the midpoint frame) and capped below the cell size so arrows
-// never run into each other; a capped one keeps its direction.
-static const int kArrowCell = 32;
-static const float kArrowScale = 0.5f;
-static const float kArrowMaxLength = 28.0f;
+// Debug view 4: one arrow per kArrowCell pixels, drawn at a quarter of the
+// vector and capped below the cell size so arrows never run into each
+// other; a capped one keeps its direction.
+static const int kArrowCell = 16;
+static const float kArrowScale = 0.25f;
+static const float kArrowMaxLength = 14.0f;
 
 float SegmentDistance(float2 p, float2 a, float2 b)
 {
@@ -237,10 +237,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                     const float speed = length(v);
                     if (speed > kArrowMaxLength) v *= kArrowMaxLength / speed;
                     const float2 tip = start + v;
-                    float d = length(pixel - start) - 1.5f;                  // the dot at the start
+                    float d = length(pixel - start) - 1.0f;                  // the dot at the start
                     if (speed > 0.5f)
                     {
-                        const float2 back = -normalize(v) * min(7.0f, 0.5f * length(v) + 2.0f);
+                        const float2 back = -normalize(v) * min(4.0f, 0.5f * length(v) + 1.5f);
                         const float2 side = float2(-back.y, back.x) * 0.5f;
                         d = min(d, SegmentDistance(pixel, start, tip));
                         d = min(d, SegmentDistance(pixel, tip, tip + back + side));
@@ -253,8 +253,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                     }
                 }
             }
-            if (nearest < 1.0f) color = arrowColor;
-            else if (nearest < 2.0f) color = float3(0.0f, 0.0f, 0.0f);   // outline, readable on any picture
+            if (nearest < 0.75f) color = arrowColor;
+            else if (nearest < 1.5f) color = float3(0.0f, 0.0f, 0.0f);   // outline, readable on any picture
         }
         const bool real = t < 0.01f || t > 0.99f;
         color = DebugMarker(id.xy, color, real ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 1.0f));

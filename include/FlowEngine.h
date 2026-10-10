@@ -91,10 +91,15 @@ public:
     static constexpr int kMaxSlots = 16;
     // DIS: 8x8 patches every kDisStride pixels at every level, kDisIterations
     // Lucas-Kanade steps each, and a ring grid of kDisRingBlock pixels - the
-    // densified field is per pixel, so the ring can be finer than SAD's.
+    // densified field is per pixel, so the ring can be finer than SAD's. At
+    // 4 px, the mean over a block and the bilinear blend of neighbouring
+    // blocks spread an object's motion 2-4 px into the background around
+    // its outline; 2 px halves that (third-person 4x test: 1-2 px outside
+    // the character +0.22 dB, the character +0.1 dB, rendered pairs +0.0 to
+    // +0.2 dB, none worse).
     static constexpr int kDisStride = 4;
     static constexpr int kDisIterations = 12;
-    static constexpr uint32_t kDisRingBlock = 4;
+    static constexpr uint32_t kDisRingBlock = 2;
 
     struct Entry {
         // R32G32B32A32_FLOAT per block: xy = vector in full-resolution

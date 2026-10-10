@@ -224,15 +224,19 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
 
     // Ring entries hold the engine's finest grid - SAD's 8x8 blocks, or
     // DIS's per-pixel field reduced to kDisRingBlock; the consumer indexes
-    // by the entry's block size.
+    // by the entry's block size. DIS writes them from DisToRingCS only and
+    // every reader takes xy, so its entries hold just the vector: at a
+    // 2-pixel grid that is half the memory of the four-channel format SAD's
+    // copies need (2 x 16 entries x 7.4 MB at 1440p).
     const uint32_t ringBlock = disActive() ? kDisRingBlock : sadBlockSize(0);
     const uint32_t ringW = (width + ringBlock - 1) / ringBlock;
     const uint32_t ringH = (height + ringBlock - 1) / ringBlock;
+    const DXGI_FORMAT ringFormat = disActive() ? DXGI_FORMAT_R32G32_FLOAT : kFlowFormat;
     for (auto& entry : m_ring) {
-        if (FAILED(m_device->createTexture2D(ringW, ringH, kFlowFormat,
+        if (FAILED(m_device->createTexture2D(ringW, ringH, ringFormat,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.forward, L"RingForward")) ||
-            FAILED(m_device->createTexture2D(ringW, ringH, kFlowFormat,
+            FAILED(m_device->createTexture2D(ringW, ringH, ringFormat,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.backward, L"RingBackward"))) return false;
         if (m_settings.uiMask &&
