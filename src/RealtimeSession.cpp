@@ -603,12 +603,49 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     if (!offline.begin()) return 1;
     std::array<ID3D12Resource*, 6> in = {tex0.texture12.Get(), tex1.texture12.Get(),
                                          entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), nullptr};
-    if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in, output.texture12.Get(), c,
-                                     (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
+    // With MOTION_ENHANCER_BENCH_ITERS the interpolation pass is timed too:
+    // the same dispatch repeated back to back between two timestamps. Each
+    // repeat rewrites the region's identical descriptors and constants, so
+    // one region serves them all.
+    const int interpolateRepeats = benchIterations > 1 ? 32 : 1;
+    ComPtr<ID3D12QueryHeap> interpolateQueries;
+    ComPtr<ID3D12Resource> interpolateTimes;
+    if (interpolateRepeats > 1) {
+        D3D12_QUERY_HEAP_DESC query = {};
+        query.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+        query.Count = 2;
+        if (FAILED(device.device()->CreateQueryHeap(&query, IID_PPV_ARGS(&interpolateQueries))) ||
+            FAILED(device.createBuffer(2 * sizeof(uint64_t), D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
+                                       D3D12_RESOURCE_FLAG_NONE, interpolateTimes))) {
+            interpolateQueries.Reset();
+        }
+    }
+    if (interpolateQueries) offline.list()->EndQuery(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
+    for (int i = 0; i < interpolateRepeats; ++i) {
+        offline.dispatch().beginRegion(0);
+        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in, output.texture12.Get(), c,
+                                         (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
+    }
+    if (interpolateQueries) {
+        offline.list()->EndQuery(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
+        offline.list()->ResolveQueryData(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, 2,
+                                         interpolateTimes.Get(), 0);
+    }
     uint64_t computeDone = 0;
     if (!offline.execute(flow.fence(), r.fence, &computeDone)) {
         std::cerr << "Error: interpolate dispatch failed\n";
         return 1;
+    }
+    double interpolateMs = 0.0;
+    if (interpolateQueries) {
+        uint64_t frequency = 0;
+        uint64_t* stamps = nullptr;
+        if (SUCCEEDED(device.presentQueue()->GetTimestampFrequency(&frequency)) && frequency &&
+            SUCCEEDED(interpolateTimes->Map(0, nullptr, reinterpret_cast<void**>(&stamps)))) {
+            interpolateMs = static_cast<double>(stamps[1] - stamps[0]) * 1000.0 /
+                            static_cast<double>(frequency) / interpolateRepeats;
+            interpolateTimes->Unmap(0, nullptr);
+        }
     }
     std::vector<uint8_t> bytes;
     UINT w = 0, h = 0, pitch = 0;
@@ -630,7 +667,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     }
     std::cout << "GPU offline interpolation (t = " << t << "): flow " << std::fixed << std::setprecision(2)
               << bestGpuMs << " ms GPU" << (benchIterations > 1 ? " (best of " + std::to_string(benchIterations) + ")" : "")
-              << ", " << elapsedMs << " ms wall incl. readback -> " << outputPath << "\n"
+              << ", " << elapsedMs << " ms wall incl. readback -> " << outputPath << "\n";
+    if (interpolateMs > 0.0) std::cout << "  Interpolate pass: " << interpolateMs << " ms GPU (mean of " << interpolateRepeats << ")\n";
+    std::cout
               << "  Flow estimator: " << (flow.usingFfx() ? "AMD FidelityFX Optical Flow" :
                                              flow.usingNeural() ? "neural learned-feature flow" : flow.usingDis() ? "DIS optical flow" : "native SAD shader graph")
               << " (" << entry.blockSize << "x" << entry.blockSize << " blocks)\n";

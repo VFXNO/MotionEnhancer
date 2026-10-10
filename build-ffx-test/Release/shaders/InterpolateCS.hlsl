@@ -130,8 +130,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     }
     const float2 uv0 = (from0 + 0.5f) * inverseSize;
     const float2 uv1 = (from1 + 0.5f) * inverseSize;
-    const float3 c0 = Frame0.SampleLevel(LinearClamp, uv0, 0).rgb;
-    const float3 c1 = Frame1.SampleLevel(LinearClamp, uv1, 0).rgb;
+    const float3 c0 = SampleSharp(Frame0, from0);
+    const float3 c1 = SampleSharp(Frame1, from1);
     float3 color = lerp(c0, c1, t);
 
     // How much each sample is the content it is meant to be: not on UI, and

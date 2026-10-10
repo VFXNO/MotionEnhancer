@@ -58,8 +58,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     const float2 inverseSize = rcp(float2(Width, Height));
     float2 from0, from1;
     WarpSources(ForwardFlow, BackwardFlow, pixel, t, from0, from1);
-    const float3 c0 = Frame0.SampleLevel(LinearClamp, (from0 + 0.5f) * inverseSize, 0).rgb;
-    const float3 c1 = Frame1.SampleLevel(LinearClamp, (from1 + 0.5f) * inverseSize, 0).rgb;
+    const float3 c0 = SampleSharp(Frame0, from0);
+    const float3 c1 = SampleSharp(Frame1, from1);
     const float damage = MaxComponent(abs(lerp(c0, c1, t) - lerp(p0, p1, t))) * kLumaScale;
     const float change = MaxComponent(abs(p1 - p0)) * kLumaScale;
 
