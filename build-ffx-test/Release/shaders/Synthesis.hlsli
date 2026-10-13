@@ -122,6 +122,78 @@ float3 SampleSharp(Texture2D<float4> frame, float2 position)
     return clamp(result, min(min(a, b), min(c, d)), max(max(a, b), max(c, d)));
 }
 
+// ------------------------------------------------------ motion projection
+//
+// For two-field pairs both fields are projected to the output time before
+// interpolating (ProjectClearCS, ProjectSplatCS): each block is written at
+// the place it occupies at time t, and where several land on one place the
+// one with the lowest priority (most likely visible there) wins. A key is
+// (priority << kProjectionIndexBits) | source block index.
+
+static const uint kProjectionEmpty = 0xFFFFFFFFu;
+// Source block index: 2^21 blocks is a 4K frame at a 2 px grid.
+static const uint kProjectionIndexBits = 21u;
+// Largest stored priority step; one below the top so a key is never empty.
+static const uint kPriorityMax = (1u << (32u - kProjectionIndexBits)) - 2u;
+static const float kPriorityQuantum = 4.0f;    // steps per priority unit
+// Priority per pixel of round-trip error, against one luma level of
+// brightness error: a point hidden in the other frame fails the round trip
+// by the relative motion, tens of pixels, and loses to whatever covers it
+// even where both are flat and the brightness says nothing.
+static const float kRoundTripWeight = 16.0f;
+float ProjectionPriority(float roundTrip, float brightnessError)
+{
+    return kRoundTripWeight * roundTrip + brightnessError;
+}
+
+// The vector of the block projected to this pixel from one half of the
+// projection (0 = forward field, scale t; 1 = backward, scale 1 - t). The
+// winners of the four cells around the pixel are candidates, and the one
+// whose block actually lands nearest the pixel is taken: the cell grid is
+// 2 px, and taking the nearest cell's winner put every outline on that grid
+// (a character's exact silhouette -1.3 dB). Where all four are empty the
+// 3x3 around them is searched - blocks that move apart leave single empty
+// cells - and found = false when that is empty too: that frame does not
+// show this point at time t.
+float2 ProjectedVector(Texture2D<uint> projection, Texture2D<float4> field, uint half, float s, float2 pixel,
+                       out bool found)
+{
+    const uint2 grid = FlowGridSize(Width, Height, BlockSize);
+    const int2 cellMax = int2(grid) - 1;
+    const int offset = (int)(half * grid.x);
+    const float2 position = (pixel - 0.5f * (float)(BlockSize - 1)) / (float)BlockSize;
+    const int2 base = int2(floor(position));
+    float best = 1e30f;
+    float2 vector = float2(0.0f, 0.0f);
+    found = false;
+    [unroll]
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        if (found) break;
+        const int lo = pass == 0 ? 0 : -1;
+        const int hi = pass == 0 ? 1 : 2;
+        for (int dy = lo; dy <= hi; ++dy)
+            for (int dx = lo; dx <= hi; ++dx)
+            {
+                const int2 n = clamp(base + int2(dx, dy), int2(0, 0), cellMax);
+                const uint key = projection.Load(int3(n.x + offset, n.y, 0));
+                if (key == kProjectionEmpty) continue;
+                const uint index = key & ((1u << kProjectionIndexBits) - 1u);
+                const uint2 source = uint2(index % grid.x, index / grid.x);
+                const float2 v = field.Load(int3(source, 0)).xy;
+                const float2 landing = float2(source) * (float)BlockSize + 0.5f * (float)(BlockSize - 1) + s * v;
+                const float d = dot(landing - pixel, landing - pixel);
+                if (d < best)
+                {
+                    best = d;
+                    vector = v;
+                    found = true;
+                }
+            }
+    }
+    return vector;
+}
+
 // ------------------------------------------------------------ static UI
 //
 // Per-pixel evidence that a pixel is screen-fixed UI (a HUD, a subtitle, a

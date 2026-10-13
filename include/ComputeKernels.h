@@ -20,6 +20,13 @@ enum class Kernel : int {
     DisPatch,
     DisDensify,
     DisToRing,
+    FfxRefineInit,
+    FfxRefineIterate,
+    FfxRefineToRing,
+    FfxRefineConsist,
+    OcclusionFill,
+    ProjectClear,
+    ProjectSplat,
     Count
 };
 

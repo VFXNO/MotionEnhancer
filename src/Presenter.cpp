@@ -88,6 +88,7 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     if (FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
                                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                        D3D12_RESOURCE_STATE_COMMON, m_output, L"PresentOutput"))) return false;
+    if (!createProjection(*device, width, height, m_projection)) return false;
 
     for (auto& set : m_commands) {
         if (FAILED(d3d->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&set.allocator)))) return false;
@@ -189,6 +190,33 @@ void Presenter::revealWindow() {
     m_revealed = true;
 }
 
+bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource>& projection) {
+    const uint32_t gw = (width + 1) / 2;
+    const uint32_t gh = (height + 1) / 2;
+    return SUCCEEDED(device.createTexture2D(2 * gw, gh, DXGI_FORMAT_R32_UINT, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                            D3D12_RESOURCE_STATE_COMMON, projection, L"MotionProjection"));
+}
+
+bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
+                       const ShaderConstants& c, ID3D12Resource* frame0, ID3D12Resource* frame1,
+                       ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
+                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs) {
+    const bool project = c.flowScale == 0.0f && projection;
+    if (project) {
+        const uint32_t block = static_cast<uint32_t>(std::max(1, c.blockSize));
+        const uint32_t gw = (c.width + block - 1) / block;
+        const uint32_t gh = (c.height + block - 1) / block;
+        std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        std::array<ID3D12Resource*, 6> splat = {frame0, frame1, forward, backward, nullptr, nullptr};
+        if (!dispatch.dispatch(list, kernels, Kernel::ProjectClear, none, projection, c, (2 * gw + 15) / 16, (gh + 15) / 16) ||
+            !dispatch.dispatch(list, kernels, Kernel::ProjectSplat, splat, projection, c, (2 * gw + 15) / 16, (gh + 15) / 16,
+                               implicitInputs & 0x3)) return false;
+    }
+    std::array<ID3D12Resource*, 6> in = {frame0, frame1, forward, backward, uiMask, project ? projection : nullptr};
+    return dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, c,
+                             (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs);
+}
+
 static std::atomic<int> g_debugView{0};
 
 void cycleDebugView() {
@@ -233,12 +261,10 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         c.blockSize = c.parentBlockSize = job.flowBlockSize;
         c.timeT = std::clamp(job.alpha, 0.0f, 1.0f);
         c.flowScale = job.singleFlowField ? 1.0f : 0.0f;
-        std::array<ID3D12Resource*, 6> in = {job.frame0, job.frame1, job.forwardFlow, job.backwardFlow,
-                                             job.uiMask, nullptr};
         // The UI mask is promoted implicitly: the flow queue may be reading
         // it at the same moment as the next pair's prior evidence.
-        ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::Interpolate, in, m_output.Get(), c,
-                                 (m_width + 15) / 16, (m_height + 15) / 16, 0x13);
+        ok = recordInterpolate(m_list.Get(), m_dispatch, *m_kernels, c, job.frame0, job.frame1, job.forwardFlow,
+                               job.backwardFlow, job.uiMask, m_projection.Get(), m_output.Get(), 0x13);
     }
     if (!ok) {
         m_list->Close();

@@ -612,9 +612,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     c.height = c.levelHeight = height;
     setInterpolationConstants(c, entry, t);
     c.neuralControl[1] = offlineDebugView();
+    ComPtr<ID3D12Resource> projection;
+    if (!createProjection(device, width, height, projection)) return 1;
     if (!offline.begin()) return 1;
-    std::array<ID3D12Resource*, 6> in = {tex0.texture12.Get(), tex1.texture12.Get(),
-                                         entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), nullptr};
     // With MOTION_ENHANCER_BENCH_ITERS the interpolation pass is timed too:
     // the same dispatch repeated back to back between two timestamps. Each
     // repeat rewrites the region's identical descriptors and constants, so
@@ -635,8 +635,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     if (interpolateQueries) offline.list()->EndQuery(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
     for (int i = 0; i < interpolateRepeats; ++i) {
         offline.dispatch().beginRegion(0);
-        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in, output.texture12.Get(), c,
-                                         (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
+        if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, tex0.texture12.Get(), tex1.texture12.Get(),
+                               entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), projection.Get(),
+                               output.texture12.Get(), 0x13)) return 1;
     }
     if (interpolateQueries) {
         offline.list()->EndQuery(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
@@ -759,6 +760,9 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
     for (int i = 0;; ++i) {
         char name[MAX_PATH];
         std::snprintf(name, sizeof(name), "%s_f%03d.png", prefix.c_str(), i);
+        // The first missing number ends the sequence; checked before loading
+        // so the normal end is not reported as a failed load.
+        if (GetFileAttributesA(name) == INVALID_FILE_ATTRIBUTES) break;
         Image image = Image::load(name);
         if (image.empty()) break;
         frames.push_back(std::move(image));
@@ -798,10 +802,13 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
     }
     SharedTexture output;
     if (!device.createSharedTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, output)) return 1;
+    ComPtr<ID3D12Resource> projection;
+    if (!createProjection(device, width, height, projection)) return 1;
 
+    // The engine is named after the pairs ran: which one runs is decided per
+    // submission (FFX can fall back), so before the first it reads as SAD.
     std::cout << "Sequence replay: " << frames.size() << " frames at " << width << "x" << height
-              << ", " << flow.searchedLevels() << " levels, engine "
-              << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n"
+              << ", " << flow.searchedLevels() << " levels\n"
               << "  pair   PSNR dB   blend dB   UI px %   centre vector\n";
 
     double first = 0.0, last = 0.0;
@@ -819,13 +826,9 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         setInterpolationConstants(c, entry, 0.5f);
         c.neuralControl[1] = offlineDebugView();
         if (!offline.begin()) return 1;
-        std::array<ID3D12Resource*, 6> in = {textures[i].texture12.Get(),
-                                             textures[i + 1].texture12.Get(),
-                                             entry.forward.Get(), entry.backward.Get(),
-                                             entry.uiMaskInput(), nullptr};
-        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in,
-                                         output.texture12.Get(), c,
-                                         (width + 15) / 16, (height + 15) / 16, 0x13)) return 1;
+        if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, textures[i].texture12.Get(),
+                               textures[i + 1].texture12.Get(), entry.forward.Get(), entry.backward.Get(),
+                               entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13)) return 1;
         uint64_t done = 0;
         if (!offline.execute(flow.fence(), result.fence, &done)) return 1;
 
@@ -899,6 +902,8 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
                   << std::setw(10) << psnr << std::setw(11) << blendPsnr << std::setw(10) << uiPercent
                   << "   (" << vx << ", " << vy << ")\n";
     }
+    std::cout << "  engine: "
+              << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n";
     if (measured >= 2) {
         std::cout << "  first " << std::fixed << std::setprecision(2) << first
                   << " dB, last " << last << " dB, drift " << (last - first) << " dB"
@@ -1476,10 +1481,11 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
     c.width = c.levelWidth = 320;
     c.height = c.levelHeight = 240;
     setInterpolationConstants(c, entry, 0.5f);
-    if (!offline.begin()) return 1;
-    std::array<ID3D12Resource*, 6> in = {tex0.texture12.Get(), tex1.texture12.Get(),
-                                         entry.forward.Get(), entry.backward.Get(), nullptr, nullptr};
-    if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::Interpolate, in, output.texture12.Get(), c, 20, 15, 0x3) ||
+    ComPtr<ID3D12Resource> projection;
+    if (!createProjection(device, 320, 240, projection) || !offline.begin()) return 1;
+    if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, tex0.texture12.Get(), tex1.texture12.Get(),
+                           entry.forward.Get(), entry.backward.Get(), nullptr, projection.Get(), output.texture12.Get(),
+                           0x3) ||
         !offline.execute(flow.fence(), r.fence)) {
         std::cerr << "D3D12 self-test: FAIL (interpolate)\n";
         return 1;

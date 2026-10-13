@@ -59,10 +59,29 @@ struct FlowSettings {
     // pairs it measured 45.7 dB against SAD's 44.6, ahead on 9 of 10, and
     // 48.3 against 37.5 on the CS2-style sequence.
     bool disFlow = true;
+    // With FFX: refine its whole-pixel 8x8 field into a per-pixel one at half
+    // resolution by variational refinement (FfxRefine.hlsli), stored on a
+    // 2x2 grid. Off = FFX's field as it comes.
+    bool ffxRefine = true;
+    // With the refinement: refine a forward field as well, from FFX's
+    // turned around, so the two directions are estimated separately and
+    // InterpolateCS's occlusion weighting can tell which frame shows a
+    // point (FfxRefineConsistCS). Off by default: on the third-person 4x
+    // test it sharpens the character (+0.5 dB) but costs the background
+    // (-1.0 dB) and step-to-step smoothness (+20% temporal error), because
+    // FFX's field is not accurate enough at edges for the test to separate
+    // occlusion from FFX's own errors. Off = FFX's single field, negated
+    // for the forward direction.
+    bool ffxOcclusion = false;
     bool allowTrainedModel = true; // false while gathering offline training examples
     // Keep screen-fixed UI (HUD, subtitles, logos) out of the warp. Per
     // pixel and confirmed over several pairs; see UiMaskCS.hlsl.
     bool uiMask = true;
+    // DIS: give the blocks beside a moving object that neither field
+    // confirms one consistent vector - the visible surface's where the
+    // picture says so, the background's where the block is hidden in the
+    // other frame (OcclusionFillCS). Once per pair, on the ring grid.
+    bool occlusionFill = true;
 };
 
 // A frame's contribution to the flow queue: the shared capture texture and
@@ -213,17 +232,22 @@ private:
     bool recordDis(const FlowInput& previous, const FlowInput& current, Entry& out);
     int statsLevel() const { return std::max(0, m_levels - 3); }
     // DIS runs unless a learned model is loaded (the neural estimator is
-    // built on the SAD graph) or FFX is selected (FFX fills an 8x8 ring and
-    // falls back to SAD, which fills the same grid).
+    // built on the SAD graph). With FFX selected it is the fallback only when
+    // FFX's field is refined: refined FFX fills DIS's 2x2 ring, plain FFX
+    // fills an 8x8 one and falls back to SAD, which fills the same grid.
     bool disActive() const {
-        return m_settings.disFlow && !m_neuralModelLoaded && !m_settings.preferFfxOpticalFlow;
+        if (m_neuralModelLoaded) return false;
+        return m_settings.preferFfxOpticalFlow ? m_settings.ffxRefine : m_settings.disFlow;
     }
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     bool createFfx();
     void destroyFfx();
     bool recordFfx(const FlowInput& previous, const FlowInput& current, Entry& out);
+    bool recordFfxRefine(const FlowInput& previous, const FlowInput& current, Entry& out);
+    bool ffxRefineActive() const { return m_settings.preferFfxOpticalFlow && disActive(); }
 #endif
     bool recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex, Entry& out);
+    bool recordOcclusionFill(const FlowInput& previous, const FlowInput& current, Entry& out);
     void readTimestamps(UINT set);
 
     GraphicsDevice* m_device = nullptr;
@@ -280,6 +304,9 @@ private:
     // --gpu-flow-eval.
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_disPatch;   // [dir][level]
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_disDense;
+    // Occlusion fill: one ring-sized field per direction, so both are filled
+    // from the unfilled pair before either is written back.
+    std::array<ComPtr<ID3D12Resource>, 2> m_fillScratch;
     bool m_usingDis = false;
 
 
@@ -298,6 +325,11 @@ private:
     FfxInterface m_ffxInterface = {};
     std::vector<uint8_t> m_ffxScratch;
     ComPtr<ID3D12Resource> m_ffxVectors;   // R16G16_SINT, 8x8 grid, current -> previous
+    // Refinement (FfxRefine.hlsli), at half resolution: the field, two
+    // R32G32_FLOAT buffers ping-ponged by the outer iterations (one
+    // FfxRefineIterateCS dispatch each).
+    static constexpr int kFfxRefineOuter = 3;
+    std::array<ComPtr<ID3D12Resource>, 2> m_refineField;
     ComPtr<ID3D12Resource> m_ffxScd;
     uint64_t m_ffxLastId = UINT64_MAX;     // last frame fed to the temporal chain
 #endif

@@ -7,7 +7,6 @@ namespace {
 // Flow is four floats per block: xy = vector, zw = the per-axis confidence
 // FillFlowCS needs to tell a measured component from an inherited one.
 constexpr DXGI_FORMAT kFlowFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-constexpr UINT kFlowTexelBytes = 16;
 
 // One place that copies the model into the constant buffer, for every pass
 // that needs it. The previous code unpacked the weights into five separate
@@ -244,18 +243,35 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
     }
+    if (disActive() && m_settings.occlusionFill) {
+        for (auto& scratch : m_fillScratch) {
+            if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R32G32_FLOAT,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, scratch, L"OcclusionFill"))) return false;
+        }
+    }
 
 
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
-    if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R16G16_SINT,
+    if (FAILED(m_device->createTexture2D((width + 7) / 8, (height + 7) / 8, DXGI_FORMAT_R16G16_SINT,
                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                          D3D12_RESOURCE_STATE_COMMON, m_ffxVectors, L"FfxVectors")) ||
         FAILED(m_device->createTexture2D(3, 1, DXGI_FORMAT_R32_UINT,
                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                          D3D12_RESOURCE_STATE_COMMON, m_ffxScd, L"FfxScd"))) return false;
+    if (ffxRefineActive()) {
+        const uint32_t hw = std::max(1u, width >> 1);
+        const uint32_t hh = std::max(1u, height >> 1);
+        for (auto& field : m_refineField) {
+            if (FAILED(m_device->createTexture2D(hw, hh, DXGI_FORMAT_R32G32_FLOAT,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, field, L"FfxRefineField"))) return false;
+        }
+    }
     if (!createFfx()) {
-        std::cerr << "FlowEngine: AMD FidelityFX Optical Flow unavailable; using the SAD graph.\n";
+        std::cerr << "FlowEngine: AMD FidelityFX Optical Flow unavailable; using "
+                  << (disActive() ? "DIS" : "the SAD graph") << ".\n";
     }
 #endif
     return true;
@@ -329,6 +345,8 @@ bool FlowEngine::recordFfx(const FlowInput& previous, const FlowInput& current, 
     if (!ok) return false;
     m_ffxLastId = current.id;
 
+    if (ffxRefineActive()) return recordFfxRefine(previous, current, out);
+
     // FFX vectors are current -> previous on an 8x8 grid: that is our
     // backward field; the forward field is its negation.
     ShaderConstants c = {};
@@ -346,6 +364,76 @@ bool FlowEngine::recordFfx(const FlowInput& previous, const FlowInput& current, 
                                     (fw + 15) / 16, (fh + 15) / 16);
     out.blockSize = 8;
     out.singleField = true;
+    return ok;
+}
+
+// FFX's field refined at half resolution (FfxRefine.hlsli): spread from its
+// 8x8 grid to every half-resolution pixel, then kFfxRefineOuter iterations
+// of FfxRefineIterateCS (linearise around the field, solve for the update,
+// add it). The result fills the ring's 2x2 grid. With ffxOcclusion the
+// forward field is refined the same way, from FFX's turned around, with the
+// two frames' roles swapped - two fields, as DIS gives; otherwise the entry
+// is FFX's single field on frame1's grid.
+bool FlowEngine::recordFfxRefine(const FlowInput& previous, const FlowInput& current, Entry& out) {
+    ID3D12GraphicsCommandList* list = m_list.Get();
+    Pyramid& prevPyramid = m_pyramids[static_cast<size_t>(std::clamp(previous.slot, 0, m_slotCount - 1))];
+    Pyramid& currPyramid = m_pyramids[static_cast<size_t>(std::clamp(current.slot, 0, m_slotCount - 1))];
+    if (&prevPyramid == &currPyramid || !m_refineField[0] || m_levels < 2) return false;
+    bool ok = true;
+    if (prevPyramid.id != previous.id) ok &= recordPyramid(previous, prevPyramid);
+    if (ok && currPyramid.id != current.id) ok &= recordPyramid(current, currPyramid);
+
+    ShaderConstants c = {};
+    c.width = m_width;
+    c.height = m_height;
+    c.levelWidth = std::max(1u, m_width >> 1);
+    c.levelHeight = std::max(1u, m_height >> 1);
+    c.levelIndex = 1;
+    c.totalLevels = m_levels;
+    const UINT gx = (c.levelWidth + 15) / 16;
+    const UINT gy = (c.levelHeight + 15) / 16;
+
+    // FfxRefineIterateCS writes the inner 12x12 of each 16x16 tile.
+    const UINT tx = (c.levelWidth + 11) / 12;
+    const UINT ty = (c.levelHeight + 11) / 12;
+    const uint32_t rw = (m_width + 1) / 2;
+    const uint32_t rh = (m_height + 1) / 2;
+    const bool twoFields = m_settings.ffxOcclusion;
+    // Direction 0 = backward (frame1 the reference), 1 = forward (frame0).
+    for (int direction = 0; ok && direction < (twoFields ? 2 : 1); ++direction) {
+        const Pyramid& ref = direction == 0 ? currPyramid : prevPyramid;
+        const Pyramid& cand = direction == 0 ? prevPyramid : currPyramid;
+        c.flowScale = direction == 0 ? 1.0f : -1.0f;   // FfxRefineInitCS: as given / turned around
+        std::array<ID3D12Resource*, 6> in = {m_ffxVectors.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+        ok = m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineInit, in, m_refineField[0].Get(), c, gx, gy);
+        int field = 0;
+        for (int outer = 0; ok && outer < kFfxRefineOuter; ++outer) {
+            in = {ref.level[1].Get(), cand.level[1].Get(), m_refineField[field].Get(),
+                  ref.stats.Get(), cand.stats.Get(), nullptr};
+            ok &= m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineIterate, in,
+                                      m_refineField[1 - field].Get(), c, tx, ty);
+            field = 1 - field;
+        }
+        c.flowScale = 1.0f;
+        if (direction == 0) {
+            in = {m_refineField[field].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+            ok = ok && m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineToRing, in, out.backward.Get(), c,
+                                           (rw + 15) / 16, (rh + 15) / 16);
+        } else {
+            // Forward: the backward entry turned around wherever the two
+            // agree, the refined forward field where they do not.
+            in = {m_refineField[field].Get(), out.backward.Get(), nullptr, nullptr, nullptr, nullptr};
+            ok = ok && m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineConsist, in, out.forward.Get(), c,
+                                           (rw + 15) / 16, (rh + 15) / 16);
+        }
+        if (ok && !twoFields) {
+            c.flowScale = -1.0f;
+            ok = m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineToRing, in, out.forward.Get(), c,
+                                     (rw + 15) / 16, (rh + 15) / 16);
+        }
+    }
+    out.blockSize = 2;
+    out.singleField = !twoFields;
     return ok;
 }
 #endif
@@ -604,6 +692,40 @@ bool FlowEngine::recordDis(const FlowInput& previous, const FlowInput& current, 
     return ok;
 }
 
+// ------------------------------------------------------- occlusion fill
+
+// Both directions of a finished DIS pair (OcclusionFillCS): each is filled
+// from the unfilled pair into its scratch field, then both are copied back.
+bool FlowEngine::recordOcclusionFill(const FlowInput& previous, const FlowInput& current, Entry& out) {
+    if (!m_settings.occlusionFill || out.singleField || !m_fillScratch[0]) return true;
+    ID3D12GraphicsCommandList* list = m_list.Get();
+    ShaderConstants c = {};
+    c.width = c.levelWidth = m_width;
+    c.height = c.levelHeight = m_height;
+    c.blockSize = c.parentBlockSize = static_cast<int32_t>(out.blockSize);
+    const uint32_t gw = (m_width + out.blockSize - 1) / out.blockSize;
+    const uint32_t gh = (m_height + out.blockSize - 1) / out.blockSize;
+    ID3D12Resource* fields[2] = {out.forward.Get(), out.backward.Get()};
+    ID3D12Resource* frames[2] = {previous.texture, current.texture};
+    bool ok = true;
+    for (int d = 0; ok && d < 2; ++d) {
+        // Inputs 2-3 are the shared capture textures: implicit promotion.
+        std::array<ID3D12Resource*, 6> in = {fields[d], fields[1 - d], frames[d], frames[1 - d], nullptr, nullptr};
+        ok = m_dispatch.dispatch(list, *m_kernels, Kernel::OcclusionFill, in, m_fillScratch[d].Get(), c,
+                                 (gw + 15) / 16, (gh + 15) / 16, 0xC);
+    }
+    for (int d = 0; ok && d < 2; ++d) {
+        DispatchContext::transition(list, m_fillScratch[d].Get(), D3D12_RESOURCE_STATE_COMMON,
+                                    D3D12_RESOURCE_STATE_COPY_SOURCE);
+        DispatchContext::transition(list, fields[d], D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyResource(fields[d], m_fillScratch[d].Get());
+        DispatchContext::transition(list, fields[d], D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+        DispatchContext::transition(list, m_fillScratch[d].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE,
+                                    D3D12_RESOURCE_STATE_COMMON);
+    }
+    return ok;
+}
+
 // ------------------------------------------------------------ static UI
 
 // Updates the static-UI evidence for this pair from the previous pair's, by
@@ -716,9 +838,13 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         if (!ok) {
             // Never execute a partially recorded FFX list; rebuild it with
             // the SAD graph and stop trying FFX for this stream.
-            std::cerr << "FlowEngine: FFX dispatch failed; switching to the SAD graph.\n";
+            std::cerr << "FlowEngine: FFX dispatch failed; switching to "
+                      << (disActive() ? "DIS" : "the SAD graph") << ".\n";
             m_list->Close();
             m_ffxReady = false;
+            // The discarded list may have built luma pyramids (the
+            // refinement does) and marked them current; they never ran.
+            for (Pyramid& pyramid : m_pyramids) pyramid.id = UINT64_MAX;
             if (!beginList()) return result;
         }
     }
@@ -726,6 +852,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     m_usingFfx = ok;
     m_usingDis = !ok && disActive();
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
+    if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
     if (ok) ok = recordUiMask(previous, current, entryIndex, scratch);
     if (!ok) {
         m_list->Close();

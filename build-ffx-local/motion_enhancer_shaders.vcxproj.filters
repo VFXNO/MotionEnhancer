@@ -13,6 +13,18 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxFlowConvertCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRefineConsistCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRefineInitCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRefineIterateCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRefineToRingCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FillFlowCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
@@ -31,10 +43,19 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\MotionSearchCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\OcclusionFillCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\PackLumaCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\PresentFrameCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\ProjectClearCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\ProjectSplatCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\PyramidCS.cso.rule">

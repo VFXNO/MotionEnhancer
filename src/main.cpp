@@ -307,6 +307,12 @@ int main(int argc, char** argv) {
             gpuSettings.refineSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
         } else if (arg == "--no-ui-mask") {
             gpuSettings.uiMask = false;
+        } else if (arg == "--no-occlusion-fill") {
+            gpuSettings.occlusionFill = false;
+        } else if (arg == "--no-ffx-refine") {
+            gpuSettings.ffxRefine = false;
+        } else if (arg == "--ffx-occlusion") {
+            gpuSettings.ffxOcclusion = true;
         } else if (arg == "--gpu-smoothness" && i + 1 < argc) {
             gpuSettings.smoothnessWeight = std::clamp(std::stof(argv[++i]), 0.0f, 0.1f);
         } else if (arg == "--flow-engine" && i + 1 < argc) {

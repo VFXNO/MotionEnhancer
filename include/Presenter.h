@@ -14,6 +14,20 @@ constexpr int kDebugViewCount = 5;
 void cycleDebugView();
 int debugView();
 
+// Records the interpolation of one output frame into `list`: for a
+// two-field pair (constants.flowScale == 0) the motion projection to
+// constants.timeT first (ProjectClearCS, ProjectSplatCS into `projection`),
+// then InterpolateCS. `projection` comes from createProjection(). Bits of
+// implicitInputs mark frame0, frame1 (0x1, 0x2) and uiMask (0x10) as read
+// through implicit promotion, as DispatchContext::dispatch takes them.
+bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
+                       const ShaderConstants& constants, ID3D12Resource* frame0, ID3D12Resource* frame1,
+                       ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
+                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs);
+// The projection for frames of width x height, at any flow grid of 2 px or
+// coarser.
+bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource>& projection);
+
 // One interpolated (or pass-through) output frame.
 struct RenderJob {
     ID3D12Resource* frame0 = nullptr;
@@ -95,6 +109,7 @@ private:
     std::array<ComPtr<ID3D12Resource>, kBackBuffers> m_backBuffers;
     HANDLE m_latencyWaitable = nullptr;
     ComPtr<ID3D12Resource> m_output;
+    ComPtr<ID3D12Resource> m_projection;
 
     ComPtr<ID3D12GraphicsCommandList> m_list;
     std::array<CommandSet, kBackBuffers> m_commands;

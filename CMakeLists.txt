@@ -132,12 +132,14 @@ if(WIN32)
         DOC "DirectX Shader Compiler")
     if(DXC_EXECUTABLE)
         set(DXC_OUTPUTS)
-        set(MOTION_ENHANCER_SHADERS Common.hlsli Synthesis.hlsli Photometric.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
+        set(MOTION_ENHANCER_SHADERS Common.hlsli Synthesis.hlsli Photometric.hlsli FfxRefine.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
-                                      DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl)
+                                      DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
-            list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl)
+            list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
+                                                FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl)
         endif()
         foreach(SHADER IN LISTS MOTION_ENHANCER_SHADERS)
             if(SHADER MATCHES "\\.hlsl$")
@@ -160,6 +162,7 @@ if(WIN32)
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Common.hlsli"
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Synthesis.hlsli"
                             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Photometric.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/FfxRefine.hlsli"
                     VERBATIM)
                 list(APPEND DXC_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}")
             endif()

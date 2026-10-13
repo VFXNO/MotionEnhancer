@@ -86,7 +86,7 @@ constexpr COLORREF ColText      = RGB(232, 238, 244);
 constexpr COLORREF ColDim       = RGB(132, 148, 164);
 constexpr COLORREF ColTextOn    = RGB(3, 14, 18);
 
-constexpr RECT LivePanelRect = { 36, 172, 36 + 794, 172 + 176 };
+constexpr RECT LivePanelRect = { 36, 172, 36 + 794, 172 + 206 };
 constexpr RECT OfflinePanelRect = { 36, 272, 36 + 794, 272 + 330 };
 constexpr RECT TrainPanelRect = { 36, 514, 36 + 794, 514 + 240 };
 
@@ -116,6 +116,9 @@ struct GuiState {
     HWND gpuRefineRadius = nullptr;
     HWND gpuSmoothness = nullptr;
     HWND uiMask = nullptr;
+    HWND ffxRefine = nullptr;
+    HWND occlusionFill = nullptr;
+    HWND ffxOcclusion = nullptr;
     HWND input0 = nullptr;
     HWND input1 = nullptr;
     HWND output = nullptr;
@@ -224,6 +227,27 @@ HWND addControl(const char* className, const char* text, DWORD style,
 // ------------------------------------------------------------------
 LRESULT CALLBACK styledControlProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
                                    UINT_PTR subclassId, DWORD_PTR refData) {
+    // Checkboxes are BS_OWNERDRAW buttons (BS_AUTOCHECKBOX | BS_OWNERDRAW is
+    // just BS_OWNERDRAW), and an owner-drawn button keeps no check state:
+    // Windows ignores BM_SETCHECK on it and BM_GETCHECK returns 0. So every
+    // checkbox read as unchecked - "Keep static UI sharp" launched every GUI
+    // capture with --no-ui-mask - and a click changed nothing. The state is
+    // kept here instead, and the main window toggles it on BN_CLICKED.
+    if (GetPropA(hwnd, "MeCheckbox")) {
+        switch (message) {
+            case BM_GETCHECK:
+                return GetPropA(hwnd, "MeChecked") ? BST_CHECKED : BST_UNCHECKED;
+            case BM_SETCHECK:
+                if (wParam == BST_CHECKED) SetPropA(hwnd, "MeChecked", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(1)));
+                else RemovePropA(hwnd, "MeChecked");
+                InvalidateRect(hwnd, nullptr, FALSE);
+                return 0;
+            case WM_NCDESTROY:
+                RemovePropA(hwnd, "MeChecked");
+                RemovePropA(hwnd, "MeCheckbox");
+                break;
+        }
+    }
     switch (message) {
         case WM_MOUSEMOVE:
             if (g_hover != hwnd) {
@@ -875,6 +899,11 @@ void startCapture() {
         "--adapter", adapterArg
     };
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
+    // FFX only; the other engines ignore both. Occlusion handling is part of
+    // the refinement, so it needs the refinement on.
+    if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
+    if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
+    if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
     if (!launchJob(captureArgs, JobType::Live, true, modelPath)) {
         CloseHandle(stopEvent);
         SetWindowTextA(g_state.liveStatus, "Could not start the capture process.");
@@ -1006,10 +1035,12 @@ HWND makeCheckbox(const char* text, int x, int y, int w, bool checked) {
         "BUTTON", text,
         BS_AUTOCHECKBOX | BS_OWNERDRAW,
         x, y, w, 24, 0);
-    SendMessageA(checkbox, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
+    // Tagged and subclassed before the initial state is set: the state lives
+    // in styledControlProc (see there).
     SetPropA(checkbox, "MeCheckbox", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(1)));
     setControlFont(checkbox, g_fontLabel);
     SetWindowSubclass(checkbox, styledControlProc, 1, 0);
+    SendMessageA(checkbox, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
     return checkbox;
 }
 
@@ -1063,9 +1094,17 @@ void createControls() {
     SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 3, 0);   // DIS
     // Static UI (HUD, subtitles, logos) is shown where it is instead of
     // being dragged along by the motion underneath it. See UiMaskCS.hlsl.
-    g_state.uiMask = makeCheckbox("Keep static UI sharp (HUD, subtitles, logos)", 56, 326, 420, true);
+    g_state.uiMask = makeCheckbox("Keep static UI sharp (HUD, subtitles, logos)", 56, 318, 420, true);
+    // DIS: one consistent motion for the band beside a moving object
+    // (FlowSettings::occlusionFill, OcclusionFillCS.hlsl).
+    g_state.occlusionFill = makeCheckbox("Fill occlusion bands (DIS)", 490, 318, 300, true);
+    // FFX engine only (FlowSettings::ffxRefine / ffxOcclusion): refine FFX's
+    // whole-pixel 8x8 field per pixel, and - experimental, off by default -
+    // estimate both directions so occlusions are handled as with DIS.
+    g_state.ffxRefine = makeCheckbox("FFX: refine motion", 56, 346, 220, true);
+    g_state.ffxOcclusion = makeCheckbox("FFX: occlusion handling (experimental)", 290, 346, 400, false);
 
-    g_state.captureButton = makeButton("START CAPTURE", 36, 372, 180, 40, IDC_START_CAPTURE);
+    g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
     HWND liveHelp = addControl(
         "STATIC",
         "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay, Ctrl+Alt+F3 cycles debug views.",
@@ -1098,7 +1137,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.captureButton, liveHelp, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
@@ -1301,6 +1340,15 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         }
 
         case WM_COMMAND:
+            // A click (or Space) on a checkbox flips its state; they keep
+            // it themselves (styledControlProc).
+            if (HIWORD(wParam) == BN_CLICKED && lParam &&
+                GetPropA(reinterpret_cast<HWND>(lParam), "MeCheckbox")) {
+                HWND box = reinterpret_cast<HWND>(lParam);
+                const bool checked = SendMessageA(box, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                SendMessageA(box, BM_SETCHECK, checked ? BST_UNCHECKED : BST_CHECKED, 0);
+                return 0;
+            }
             switch (LOWORD(wParam)) {
                 case IDC_TAB_LIVE:
                     if (g_state.activeTab != 0) {

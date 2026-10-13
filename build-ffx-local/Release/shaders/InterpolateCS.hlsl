@@ -28,6 +28,7 @@ Texture2D<float4> Frame1 : register(t1);
 Texture2D<float4> ForwardFlow : register(t2);
 Texture2D<float4> BackwardFlow : register(t3);
 Texture2D<float> UiMask : register(t4);
+Texture2D<uint> Projection : register(t5);   // two-field pairs: ProjectSplatCS's winners at time t
 RWTexture2D<float4> Output : register(u0);
 
 // Confirmed UI pixels (of 9, including this one) a pixel needs around it to
@@ -47,6 +48,24 @@ static const float kTrajectoryScale = 5.0f;
 static const float kEdgeReach = 8.0f;
 static const float kFarReach = 24.0f;
 static const float kSwitchMargin = 0.25f;
+// Soft choice at a near tie (ClosestTrajectory): the runner-up's sample is
+// blended in with weight exp(-((r2 - r1) / kTieWidth)^2) when the best
+// trajectory itself closes worse than kTieGate pixels (an occlusion band,
+// not the clean field elsewhere).
+static const float kTieWidth = 1.0f;
+static const float kTieGate = 0.5f;
+// How far (px) one trajectory step may move a projected vector and still be
+// taken (see the projection in CSMain).
+static const float kRefineReach = 3.0f;
+// Brightness disagreement (levels) between a pair's two samples at which a
+// candidate pair counts e^-1 in the choice between the projected pair and
+// the trajectory-search pair.
+static const float kAgreement = 8.0f;
+// Below this disagreement (levels) between the projected pair's samples the
+// trajectory search is skipped: the projected pair is already right, and
+// that is most of the frame (the pass went from 1.2 to about 0.6 ms at
+// 1440p with no measurable change in quality).
+static const float kSearchBelow = 2.0f;
 
 // Debug view 4: one arrow per kArrowCell pixels, drawn at a quarter of the
 // vector and capped below the cell size so arrows never run into each
@@ -102,10 +121,27 @@ float TrajectoryWeight(float residual)
 // geometric test, not a photometric one: in uniform motion every candidate
 // is the same vector and nothing can switch, and at an edge the vector that
 // wins is the one the field itself confirms at the place it points to.
-float2 ClosestTrajectory(Texture2D<float4> flow, float2 pixel, float s, out float residual)
+//
+// The runner-up - the best clearly different vector (more than half a pixel
+// from the winner) and its residual - is returned as well. In an occlusion
+// band two candidates often close almost equally, and a hard choice made
+// per pixel there picks one or the other from pixel to pixel: the band
+// came out as blocky fragments of both sources ("pixelated noise" beside a
+// turning character). The caller blends the two samples by how close the
+// tie is instead (kTieWidth, kTieGate). Measured on the third-person 4x
+// test: high-frequency noise in the 1-12 px outside the character -12%,
+// that band +0.1 dB, the character's exact silhouette +0.14 dB, temporal
+// error unchanged. Blending every near tie, not only where the best
+// trajectory closes badly, removed more noise (-17%) but also blended two
+// valid vectors in the clean background and raised the whole frame's
+// temporal error 3%.
+float2 ClosestTrajectory(Texture2D<float4> flow, float2 pixel, float s, out float residual,
+                         out float2 runnerUp, out float runnerUpResidual)
 {
     float2 best = TrackFlow(flow, pixel, s);
     residual = s * length(SampleFlow(flow, pixel - s * best) - best);
+    runnerUp = best;
+    runnerUpResidual = 1e30f;
     // Two reaches: a few pixels covers the bilinear ramp of the block grid;
     // the band uncovered beside a fast object is as wide as its relative
     // motion, so the far side is also looked for further out.
@@ -117,8 +153,18 @@ float2 ClosestTrajectory(Texture2D<float4> flow, float2 pixel, float s, out floa
         const float r = s * length(SampleFlow(flow, pixel - s * v) - v);
         if (r < residual - kSwitchMargin)
         {
+            if (length(best - v) > 0.5f)
+            {
+                runnerUp = best;
+                runnerUpResidual = residual;
+            }
             best = v;
             residual = r;
+        }
+        else if (r < runnerUpResidual && length(best - v) > 0.5f)
+        {
+            runnerUp = v;
+            runnerUpResidual = r;
         }
     }
     return best;
@@ -131,41 +177,144 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     const float t = saturate(TimeT);
     const float2 pixel = float2(id.xy);
     const float2 inverseSize = rcp(float2(Width, Height));
-    float2 from0, from1;
-    float residual0 = 0.0f, residual1 = 0.0f;
+    float2 from0 = pixel, from1 = pixel;
+    float3 c0, c1;
+    float trust0 = 1.0f, trust1 = 1.0f;
+    bool search = false;     // run the trajectory search
+    bool hybrid = false;     // ... as the second candidate next to the projected pair
     if (FlowScale == 0.0f)
     {
-        from0 = pixel - t * ClosestTrajectory(ForwardFlow, pixel, t, residual0);
-        from1 = pixel - (1.0f - t) * ClosestTrajectory(BackwardFlow, pixel, 1.0f - t, residual1);
+        // The projected fields: each frame's sample comes from the block of
+        // that frame that is at this pixel at time t, and a frame none of
+        // whose blocks is here does not show this point - its sample is
+        // left out. Only where neither frame has a block here (rare: both
+        // fields spread apart) does the trajectory search below decide.
+        //
+        // Where both frames have a block here and their samples disagree by
+        // more than kSearchBelow, the trajectory search's pair is computed
+        // as well and the two results are blended by how well
+        // each pair's two samples agree - the right motion shows the same
+        // surface in both frames (AMD FSR 3 frame interpolation chooses
+        // between its game-vector and optical-flow results the same way).
+        // A projected vector painted wherever it lands, so one wrong vector
+        // at an edge drew its colour elsewhere (a hair-coloured ring beside a
+        // head); the search's pair is exact inside a surface. Where one
+        // frame has no block here, that is the occlusion the projection is
+        // for, and its single sample is taken. Measured on the third-person
+        // 4x test against the trajectory search alone: the band beside the
+        // character +0.5 dB, the character +0.4 dB, the rest of the frame
+        // +0.6 dB, step-to-step temporal error 3.03 -> 2.74, high-frequency
+        // noise in the band -16%. The projection alone was ahead on the
+        // background and the temporal error but 0.7 dB behind on the
+        // character.
+        //
+        // The priority only decides which block wins a place; a winner is
+        // then trusted fully. Down-weighting winners by their priority
+        // distrusted exactly the background still visible at time t that is
+        // covered later (its round trip fails, and it is still the right
+        // sample here), and blended both frames across wide bands beside a
+        // character.
+        bool found0, found1;
+        float2 v0 = ProjectedVector(Projection, ForwardFlow, 0u, t, pixel, found0);
+        float2 v1 = ProjectedVector(Projection, BackwardFlow, 1u, 1.0f - t, pixel, found1);
+        // The winner is one block's vector, constant over 2 px; one step of
+        // the trajectory solve on the bilinear field makes it continuous
+        // inside the surface it chose, and is kept only while it stays on
+        // that surface.
+        const float2 r0 = SampleFlow(ForwardFlow, pixel - t * v0);
+        const float2 r1 = SampleFlow(BackwardFlow, pixel - (1.0f - t) * v1);
+        if (length(r0 - v0) < kRefineReach) v0 = r0;
+        if (length(r1 - v1) < kRefineReach) v1 = r1;
+        if (found0 || found1)
+        {
+            from0 = pixel - t * v0;
+            from1 = pixel - (1.0f - t) * v1;
+            trust0 = found0 ? 1.0f : 0.0f;
+            trust1 = found1 ? 1.0f : 0.0f;
+            c0 = SampleSharp(Frame0, from0);
+            c1 = SampleSharp(Frame1, from1);
+            // Samples that already agree leave the search nothing to add,
+            // and skipping it there is most of the frame.
+            hybrid = found0 && found1 && MaxComponent(abs(c0 - c1)) * kLumaScale > kSearchBelow;
+            search = hybrid;
+        }
+        else
+        {
+            search = true;
+        }
     }
     else
     {
         WarpSources(ForwardFlow, BackwardFlow, pixel, t, from0, from1);
+        c0 = SampleSharp(Frame0, from0);
+        c1 = SampleSharp(Frame1, from1);
+    }
+
+    // The trajectory search, from one call site (called from two branches,
+    // the shader's register use doubled the pass's time).
+    float2 fromB0 = pixel, fromB1 = pixel;
+    float3 b0 = float3(0.0f, 0.0f, 0.0f), b1 = float3(0.0f, 0.0f, 0.0f);
+    float trustB0 = 1.0f, trustB1 = 1.0f;
+    if (search)
+    {
+        float residual0, residual1, runnerUpResidual0, runnerUpResidual1;
+        float2 runnerUp0, runnerUp1;
+        fromB0 = pixel - t * ClosestTrajectory(ForwardFlow, pixel, t, residual0, runnerUp0, runnerUpResidual0);
+        fromB1 = pixel - (1.0f - t) * ClosestTrajectory(BackwardFlow, pixel, 1.0f - t, residual1,
+                                                       runnerUp1, runnerUpResidual1);
+        trustB0 = TrajectoryWeight(residual0);
+        trustB1 = TrajectoryWeight(residual1);
+        b0 = SampleSharp(Frame0, fromB0);
+        b1 = SampleSharp(Frame1, fromB1);
+        if (!hybrid)
+        {
+            // A near tie in an occlusion band: blend the runner-up's sample
+            // in by how close the tie is (see ClosestTrajectory).
+            const float tie0 = (runnerUpResidual0 - residual0) / kTieWidth;
+            const float tie1 = (runnerUpResidual1 - residual1) / kTieWidth;
+            if (residual0 > kTieGate && tie0 < 3.0f)
+            {
+                const float w = exp(-tie0 * tie0);
+                b0 = (b0 + w * SampleSharp(Frame0, pixel - t * runnerUp0)) / (1.0f + w);
+            }
+            if (residual1 > kTieGate && tie1 < 3.0f)
+            {
+                const float w = exp(-tie1 * tie1);
+                b1 = (b1 + w * SampleSharp(Frame1, pixel - (1.0f - t) * runnerUp1)) / (1.0f + w);
+            }
+            from0 = fromB0;
+            from1 = fromB1;
+            c0 = b0;
+            c1 = b1;
+            trust0 = trustB0;
+            trust1 = trustB1;
+        }
     }
     const float2 uv0 = (from0 + 0.5f) * inverseSize;
     const float2 uv1 = (from1 + 0.5f) * inverseSize;
-    const float3 c0 = SampleSharp(Frame0, from0);
-    const float3 c1 = SampleSharp(Frame1, from1);
     float3 color = lerp(c0, c1, t);
 
     // How much each sample is the content it is meant to be: not on UI, and
     // on a trajectory that actually reaches this pixel.
-    float valid0 = 1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv0, 0));
-    float valid1 = 1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv1, 0));
-    float trust0 = 1.0f, trust1 = 1.0f;
-    if (FlowScale == 0.0f)
-    {
-        trust0 = TrajectoryWeight(residual0);
-        trust1 = TrajectoryWeight(residual1);
-        valid0 *= trust0;
-        valid1 *= trust1;
-    }
+    float valid0 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv0, 0))) * trust0;
+    float valid1 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, uv1, 0))) * trust1;
     if (valid0 < 1.0f || valid1 < 1.0f)
     {
         const float w0 = (1.0f - t) * valid0;
         const float w1 = t * valid1;
         // Neither sample usable: nothing better to fetch, keep the plain blend.
         if (w0 + w1 > 1e-4f) color = (w0 * c0 + w1 * c1) / (w0 + w1);
+    }
+    if (hybrid)
+    {
+        const float vb0 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, (fromB0 + 0.5f) * inverseSize, 0))) * trustB0;
+        const float vb1 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, (fromB1 + 0.5f) * inverseSize, 0))) * trustB1;
+        const float wb0 = (1.0f - t) * vb0, wb1 = t * vb1;
+        const float3 colorB = wb0 + wb1 > 1e-4f ? (wb0 * b0 + wb1 * b1) / (wb0 + wb1) : lerp(b0, b1, t);
+        const float dA = MaxComponent(abs(c0 - c1)) * kLumaScale / kAgreement;
+        const float dB = MaxComponent(abs(b0 - b1)) * kLumaScale / kAgreement;
+        const float wA = exp(-dA * dA), wB = exp(-dB * dB);
+        color = wA + wB > 1e-6f ? (wA * color + wB * colorB) / (wA + wB) : 0.5f * (color + colorB);
     }
     // A confirmed pixel is held in place only inside a patch of UI: at least
     // kUiSupport of its 3x3 neighbourhood confirmed too. Isolated confirmed
