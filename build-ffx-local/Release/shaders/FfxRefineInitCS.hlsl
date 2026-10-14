@@ -17,7 +17,7 @@
 //
 // Constants: Width/Height = full resolution, LevelWidth/Height = the
 // half-resolution field.
-Texture2D<int2> FfxVectors : register(t0);
+Texture2D<float4> FfxVectors : register(t0);   // FFX's field after FfxRepairCS
 RWTexture2D<float2> Field : register(u0);
 
 // FFX's backward field at half-resolution position q, in half-resolution
@@ -29,10 +29,10 @@ float2 Backward(float2 q)
     const float2 grid = (2.0f * q + 0.5f - 3.5f) / 8.0f;
     const int2 base = int2(floor(grid));
     const float2 f = frac(grid);
-    const float2 v00 = float2(FfxVectors.Load(int3(clamp(base, int2(0, 0), gridMax), 0)));
-    const float2 v10 = float2(FfxVectors.Load(int3(clamp(base + int2(1, 0), int2(0, 0), gridMax), 0)));
-    const float2 v01 = float2(FfxVectors.Load(int3(clamp(base + int2(0, 1), int2(0, 0), gridMax), 0)));
-    const float2 v11 = float2(FfxVectors.Load(int3(clamp(base + int2(1, 1), int2(0, 0), gridMax), 0)));
+    const float2 v00 = FfxVectors.Load(int3(clamp(base, int2(0, 0), gridMax), 0)).xy;
+    const float2 v10 = FfxVectors.Load(int3(clamp(base + int2(1, 0), int2(0, 0), gridMax), 0)).xy;
+    const float2 v01 = FfxVectors.Load(int3(clamp(base + int2(0, 1), int2(0, 0), gridMax), 0)).xy;
+    const float2 v11 = FfxVectors.Load(int3(clamp(base + int2(1, 1), int2(0, 0), gridMax), 0)).xy;
     return 0.5f * lerp(lerp(v00, v10, f.x), lerp(v01, v11, f.x), f.y);
 }
 

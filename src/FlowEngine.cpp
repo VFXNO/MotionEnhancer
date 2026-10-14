@@ -243,6 +243,13 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
     }
+    if (disActive() && m_settings.flowMedian) {
+        for (auto& scratch : m_medianScratch) {
+            if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R32G32_FLOAT,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, scratch, L"FlowMedian"))) return false;
+        }
+    }
     if (disActive() && m_settings.occlusionFill) {
         for (auto& scratch : m_fillScratch) {
             if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R32G32_FLOAT,
@@ -254,6 +261,9 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
 
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
+    if (FAILED(m_device->createTexture2D((width + 7) / 8, (height + 7) / 8, DXGI_FORMAT_R32G32_FLOAT,
+                                         D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                         D3D12_RESOURCE_STATE_COMMON, m_ffxRepaired, L"FfxRepaired"))) return false;
     if (FAILED(m_device->createTexture2D((width + 7) / 8, (height + 7) / 8, DXGI_FORMAT_R16G16_SINT,
                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                          D3D12_RESOURCE_STATE_COMMON, m_ffxVectors, L"FfxVectors")) ||
@@ -345,6 +355,18 @@ bool FlowEngine::recordFfx(const FlowInput& previous, const FlowInput& current, 
     if (!ok) return false;
     m_ffxLastId = current.id;
 
+    {
+        // FfxRepairCS (or, with --no-ffx-repair, the field as given) into
+        // m_ffxRepaired, which every reader below takes. Inputs 1-2 are the
+        // shared capture textures: implicit promotion.
+        ShaderConstants r = {};
+        r.width = r.levelWidth = m_width;
+        r.height = r.levelHeight = m_height;
+        r.searchRadius = m_settings.ffxRepair ? 1 : 0;
+        std::array<ID3D12Resource*, 6> in = {m_ffxVectors.Get(), current.texture, previous.texture, nullptr, nullptr, nullptr};
+        if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FfxRepair, in, m_ffxRepaired.Get(), r,
+                                 ((m_width + 7) / 8 + 7) / 8, ((m_height + 7) / 8 + 7) / 8, 0x6)) return false;
+    }
     if (ffxRefineActive()) return recordFfxRefine(previous, current, out);
 
     // FFX vectors are current -> previous on an 8x8 grid: that is our
@@ -355,7 +377,7 @@ bool FlowEngine::recordFfx(const FlowInput& previous, const FlowInput& current, 
     c.blockSize = c.parentBlockSize = 8;
     const uint32_t fw = (m_width + 7) / 8;
     const uint32_t fh = (m_height + 7) / 8;
-    std::array<ID3D12Resource*, 6> in = {m_ffxVectors.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+    std::array<ID3D12Resource*, 6> in = {m_ffxRepaired.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
     c.flowScale = 1.0f;
     ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FfxFlowConvert, in, out.backward.Get(), c,
                               (fw + 15) / 16, (fh + 15) / 16);
@@ -404,7 +426,7 @@ bool FlowEngine::recordFfxRefine(const FlowInput& previous, const FlowInput& cur
         const Pyramid& ref = direction == 0 ? currPyramid : prevPyramid;
         const Pyramid& cand = direction == 0 ? prevPyramid : currPyramid;
         c.flowScale = direction == 0 ? 1.0f : -1.0f;   // FfxRefineInitCS: as given / turned around
-        std::array<ID3D12Resource*, 6> in = {m_ffxVectors.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+        std::array<ID3D12Resource*, 6> in = {m_ffxRepaired.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
         ok = m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineInit, in, m_refineField[0].Get(), c, gx, gy);
         int field = 0;
         for (int outer = 0; ok && outer < kFfxRefineOuter; ++outer) {
@@ -416,7 +438,10 @@ bool FlowEngine::recordFfxRefine(const FlowInput& previous, const FlowInput& cur
         }
         c.flowScale = 1.0f;
         if (direction == 0) {
-            in = {m_refineField[field].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+            // FfxRefineToRingCS keeps FFX's start wherever the refinement
+            // matches the pictures worse.
+            in = {m_refineField[field].Get(), m_ffxRepaired.Get(), currPyramid.level[1].Get(), prevPyramid.level[1].Get(),
+                  currPyramid.stats.Get(), prevPyramid.stats.Get()};
             ok = ok && m_dispatch.dispatch(list, *m_kernels, Kernel::FfxRefineToRing, in, out.backward.Get(), c,
                                            (rw + 15) / 16, (rh + 15) / 16);
         } else {
@@ -726,6 +751,38 @@ bool FlowEngine::recordOcclusionFill(const FlowInput& previous, const FlowInput&
     return ok;
 }
 
+// ------------------------------------------------------------ flow median
+
+// Both fields of a finished pair on the 2 px ring grid (FlowMedianCS): each
+// is filtered into its scratch field and copied back.
+bool FlowEngine::recordFlowMedian(Entry& out) {
+    if (!m_settings.flowMedian || !m_medianScratch[0] || out.blockSize != kDisRingBlock) return true;
+    ID3D12GraphicsCommandList* list = m_list.Get();
+    ShaderConstants c = {};
+    c.width = c.levelWidth = m_width;
+    c.height = c.levelHeight = m_height;
+    c.blockSize = c.parentBlockSize = static_cast<int32_t>(out.blockSize);
+    const uint32_t gw = (m_width + out.blockSize - 1) / out.blockSize;
+    const uint32_t gh = (m_height + out.blockSize - 1) / out.blockSize;
+    ID3D12Resource* fields[2] = {out.forward.Get(), out.backward.Get()};
+    bool ok = true;
+    for (int d = 0; ok && d < 2; ++d) {
+        std::array<ID3D12Resource*, 6> in = {fields[d], nullptr, nullptr, nullptr, nullptr, nullptr};
+        ok = m_dispatch.dispatch(list, *m_kernels, Kernel::FlowMedian, in, m_medianScratch[d].Get(), c,
+                                 (gw + 15) / 16, (gh + 15) / 16);
+    }
+    for (int d = 0; ok && d < 2; ++d) {
+        DispatchContext::transition(list, m_medianScratch[d].Get(), D3D12_RESOURCE_STATE_COMMON,
+                                    D3D12_RESOURCE_STATE_COPY_SOURCE);
+        DispatchContext::transition(list, fields[d], D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyResource(fields[d], m_medianScratch[d].Get());
+        DispatchContext::transition(list, fields[d], D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+        DispatchContext::transition(list, m_medianScratch[d].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE,
+                                    D3D12_RESOURCE_STATE_COMMON);
+    }
+    return ok;
+}
+
 // ------------------------------------------------------------ static UI
 
 // Updates the static-UI evidence for this pair from the previous pair's, by
@@ -853,6 +910,10 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     m_usingDis = !ok && disActive();
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
     if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
+    // Refined FFX's field is median filtered (FlowMedianCS). DIS's is not:
+    // there the median removed some noise (-6%) but cost the third-person
+    // test 0.1-0.3 dB.
+    if (ok && m_usingFfx) ok = recordFlowMedian(scratch);
     if (ok) ok = recordUiMask(previous, current, entryIndex, scratch);
     if (!ok) {
         m_list->Close();

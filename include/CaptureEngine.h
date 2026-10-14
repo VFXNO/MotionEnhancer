@@ -146,4 +146,6 @@ private:
 
 // Arms a dump of the next accepted frames to <MOTION_ENHANCER_DUMP_FRAMES or
 // motion_dump>_NNN.png (overlay hotkey Ctrl+Alt+F2).
-void requestFrameDump();
+// Arms a dump of the next accepted frames as <prefix>_000.png, ... (empty:
+// MOTION_ENHANCER_DUMP_FRAMES or "motion_dump" in the working directory).
+void requestFrameDump(const std::string& prefix = std::string());

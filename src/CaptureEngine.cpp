@@ -31,6 +31,10 @@ constexpr int kDumpFrameCount = 8;
 // Ctrl+Alt+F2 in the overlay arms a dump of the next kDumpFrameCount
 // accepted frames, so a moment mid-game can be replayed offline.
 std::atomic<int> g_dumpArmed{0};
+// Where the armed dump goes (requestFrameDump), and how many it has written.
+std::mutex g_dumpMutex;
+std::string g_dumpPrefix;
+std::atomic<int> g_dumpWritten{0};
 
 std::string dumpPrefix() {
     char buffer[MAX_PATH] = {};
@@ -494,7 +498,12 @@ void CaptureEngine::acceptFrame(const PendingFrame& pending) {
 }
 
 // Producer thread: stages one accepted slot through D3D11 and writes it out.
-void requestFrameDump() {
+void requestFrameDump(const std::string& prefix) {
+    {
+        std::lock_guard<std::mutex> lock(g_dumpMutex);
+        g_dumpPrefix = prefix;
+    }
+    g_dumpWritten.store(0);
     g_dumpArmed.store(kDumpFrameCount);
     std::cout << "[Capture] saving the next " << kDumpFrameCount << " frames" << std::endl;
 }
@@ -504,11 +513,17 @@ void CaptureEngine::dumpFrame(int slot) {
     static int written = 0;
     if (slot < 0) return;
     const bool fromEnv = !envPrefix.empty() && written < kDumpFrameCount;
+    std::string prefix = envPrefix.empty() ? std::string("motion_dump") : envPrefix;
+    int index = written;
     if (!fromEnv) {
         if (g_dumpArmed.load() <= 0) return;
         g_dumpArmed.fetch_sub(1);
+        std::lock_guard<std::mutex> lock(g_dumpMutex);
+        if (!g_dumpPrefix.empty()) {
+            prefix = g_dumpPrefix;
+            index = g_dumpWritten.fetch_add(1);
+        }
     }
-    const std::string prefix = envPrefix.empty() ? std::string("motion_dump") : envPrefix;
 
     ID3D11Device* device = m_device->captureDevice();
     ID3D11DeviceContext* ctx = m_device->captureContext();
@@ -527,22 +542,33 @@ void CaptureEngine::dumpFrame(int slot) {
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     if (FAILED(ctx->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped))) return;
-    Image image(static_cast<int>(m_width), static_cast<int>(m_height), 3);
-    for (uint32_t y = 0; y < m_height; ++y) {
-        const uint8_t* row = static_cast<const uint8_t*>(mapped.pData) + static_cast<size_t>(y) * mapped.RowPitch;
-        for (uint32_t x = 0; x < m_width; ++x) {
-            for (int c = 0; c < 3; ++c) {
-                image.set(static_cast<int>(x), static_cast<int>(y), c, static_cast<float>(row[x * 4 + c]));
-            }
-        }
-    }
+    // The capture slots are B8G8R8A8: red is the third byte. Read as RGB
+    // they came out with red and blue swapped.
+    const bool bgra = desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM || desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    const uint32_t width = m_width;
+    const uint32_t height = m_height;
+    const size_t pitch = mapped.RowPitch;
+    std::vector<uint8_t> bytes(static_cast<const uint8_t*>(mapped.pData),
+                               static_cast<const uint8_t*>(mapped.pData) + pitch * height);
     ctx->Unmap(staging.Get(), 0);
 
     char path[MAX_PATH] = {};
-    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s_%03d.png", prefix.c_str(), written);
-    image.savePNG(path);
-    std::cout << "[Capture] dumped " << path << "\n";
-    ++written;
+    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s_%03d.png", prefix.c_str(), index);
+    if (fromEnv || prefix == "motion_dump") ++written;
+    // PNG encoding off the capture thread: stalling it while the moment is
+    // being captured held the presenter on real frames, so the presented
+    // frames saved at the same time showed no interpolation at all.
+    std::thread([bytes = std::move(bytes), width, height, pitch, bgra, file = std::string(path)]() {
+        Image image(static_cast<int>(width), static_cast<int>(height), 3);
+        for (uint32_t y = 0; y < height; ++y) {
+            const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
+            for (uint32_t x = 0; x < width; ++x)
+                for (int c = 0; c < 3; ++c)
+                    image.set(static_cast<int>(x), static_cast<int>(y), c, static_cast<float>(row[x * 4 + (bgra ? 2 - c : c)]));
+        }
+        image.savePNG(file);
+        std::cout << "[Capture] dumped " << file << "\n";
+    }).detach();
 }
 
 // -------------------------------------------------------- render thread

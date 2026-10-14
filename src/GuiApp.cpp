@@ -899,8 +899,9 @@ void startCapture() {
         "--adapter", adapterArg
     };
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
-    // FFX only; the other engines ignore both. Occlusion handling is part of
-    // the refinement, so it needs the refinement on.
+    // Engine-specific, ignored by the others: the occlusion fill is DIS's,
+    // the refinement and its occlusion handling FFX's (occlusion handling
+    // is part of the refinement, so it needs the refinement on).
     if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
     if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");

@@ -4,7 +4,11 @@
 #include "GraphicsDevice.h"
 
 #include <array>
+#include <atomic>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
 
 // Live debug view of the presented frames (see DebugView() in
 // Common.hlsli): 0 = off, 1 = motion, 2 = static-UI evidence, 3 = occlusion
@@ -13,6 +17,16 @@
 constexpr int kDebugViewCount = 5;
 void cycleDebugView();
 int debugView();
+// Ctrl+Alt+F2 in the overlay: saves, into captures\<date-time>\ next to the
+// executable, the last kReplayShown presented frames (shown_###_..._t<t>.png,
+// exactly what was on screen, generated frames included) and the last
+// kReplayGame game frames they were made from (game_###.png). The presenter
+// keeps both in a replay buffer in video memory all the time (one copy per
+// refresh, about 0.05 ms), so the key saves the moment just before it was
+// pressed and nothing on the way to the screen waits for the save.
+constexpr int kReplayShown = 20;
+constexpr int kReplayGame = 8;
+void requestCaptureDump();
 
 // Records the interpolation of one output frame into `list`: for a
 // two-field pair (constants.flowScale == 0) the motion projection to
@@ -110,6 +124,25 @@ private:
     HANDLE m_latencyWaitable = nullptr;
     ComPtr<ID3D12Resource> m_output;
     ComPtr<ID3D12Resource> m_projection;
+
+    // Replay buffer for requestCaptureDump(): the last presented frames and
+    // the game frames they were made from, in video memory. Frozen while a
+    // save is reading it back (m_replayBusy, cleared by the save thread).
+    struct ReplayFrame {
+        ComPtr<ID3D12Resource> texture;
+        float alpha = 0.0f;
+        bool real = false;
+        uint64_t ready0 = 0;   // the game frames it was made from (capture ready values)
+        uint64_t ready1 = 0;
+    };
+    std::array<ReplayFrame, kReplayShown> m_replayShown;
+    std::array<ReplayFrame, kReplayGame> m_replayGame;   // ready0 = this frame's ready value
+    uint64_t m_replayShownCount = 0;
+    uint64_t m_replayGameCount = 0;
+    uint64_t m_replayLastGame = 0;
+    std::shared_ptr<std::atomic<bool>> m_replayBusy;
+    void recordReplay(const RenderJob& job);
+    void startReplaySave(uint64_t presentValue);
 
     ComPtr<ID3D12GraphicsCommandList> m_list;
     std::array<CommandSet, kBackBuffers> m_commands;

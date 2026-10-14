@@ -24,9 +24,11 @@ enum class Kernel : int {
     FfxRefineIterate,
     FfxRefineToRing,
     FfxRefineConsist,
+    FfxRepair,
     OcclusionFill,
     ProjectClear,
     ProjectSplat,
+    FlowMedian,
     Count
 };
 

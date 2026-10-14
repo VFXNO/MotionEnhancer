@@ -25,7 +25,13 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRefineToRingCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FfxRepairCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FillFlowCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FlowMedianCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\CMakeFiles\3eb8624aa2c68a54560a3a24228830fe\FrameStatsCS.cso.rule">

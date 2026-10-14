@@ -34,6 +34,7 @@ static const int kTile = 16;
 static const int kApron = 2;
 static const int kInterior = kTile - 2 * kApron;
 static const int kSweeps = 5;
+static const float kRefineMaxStep = 1.0f;   // half-resolution pixels per outer iteration
 
 groupshared float4 SharedA[kTile * kTile];    // A11, A12, A22, smoothness weight
 groupshared float2 SharedB[kTile * kTile];
@@ -133,5 +134,14 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
 
     // --- 3. the tile's interior -------------------------------------------
     if (valid && all(int2(tid.xy) >= kApron) && all(int2(tid.xy) < kApron + kInterior))
-        Updated[x] = SharedU[li] + SharedDu[li];
+    {
+        // The linearisation holds only within about a pixel of the current
+        // field; a longer step is extrapolation. On real game content,
+        // where FFX's vector can be further off than that, an unbounded
+        // step threw vectors pixels the wrong way. Capped like DIS's.
+        float2 move = SharedDu[li];
+        const float moveLength = length(move);
+        if (moveLength > kRefineMaxStep) move *= kRefineMaxStep / moveLength;
+        Updated[x] = SharedU[li] + move;
+    }
 }

@@ -32,8 +32,14 @@ Texture2D<uint> Projection : register(t5);   // two-field pairs: ProjectSplatCS'
 RWTexture2D<float4> Output : register(u0);
 
 // Confirmed UI pixels (of 9, including this one) a pixel needs around it to
-// be held in place.
-static const float kUiSupport = 4.0f;
+// be held in place: itself and one neighbour, so a lone confirmed pixel is
+// still left alone. At 4, a 1-2 px stroke - HUD text, a thin icon outline -
+// has only about three confirmed pixels in any 3x3 and was never held: it
+// was warped with the background behind it and broke into pixel fragments
+// (text on a translucent panel over a panning background: HUD +1.2 dB with
+// FFX, +0.5 dB with DIS at 2; the rest of the frame and the sequences
+// without UI unchanged).
+static const float kUiSupport = 2.0f;
 
 // Trajectory error (pixels) at which a sample counts as half valid. An
 // occlusion leaves a residual of the relative motion times t - 10-25 px for

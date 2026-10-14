@@ -160,7 +160,7 @@ static LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                 PostQuitMessage(0);
                 return 0;
             } else if (key == VK_F2) {
-                requestFrameDump();
+                requestCaptureDump();
                 return 0;
             } else if (key == VK_F3) {
                 cycleDebugView();

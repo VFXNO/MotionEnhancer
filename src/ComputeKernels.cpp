@@ -36,8 +36,8 @@ const char* kShaderFiles[] = {
     "LearnedFeaturesCS.cso", "FillFlowCS.cso", "UiMaskCS.cso", "FrameStatsCS.cso",
     "DisPatchCS.cso", "DisDensifyCS.cso", "DisToRingCS.cso",
     "FfxRefineInitCS.cso", "FfxRefineIterateCS.cso", "FfxRefineToRingCS.cso",
-    "FfxRefineConsistCS.cso", "OcclusionFillCS.cso",
-    "ProjectClearCS.cso", "ProjectSplatCS.cso"};
+    "FfxRefineConsistCS.cso", "FfxRepairCS.cso", "OcclusionFillCS.cso",
+    "ProjectClearCS.cso", "ProjectSplatCS.cso", "FlowMedianCS.cso"};
 }
 
 bool ComputeKernels::load(ID3D12Device* device) {
@@ -84,7 +84,7 @@ bool ComputeKernels::load(ID3D12Device* device) {
         if (!loadBytecode(kShaderFiles[i], bytes)) {
 #ifndef MOTION_ENHANCER_FFX_OPTICAL_FLOW
             if (i == static_cast<size_t>(Kernel::FfxFlowConvert) ||
-                (i >= static_cast<size_t>(Kernel::FfxRefineInit) && i <= static_cast<size_t>(Kernel::FfxRefineConsist)))
+                (i >= static_cast<size_t>(Kernel::FfxRefineInit) && i <= static_cast<size_t>(Kernel::FfxRepair)))
                 continue;
 #endif
             std::cerr << "Error: missing compiled shader " << kShaderFiles[i]

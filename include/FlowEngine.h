@@ -73,6 +73,10 @@ struct FlowSettings {
     // occlusion from FFX's own errors. Off = FFX's single field, negated
     // for the forward direction.
     bool ffxOcclusion = false;
+    // FFX: before anything reads FFX's field, let each block try zero motion
+    // and its neighbours' vectors (FfxRepairCS) - FFX spreads one surface's
+    // vector over its neighbours at large motion.
+    bool ffxRepair = true;
     bool allowTrainedModel = true; // false while gathering offline training examples
     // Keep screen-fixed UI (HUD, subtitles, logos) out of the warp. Per
     // pixel and confirmed over several pairs; see UiMaskCS.hlsl.
@@ -82,6 +86,10 @@ struct FlowSettings {
     // picture says so, the background's where the block is hidden in the
     // other frame (OcclusionFillCS). Once per pair, on the ring grid.
     bool occlusionFill = true;
+    // Refined FFX: a 3x3 median of both fields on the 2 px ring grid, once
+    // per pair, removing isolated outlier vectors the refinement leaves
+    // where the picture does not decide (FlowMedianCS).
+    bool flowMedian = true;
 };
 
 // A frame's contribution to the flow queue: the shared capture texture and
@@ -248,6 +256,7 @@ private:
 #endif
     bool recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex, Entry& out);
     bool recordOcclusionFill(const FlowInput& previous, const FlowInput& current, Entry& out);
+    bool recordFlowMedian(Entry& out);
     void readTimestamps(UINT set);
 
     GraphicsDevice* m_device = nullptr;
@@ -307,6 +316,9 @@ private:
     // Occlusion fill: one ring-sized field per direction, so both are filled
     // from the unfilled pair before either is written back.
     std::array<ComPtr<ID3D12Resource>, 2> m_fillScratch;
+    // Flow median: one ring-sized field per direction, filtered into and
+    // copied back.
+    std::array<ComPtr<ID3D12Resource>, 2> m_medianScratch;
     bool m_usingDis = false;
 
 
@@ -325,6 +337,7 @@ private:
     FfxInterface m_ffxInterface = {};
     std::vector<uint8_t> m_ffxScratch;
     ComPtr<ID3D12Resource> m_ffxVectors;   // R16G16_SINT, 8x8 grid, current -> previous
+    ComPtr<ID3D12Resource> m_ffxRepaired;  // R32G32_FLOAT, the same field after FfxRepairCS
     // Refinement (FfxRefine.hlsli), at half resolution: the field, two
     // R32G32_FLOAT buffers ping-ponged by the outer iterations (one
     // FfxRefineIterateCS dispatch each).

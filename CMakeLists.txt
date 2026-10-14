@@ -136,10 +136,10 @@ if(WIN32)
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
-                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl)
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
-                                                FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl)
+                                                FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl FfxRepairCS.hlsl)
         endif()
         foreach(SHADER IN LISTS MOTION_ENHANCER_SHADERS)
             if(SHADER MATCHES "\\.hlsl$")
