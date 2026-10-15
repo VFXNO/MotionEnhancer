@@ -2302,11 +2302,11 @@ bool writeSplashFrames(const char* prefix) {
             for (int x = 0; x < kSplashW; ++x) {
                 Gdiplus::Color c;
                 surface.GetPixel(x, y, &c);
-                // Over a dark grey desktop, to show the transparency.
+                // Over GitHub's dark page colour (the README shows these).
                 const float a = c.GetA() / 255.0f;
-                image.set(x, y, 0, c.GetR() * a + 46.0f * (1.0f - a));
-                image.set(x, y, 1, c.GetG() * a + 52.0f * (1.0f - a));
-                image.set(x, y, 2, c.GetB() * a + 64.0f * (1.0f - a));
+                image.set(x, y, 0, c.GetR() * a + 13.0f * (1.0f - a));
+                image.set(x, y, 1, c.GetG() * a + 17.0f * (1.0f - a));
+                image.set(x, y, 2, c.GetB() * a + 23.0f * (1.0f - a));
             }
         char name[MAX_PATH];
         std::snprintf(name, sizeof(name), "%s_%02d.png", prefix, index);

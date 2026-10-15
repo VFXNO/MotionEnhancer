@@ -1,8 +1,142 @@
-# Motion Enhancer - Enhanced 8-Level Pyramid ZNCC Frame Interpolator
+<p align="center">
+  <img src="docs/assets/banner.png" alt="Motion Enhancer: real-time frame generation for any window" width="100%">
+</p>
+
+<p align="center">
+  <img alt="Windows 10 | 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0b0b0d?style=for-the-badge&logo=windows11&logoColor=white&labelColor=1a1a1e">
+  <img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-0b0b0d?style=for-the-badge&logo=cplusplus&logoColor=white&labelColor=1a1a1e">
+  <img alt="Direct3D 12" src="https://img.shields.io/badge/Direct3D-12-0b0b0d?style=for-the-badge&labelColor=1a1a1e">
+  <img alt="AMD FidelityFX" src="https://img.shields.io/badge/AMD-FidelityFX-0b0b0d?style=for-the-badge&logo=amd&logoColor=white&labelColor=1a1a1e">
+  <img alt="DirectML" src="https://img.shields.io/badge/DirectML-AI%20depth-0b0b0d?style=for-the-badge&labelColor=1a1a1e">
+</p>
+
+<p align="center">
+  <b>Motion Enhancer</b> raises the frame rate of any window, whether a game, a video or a browser. It generates the frames in between on the GPU in real time and shows them in a click-through overlay.
+</p>
+
+<p align="center">
+  <a href="#highlights">Highlights</a> &nbsp;·&nbsp;
+  <a href="#interface">Interface</a> &nbsp;·&nbsp;
+  <a href="#quick-start">Quick start</a> &nbsp;·&nbsp;
+  <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
+  <a href="#technical-documentation">Documentation</a>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/assets/splash.gif" alt="The startup splash: the emblem builds itself" width="460">
+</p>
+
+<br>
+
+<a id="highlights"></a>
+<img src="docs/assets/section-highlights.png" alt="Highlights" width="100%">
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>◉ Any window, live</h3>
+      Windows Graphics Capture in, a click-through Direct3D 12 overlay out, paced to your display's refresh. 2×, 3×, 4× or up to the refresh rate.
+    </td>
+    <td width="33%" valign="top">
+      <h3>◈ Motion engines</h3>
+      Dense Inverse Search optical flow (the default), AMD FidelityFX Optical Flow, SAD block matching, and a neural estimator you can train on your own footage.
+    </td>
+    <td width="33%" valign="top">
+      <h3>◐ Occlusion-aware</h3>
+      Flow in both directions, motion projection and occlusion fill keep a character solid while the camera turns around it.
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>▣ HUD stays put</h3>
+      Static UI (HUDs, subtitles, logos) is recognised per pixel and shown where it is instead of being dragged along by the scene.
+    </td>
+    <td width="33%" valign="top">
+      <h3>◎ AI depth</h3>
+      Optional MiDaS depth on DirectML, entirely on the GPU. The nearer surface wins and outlines move with the object in front, as with FSR's depth dilation.
+    </td>
+    <td width="33%" valign="top">
+      <h3>◫ See what it sees</h3>
+      <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F2</kbd> saves the last 20 frames you saw from a replay buffer in video memory, and <kbd>F3</kbd> cycles the debug views.
+    </td>
+  </tr>
+</table>
+
+<br>
+
+<a id="interface"></a>
+<img src="docs/assets/section-interface.png" alt="Interface" width="100%">
+
+<p align="center">
+  <img src="docs/assets/gui-live.png" alt="Live Capture page" width="49%">
+  <img src="docs/assets/gui-offline.png" alt="Offline Interpolation page" width="49%">
+</p>
+
+<table>
+  <tr>
+    <td width="200" valign="middle"><img src="docs/assets/sidebar.gif" alt="The animated sidebar" width="180"></td>
+    <td valign="top">
+      A monochrome interface with a living emblem. The spark circles the ring and the nodes orbit, the sidebar's lines drift, and the status dot pulses while a capture runs. The navigation highlight glides between pages, buttons fade on hover, and the main button carries a moving sheen. The ambient motion only runs while the window is in front, so it costs nothing while you play.
+      <br><br>
+      Every engine setting is on the page: pyramid levels and search radii, the flow engine, occlusion handling, static-UI protection, and the AI depth on/off and rate.
+    </td>
+  </tr>
+</table>
+
+<br>
+
+<a id="quick-start"></a>
+<img src="docs/assets/section-quick-start.png" alt="Quick start" width="100%">
+
+**1. Build.** You need Visual Studio 2022 with C++ and CMake 3.16 or newer.
+
+```powershell
+cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+```
+
+**2. Run** `build\Release\motion_enhancer.exe`. Pick the target window, leave **Source FPS** on `Auto` and **Output multiplier** on `Max`, then press **Start Capture**.
+
+**3. In the overlay:**
+
+| Keys | Action |
+|---|---|
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F1</kbd> | Show or hide the overlay |
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F2</kbd> | Save the moment you just saw (the frames shown and the game frames they came from) |
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd> | Cycle the debug views: motion, static UI, occlusion, vector arrows, AI depth |
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Esc</kbd> | Stop capture |
+
+From a terminal, `motion_enhancer.exe --list-windows` lists the capturable windows and `--capture-window "<title>"` starts directly. All options are listed under [Usage](#usage).
+
+<br>
+
+<a id="how-it-works"></a>
+<img src="docs/assets/section-how-it-works.png" alt="How it works" width="100%">
+
+```
+  target window ──WGC──▶ capture ring ──▶ flow queue ──────────────▶ flow ring
+                           (dedupe,        DIS · FFX · SAD · neural     │
+                            cadence)       AI depth (DirectML) ────┐    │
+                                                                   ▼    ▼
+  click-through overlay ◀── present queue ◀── motion projection + interpolation
+                           (one frame per      (occlusion-aware, static UI kept,
+                            display refresh)    timestamp-exact t per frame)
+```
+
+Capture, flow and presentation run on separate threads and GPU queues and meet only through fences, so nothing on the way to the screen waits for the flow. Each refresh draws the frame at the exact time between the two source frames that the display needs.
+
+<br>
+
+<a id="technical-documentation"></a>
+<img src="docs/assets/section-documentation.png" alt="Technical documentation" width="100%">
+
+## Offline CPU interpolator
 
 A C++17 frame interpolation application implementing an **8-level Gaussian pyramid** with **Zero-mean Normalized Cross-Correlation (ZNCC)** block matching motion estimation, multi-candidate spatial predictors (EPZS), 2D Gaussian block weighting, direct quarter-pel bilinear refinement, and **advanced artifact refinement** (Laplacian detail restoration and color bounding box clamping). Interpolation itself is unconditional: no occlusion mask, no confidence weighting, no gating.
 
-## Features & Improvements
+### Features & Improvements
 
 - **8-Level Coarse-to-Fine Pyramid**: Builds an 8-level Gaussian image pyramid ($L_0$ to $L_7$) using a 5-tap separable binomial filter $\frac{1}{16}[1, 4, 6, 4, 1]$ and dyadic downsampling.
 - **Multi-Candidate Spatial Predictors (EPZS)**: Evaluates hierarchical coarse predictor, spatial neighborhood vectors, and zero vector before searching, eliminating traps in repetitive patterns and local minima.
