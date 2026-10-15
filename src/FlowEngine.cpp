@@ -23,10 +23,12 @@ void uploadNeuralModel(ShaderConstants& c, const NeuralFlowModel& model) {
 }
 
 constexpr DWORD kGpuWaitTimeoutMs = 5000;
-// Worst case per submission: two cached luma/packed pyramids plus
-// bidirectional SAD searches over every pyramid level.
-constexpr UINT kDescriptorsPerRegion = 512;
-constexpr UINT kConstantsPerRegion = 96;
+// Worst case per submission: two cached luma/packed pyramids (or learned
+// feature pyramids) plus bidirectional searches over every pyramid level,
+// with headroom: 512 was exhausted at eight levels once a few passes were
+// added to the neural graph.
+constexpr UINT kDescriptorsPerRegion = 1024;
+constexpr UINT kConstantsPerRegion = 160;
 
 // SAD block size per pyramid level: 8 px at every level, FFX's grid. A
 // block straddling an object boundary is what decides motion on busy
@@ -246,9 +248,9 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
     }
-    if (disActive() && m_settings.flowMedian) {
+    if ((disActive() || m_neuralModelLoaded) && m_settings.flowMedian) {
         for (auto& scratch : m_medianScratch) {
-            if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R32G32_FLOAT,
+            if (FAILED(m_device->createTexture2D(ringW, ringH, ringFormat,
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                  D3D12_RESOURCE_STATE_COMMON, scratch, L"FlowMedian"))) return false;
         }
@@ -768,7 +770,7 @@ bool FlowEngine::recordOcclusionFill(const FlowInput& previous, const FlowInput&
 // Both fields of a finished pair on the 2 px ring grid (FlowMedianCS): each
 // is filtered into its scratch field and copied back.
 bool FlowEngine::recordFlowMedian(Entry& out) {
-    if (!m_settings.flowMedian || !m_medianScratch[0] || out.blockSize != kDisRingBlock) return true;
+    if (!m_settings.flowMedian || !m_medianScratch[0] || (out.blockSize != kDisRingBlock && !m_neuralModelLoaded)) return true;
     ID3D12GraphicsCommandList* list = m_list.Get();
     ShaderConstants c = {};
     c.width = c.levelWidth = m_width;
@@ -922,6 +924,13 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     m_usingDis = !ok && disActive();
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
     if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
+    // The neural estimator's 8x8 fields are median filtered as well: on the
+    // user's real frames +0.14 dB (24.52 -> 24.66, the two sequences with
+    // fast near grass +0.4 dB each), and less speckle beside the character
+    // on the third-person test (6.60 -> 6.46). DIS's occlusion fill on top
+    // gained 0.04 dB more on the real frames but added speckle there
+    // (-> 7.24) and cost the hardest fast-turn pair 2 dB, so it stays DIS's.
+    if (ok && !m_usingFfx && !m_usingDis && m_neuralModelLoaded) ok = recordFlowMedian(scratch);
     // Refined FFX's field is median filtered (FlowMedianCS). DIS's is not:
     // there the median removed some noise (-6%) but cost the third-person
     // test 0.1-0.3 dB.
