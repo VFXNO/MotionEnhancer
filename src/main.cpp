@@ -243,6 +243,7 @@ int main(int argc, char** argv) {
     bool neuralGradientCheck = false;
     bool neuralParityCheck = false;
     std::string sequencePrefix;
+    std::string depthTestInput, depthTestOutput;
     bool flowEval = false;   // --gpu-flow-eval <prefix>...: positional prefixes
 
     std::vector<std::string> positionalArgs;
@@ -258,6 +259,9 @@ int main(int argc, char** argv) {
             d3d12SelfTest = true;
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
+        } else if (arg == "--depth-test" && i + 2 < argc) {
+            depthTestInput = argv[++i];
+            depthTestOutput = argv[++i];
         } else if (arg == "--gpu-flow-eval") {
             flowEval = true;
         } else if (arg == "--neural-parity-check") {
@@ -309,6 +313,10 @@ int main(int argc, char** argv) {
             gpuSettings.uiMask = false;
         } else if (arg == "--no-occlusion-fill") {
             gpuSettings.occlusionFill = false;
+        } else if (arg == "--ai-depth") {
+            gpuSettings.aiDepth = true;
+        } else if (arg == "--ai-depth-every" && i + 1 < argc) {
+            gpuSettings.aiDepthStride = std::clamp(std::stoi(argv[++i]), 1, 4);
         } else if (arg == "--no-flow-median") {
             gpuSettings.flowMedian = false;
         } else if (arg == "--no-ffx-refine") {
@@ -440,6 +448,10 @@ int main(int argc, char** argv) {
 
     if (d3d12SelfTest) {
         return runD3D12SelfTest(adapterPreference);
+    }
+
+    if (!depthTestInput.empty()) {
+        return runDepthTest(depthTestInput, depthTestOutput, adapterPreference);
     }
 
     if (neuralGradientCheck) {

@@ -372,7 +372,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             const float3 tint = float3(1.0f - trust0, 0.0f, 1.0f - trust1);
             color = saturate(lerp(grey, tint, 0.85f * max(tint.x, tint.z)));
         }
-        else
+        else if (view == 4)
         {
             // Vector arrows: the estimated field frame0 -> frame1, sampled
             // at the centre of every kArrowCell cell and drawn from there,
@@ -410,6 +410,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             }
             if (nearest < 0.75f) color = arrowColor;
             else if (nearest < 1.5f) color = float3(0.0f, 0.0f, 0.0f);   // outline, readable on any picture
+        }
+        else
+        {
+            // View 5, AI depth: DepthViewCS draws over this where the
+            // frames' depth exists; grey where it does not.
+            color = grey;
         }
         const bool real = t < 0.01f || t > 0.99f;
         color = DebugMarker(id.xy, color, real ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 1.0f));

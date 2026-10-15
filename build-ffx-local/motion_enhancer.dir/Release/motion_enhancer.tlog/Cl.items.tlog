@@ -15,3 +15,5 @@ C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\NeuralFlowTrain.cpp;C:\Users
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\TrainingVideo.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\TrainingVideo.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\WindowHelper.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\WindowHelper.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\GuiApp.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\DepthEstimator.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\motion_enhancer.dir\Release\DepthService.obj

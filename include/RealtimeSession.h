@@ -33,6 +33,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
 
 // Bounded self-test of the native pipeline without capture.
 int runD3D12SelfTest(GraphicsAdapterPreference adapter);
+// AI depth on one image (DepthEstimator): average time over 20 runs, and the
+// nearness map written to `output` as an 8-bit PNG (white = near).
+int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter);
 
 // Replays <prefix>_f000.png, _f001.png, ... as consecutive pairs through one
 // engine, carrying cross-pair state (FFX's history, the static-UI evidence)

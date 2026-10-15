@@ -24,7 +24,19 @@ Texture2D<float4> Frame0 : register(t0);
 Texture2D<float4> Frame1 : register(t1);
 Texture2D<float4> ForwardFlow : register(t2);
 Texture2D<float4> BackwardFlow : register(t3);
+// AI depth (DepthService; SearchRadius == 1 when both are bound): each
+// frame's nearness, 0 = far .. 1 = near, at a low resolution.
+Texture2D<float> Depth0 : register(t4);
+Texture2D<float> Depth1 : register(t5);
 RWTexture2D<uint> Projection : register(u0);
+
+// Priority per unit of farness (1 - nearness): where two blocks both close
+// their round trip and match their pictures - the world behind a standing
+// character's head lines up with the head at mid-time of a camera turn,
+// visible at both ends - the nearer one wins, as with a real depth buffer.
+// Next to the round trip's 16 per pixel this only decides near-ties: a
+// point that is covered fails that by the relative motion, tens of pixels.
+static const float kDepthWeight = 32.0f;
 
 [numthreads(16, 16, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
@@ -44,7 +56,13 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     const float2 uv = (centre + v + 0.5f) * inverseSize;
     const float3 other = backward ? Frame0.SampleLevel(LinearClamp, uv, 0).rgb
                                   : Frame1.SampleLevel(LinearClamp, uv, 0).rgb;
-    const float priority = ProjectionPriority(length(v + back), MaxComponent(abs(own - other)) * kLumaScale);
+    float priority = ProjectionPriority(length(v + back), MaxComponent(abs(own - other)) * kLumaScale);
+    if (SearchRadius == 1)
+    {
+        const float2 uvHere = (centre + 0.5f) * inverseSize;
+        const float near = backward ? Depth1.SampleLevel(LinearClamp, uvHere, 0) : Depth0.SampleLevel(LinearClamp, uvHere, 0);
+        priority += kDepthWeight * (1.0f - saturate(near));
+    }
 
     const float2 target = centre + (backward ? 1.0f - t : t) * v;
     const int2 cell = int2(floor((target - 0.5f * (float)(BlockSize - 1)) / (float)BlockSize + 0.5f));

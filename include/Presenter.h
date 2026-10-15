@@ -12,9 +12,9 @@
 
 // Live debug view of the presented frames (see DebugView() in
 // Common.hlsli): 0 = off, 1 = motion, 2 = static-UI evidence, 3 = occlusion
-// trust, 4 = vector arrows. Ctrl+Alt+F3 in the overlay cycles it; read on
-// every frame.
-constexpr int kDebugViewCount = 5;
+// trust, 4 = vector arrows, 5 = AI depth (DepthViewCS). Ctrl+Alt+F3 in the
+// overlay cycles it; read on every frame.
+constexpr int kDebugViewCount = 6;
 void cycleDebugView();
 int debugView();
 // Ctrl+Alt+F2 in the overlay: saves, into captures\<date-time>\ next to the
@@ -34,13 +34,27 @@ void requestCaptureDump();
 // then InterpolateCS. `projection` comes from createProjection(). Bits of
 // implicitInputs mark frame0, frame1 (0x1, 0x2) and uiMask (0x10) as read
 // through implicit promotion, as DispatchContext::dispatch takes them.
+// depth0/depth1: the frames' AI depth (FlowEngine::depthFor), used by the
+// projection only when both are given. dilated: two field-sized scratch
+// textures (createDilatedFields); with them, each field whose frame has
+// depth is first dilated at outlines (DepthDilateCS) and used dilated.
 bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
                        const ShaderConstants& constants, ID3D12Resource* frame0, ID3D12Resource* frame1,
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
-                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs);
+                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
+                       ID3D12Resource* depth0 = nullptr, ID3D12Resource* depth1 = nullptr,
+                       ID3D12Resource* const* dilated = nullptr);
 // The projection for frames of width x height, at any flow grid of 2 px or
 // coarser.
 bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource>& projection);
+// The two dilated fields for recordInterpolate, at any flow grid of 2 px or
+// coarser.
+bool createDilatedFields(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource> (&fields)[2]);
+// Debug view 5: draws the AI depth of depth0/depth1, blended at
+// constants.timeT, over `output` (DepthViewCS).
+bool recordDepthView(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
+                     const ShaderConstants& constants, ID3D12Resource* depth0, ID3D12Resource* depth1,
+                     ID3D12Resource* output);
 
 // One interpolated (or pass-through) output frame.
 struct RenderJob {
@@ -55,6 +69,8 @@ struct RenderJob {
     ID3D12Resource* uiMask = nullptr;  // FlowEngine::Entry::uiMaskInput(); null = no UI
     ID3D12Fence* flowFence = nullptr;   // GPU-side wait before the interpolate pass
     uint64_t flowFenceValue = 0;
+    ID3D12Resource* depth0 = nullptr;  // AI depth of frame0 / frame1, when complete
+    ID3D12Resource* depth1 = nullptr;
     float alpha = 0.0f;
     bool single = false;               // show frame0 (alpha < 0.5) or frame1 as-is
 };
@@ -124,6 +140,7 @@ private:
     HANDLE m_latencyWaitable = nullptr;
     ComPtr<ID3D12Resource> m_output;
     ComPtr<ID3D12Resource> m_projection;
+    ComPtr<ID3D12Resource> m_dilated[2];   // DepthDilateCS
 
     // Replay buffer for requestCaptureDump(): the last presented frames and
     // the game frames they were made from, in video memory. Frozen while a

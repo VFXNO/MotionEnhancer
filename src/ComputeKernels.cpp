@@ -37,7 +37,8 @@ const char* kShaderFiles[] = {
     "DisPatchCS.cso", "DisDensifyCS.cso", "DisToRingCS.cso",
     "FfxRefineInitCS.cso", "FfxRefineIterateCS.cso", "FfxRefineToRingCS.cso",
     "FfxRefineConsistCS.cso", "FfxRepairCS.cso", "OcclusionFillCS.cso",
-    "ProjectClearCS.cso", "ProjectSplatCS.cso", "FlowMedianCS.cso"};
+    "ProjectClearCS.cso", "ProjectSplatCS.cso", "FlowMedianCS.cso", "DepthInputCS.cso", "DepthFinishCS.cso", "DepthViewCS.cso",
+    "DepthDilateCS.cso"};
 }
 
 bool ComputeKernels::load(ID3D12Device* device) {

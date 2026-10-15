@@ -1,5 +1,7 @@
 #include "RealtimeSession.h"
 
+#include "DepthEstimator.h"
+
 #include "CaptureEngine.h"
 #include "ComputeKernels.h"
 #include "FrameTimeline.h"
@@ -356,6 +358,9 @@ int runRealtimeSession(const RealtimeOptions& options) {
             job.ready0 = in0.readyValue;
             job.frame1 = in1.texture;
             job.ready1 = in1.readyValue;
+            // AI depth only where it is already complete: never a wait.
+            job.depth0 = flow.depthFor(in0);
+            job.depth1 = flow.depthFor(in1);
             job.alpha = sel.alpha;
             const bool pair = sel.f0.index != sel.f1.index;
             FlowEngine::Entry entry;
@@ -803,7 +808,10 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
     SharedTexture output;
     if (!device.createSharedTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, output)) return 1;
     ComPtr<ID3D12Resource> projection;
-    if (!createProjection(device, width, height, projection)) return 1;
+    ComPtr<ID3D12Resource> dilated[2];
+    if (!createProjection(device, width, height, projection) || !createDilatedFields(device, width, height, dilated))
+        return 1;
+    ID3D12Resource* const dilatedFields[2] = {dilated[0].Get(), dilated[1].Get()};
 
     // The engine is named after the pairs ran: which one runs is decided per
     // submission (FFX can fall back), so before the first it reads as SAD.
@@ -813,6 +821,7 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
 
     double first = 0.0, last = 0.0;
     int measured = 0;
+    int depthPairs = 0;
     for (size_t i = 0; i + 1 < frames.size(); ++i) {
         const auto result = flow.submitPair(inputs[i], inputs[i + 1]);
         if (result.entry < 0 || !flow.waitFence(result.fence)) {
@@ -825,10 +834,16 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         c.height = c.levelHeight = height;
         setInterpolationConstants(c, entry, 0.5f);
         c.neuralControl[1] = offlineDebugView();
+        // AI depth: waited for here so a sequence measures the same thing
+        // every run (the live presenter only takes completed depth).
+        ID3D12Resource* depth0 = settings.aiDepth ? flow.waitDepth(inputs[i], 5000) : nullptr;
+        ID3D12Resource* depth1 = settings.aiDepth ? flow.waitDepth(inputs[i + 1], 5000) : nullptr;
+        if (depth0 && depth1) ++depthPairs;
         if (!offline.begin()) return 1;
         if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, textures[i].texture12.Get(),
                                textures[i + 1].texture12.Get(), entry.forward.Get(), entry.backward.Get(),
-                               entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13)) return 1;
+                               entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13,
+                               depth0, depth1, dilatedFields)) return 1;
         uint64_t done = 0;
         if (!offline.execute(flow.fence(), result.fence, &done)) return 1;
 
@@ -904,6 +919,8 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
     }
     std::cout << "  engine: "
               << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n";
+    if (settings.aiDepth)
+        std::cout << "  AI depth used for " << depthPairs << " of " << (frames.size() - 1) << " pairs\n";
     if (measured >= 2) {
         std::cout << "  first " << std::fixed << std::setprecision(2) << first
                   << " dB, last " << last << " dB, drift " << (last - first) << " dB"
@@ -1442,6 +1459,91 @@ int runNeuralParityCheck(const std::string& frame0Path, const std::string& frame
                        "do not compute the same function.\n");
     return ok ? 0 : 1;
 }
+// Area-averaged RGB of `image` at DepthEstimator::kSize squared.
+static std::vector<uint8_t> depthInput(const Image& image) {
+    const int n = DepthEstimator::kSize;
+    std::vector<uint8_t> rgb(static_cast<size_t>(n) * n * 3);
+    for (int y = 0; y < n; ++y) {
+        const int y0 = y * image.height / n, y1 = std::max(y0 + 1, (y + 1) * image.height / n);
+        for (int x = 0; x < n; ++x) {
+            const int x0 = x * image.width / n, x1 = std::max(x0 + 1, (x + 1) * image.width / n);
+            for (int c = 0; c < 3; ++c) {
+                float sum = 0.0f;
+                for (int yy = y0; yy < y1; ++yy)
+                    for (int xx = x0; xx < x1; ++xx) sum += image.get(xx, yy, std::min(c, image.channels - 1));
+                rgb[(static_cast<size_t>(y) * n + x) * 3 + c] =
+                    static_cast<uint8_t>(std::clamp(sum / static_cast<float>((y1 - y0) * (x1 - x0)), 0.0f, 255.0f));
+            }
+        }
+    }
+    return rgb;
+}
+
+int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter) {
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    DepthEstimator depth;
+    if (!depth.initialize(device.device(), DepthEstimator::defaultModelPath())) return 1;
+    const Image image = Image::load(input);
+    if (image.empty()) {
+        std::cerr << "Error: failed to load " << input << "\n";
+        return 1;
+    }
+    const std::vector<uint8_t> rgb = depthInput(image);
+    const int n = DepthEstimator::kSize;
+    std::vector<float> nearness(static_cast<size_t>(n) * n);
+    if (!depth.estimate(rgb.data(), nearness.data())) return 1;   // warm-up
+    const int runs = 20;
+    const auto start = std::chrono::steady_clock::now();
+    DepthEstimator::Timings split;
+    for (int i = 0; i < runs; ++i) {
+        if (!depth.estimate(rgb.data(), nearness.data())) return 1;
+        const DepthEstimator::Timings t = depth.lastTimings();
+        split.prepare += t.prepare / runs;
+        split.network += t.network / runs;
+        split.finish += t.finish / runs;
+    }
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() / runs;
+    std::cout << "AI depth: " << ms << " ms per frame (mean of " << runs << ", CPU round trip included)\n"
+              << "  input tensor " << split.prepare << " ms, network " << split.network << " ms, output mapping "
+              << split.finish << " ms\n";
+    Image out(n, n, 1);
+    for (int y = 0; y < n; ++y)
+        for (int x = 0; x < n; ++x) out.set(x, y, 0, 255.0f * nearness[static_cast<size_t>(y) * n + x]);
+    if (!out.savePNG(output)) return 1;
+
+    // The GPU path (DepthService): the tensors stay in D3D12 buffers, the
+    // network runs on them and the CPU only waits for its fence here.
+    ComPtr<ID3D12Resource> inputBuffer, outputBuffer, upload;
+    ComPtr<ID3D12Fence> fence;
+    if (FAILED(device.createBuffer(DepthEstimator::kInputBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                   D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, inputBuffer)) ||
+        FAILED(device.createBuffer(DepthEstimator::kOutputBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                   D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, outputBuffer)) ||
+        FAILED(device.device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))))
+        return 1;
+    void* inputHandle = depth.registerBuffer(inputBuffer.Get());
+    void* outputHandle = depth.registerBuffer(outputBuffer.Get());
+    HANDLE event = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (!inputHandle || !outputHandle || !event) return 1;
+    uint64_t value = 0;
+    auto gpuRun = [&]() {
+        if (!depth.runGpu(inputHandle, outputHandle, nullptr, 0, fence.Get(), ++value)) return false;
+        return SUCCEEDED(fence->SetEventOnCompletion(value, event)) && WaitForSingleObject(event, 5000) == WAIT_OBJECT_0;
+    };
+    bool gpuOk = gpuRun();   // warm-up
+    const auto gpuStart = std::chrono::steady_clock::now();
+    for (int i = 0; gpuOk && i < runs; ++i) gpuOk = gpuRun();
+    const double gpuMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - gpuStart).count() / runs;
+    depth.releaseBuffer(inputHandle);
+    depth.releaseBuffer(outputHandle);
+    CloseHandle(event);
+    if (!gpuOk) return 1;
+    std::cout << "AI depth, GPU path: " << gpuMs << " ms per frame until the network is done (mean of " << runs
+              << ", no CPU copies)\n";
+    return 0;
+}
+
 int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;

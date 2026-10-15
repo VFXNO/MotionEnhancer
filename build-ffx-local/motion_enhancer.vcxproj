@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -111,16 +111,16 @@
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -128,8 +128,21 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>	Copying HLSL shaders to target binary directory</Message>
+      <Message>Staging the AI depth runtime and model next to the executable		Copying HLSL shaders to target binary directory</Message>
       <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime_providers_shared.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/DirectML.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Debug/models
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/models/midas_v21_small_256_fp16.onnx C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Debug/models
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Debug/shaders
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
@@ -149,10 +162,11 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64d.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64d.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64d.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64d.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\lib\onnxruntime.lib;delayimp.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;gdiplus.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <DelayLoadDLLs>onnxruntime.dll</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -168,7 +182,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -192,18 +206,18 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -211,8 +225,21 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>	Copying HLSL shaders to target binary directory</Message>
+      <Message>Staging the AI depth runtime and model next to the executable		Copying HLSL shaders to target binary directory</Message>
       <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime_providers_shared.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/DirectML.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Release
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Release/models
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/models/midas_v21_small_256_fp16.onnx C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Release/models
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/Release/shaders
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
@@ -232,10 +259,11 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\lib\onnxruntime.lib;delayimp.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;gdiplus.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <DelayLoadDLLs>onnxruntime.dll</DelayLoadDLLs>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -251,7 +279,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -275,18 +303,18 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -294,8 +322,21 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>	Copying HLSL shaders to target binary directory</Message>
+      <Message>Staging the AI depth runtime and model next to the executable		Copying HLSL shaders to target binary directory</Message>
       <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime_providers_shared.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/DirectML.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/MinSizeRel
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/MinSizeRel/models
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/models/midas_v21_small_256_fp16.onnx C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/MinSizeRel/models
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/MinSizeRel/shaders
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
@@ -315,10 +356,11 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>fidelityfx-sdk\src\components\opticalflow\MinSizeRel\ffx_opticalflow_x64.lib;fidelityfx-sdk\src\backends\dx12\MinSizeRel\ffx_backend_dx12_x64.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>fidelityfx-sdk\src\components\opticalflow\MinSizeRel\ffx_opticalflow_x64.lib;fidelityfx-sdk\src\backends\dx12\MinSizeRel\ffx_backend_dx12_x64.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\lib\onnxruntime.lib;delayimp.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;gdiplus.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <DelayLoadDLLs>onnxruntime.dll</DelayLoadDLLs>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -334,7 +376,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /await</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -359,16 +401,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;MOTION_ENHANCER_FFX_OPTICAL_FLOW=1;MOTION_ENHANCER_AI_DEPTH=1;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;MOTION_ENHANCER_DXC=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\src\shared;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-local\fidelityfx-sdk\src\backends\shaders\dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -376,8 +418,21 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>	Copying HLSL shaders to target binary directory</Message>
+      <Message>Staging the AI depth runtime and model next to the executable		Copying HLSL shaders to target binary directory</Message>
       <Command>setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/onnxruntime_providers_shared.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/bin/DirectML.dll C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/RelWithDebInfo
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/RelWithDebInfo/models
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ai-depth/models/midas_v21_small_256_fp16.onnx C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/RelWithDebInfo/models
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/shaders C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-local/RelWithDebInfo/shaders
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
@@ -397,10 +452,11 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64drel.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64drel.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_opticalflow_x64drel.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\bin\ffx_sdk\ffx_backend_dx12_x64drel.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ai-depth\lib\onnxruntime.lib;delayimp.lib;d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dwmapi.lib;avrt.lib;comctl32.lib;comdlg32.lib;gdiplus.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;windowscodecs.lib;windowsapp.lib;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <DelayLoadDLLs>onnxruntime.dll</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -489,6 +545,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\TrainingVideo.cpp" />
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\WindowHelper.cpp" />
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp" />
     <ResourceCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\app.rc" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Image.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Pyramid.h" />
@@ -507,6 +565,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\WallClock.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\WindowHelper.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\GuiApp.h" />
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthEstimator.h" />
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthService.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image_write.h" />
   </ItemGroup>

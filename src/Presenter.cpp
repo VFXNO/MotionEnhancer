@@ -96,7 +96,8 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     if (FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
                                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                        D3D12_RESOURCE_STATE_COMMON, m_output, L"PresentOutput"))) return false;
-    if (!createProjection(*device, width, height, m_projection)) return false;
+    if (!createProjection(*device, width, height, m_projection) || !createDilatedFields(*device, width, height, m_dilated))
+        return false;
     // The replay buffer's presented frames (requestCaptureDump()); without
     // the memory for it the hotkey saves nothing, and presenting goes on.
     m_replayBusy = std::make_shared<std::atomic<bool>>(false);
@@ -118,9 +119,10 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     m_fence->SetName(L"PresentFence");
     m_fenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
     if (!m_fenceEvent) return false;
-    // Four dispatches per presented frame (splat clear, splat, resolve,
-    // interpolate), seven descriptors and one constant slot each.
-    if (!m_dispatch.initialize(d3d, kBackBuffers, 32, 8)) return false;
+    // Up to seven dispatches per presented frame (two depth dilations, splat
+    // clear, splat, resolve, interpolate, depth view), seven descriptors and
+    // one constant slot each.
+    if (!m_dispatch.initialize(d3d, kBackBuffers, 64, 16)) return false;
 
     m_refreshHz = queryRefreshRate(window);
     m_refreshInterval = static_cast<int64_t>(10000000.0 / m_refreshHz + 0.5);
@@ -215,24 +217,68 @@ bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, C
                                             D3D12_RESOURCE_STATE_COMMON, projection, L"MotionProjection"));
 }
 
+bool createDilatedFields(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource> (&fields)[2]) {
+    const uint32_t gw = (width + 1) / 2;
+    const uint32_t gh = (height + 1) / 2;
+    for (auto& field : fields)
+        if (FAILED(device.createTexture2D(gw, gh, DXGI_FORMAT_R32G32_FLOAT, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                          D3D12_RESOURCE_STATE_COMMON, field, L"DepthDilated"))) return false;
+    return true;
+}
+
+bool recordDepthView(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
+                     const ShaderConstants& constants, ID3D12Resource* depth0, ID3D12Resource* depth1,
+                     ID3D12Resource* output) {
+    if (!depth0 || !depth1) return true;
+    std::array<ID3D12Resource*, 6> in = {depth0, depth1, nullptr, nullptr, nullptr, nullptr};
+    return dispatch.dispatch(list, kernels, Kernel::DepthView, in, output, constants,
+                             (constants.width + 15) / 16, (constants.height + 15) / 16);
+}
+
 bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
                        const ShaderConstants& c, ID3D12Resource* frame0, ID3D12Resource* frame1,
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
-                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs) {
+                       ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
+                       ID3D12Resource* depth0, ID3D12Resource* depth1, ID3D12Resource* const* dilated) {
     const bool project = c.flowScale == 0.0f && projection;
     if (project) {
         const uint32_t block = static_cast<uint32_t>(std::max(1, c.blockSize));
         const uint32_t gw = (c.width + block - 1) / block;
         const uint32_t gh = (c.height + block - 1) / block;
         std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-        std::array<ID3D12Resource*, 6> splat = {frame0, frame1, forward, backward, nullptr, nullptr};
+        // AI depth edge dilation (DepthDilateCS), each field with its own
+        // frame's depth; the projection and the interpolation then read the
+        // dilated fields. Reach one block: on the user's real frames every
+        // pair improved where it acted (DIS 13 of 13, FFX occlusion 10 of
+        // 10, speckle unchanged); two blocks was mixed (8 better, 10 worse).
+        constexpr int dilateReach = 1;
+        if (dilated) {
+            ID3D12Resource* depths[2] = {depth0, depth1};
+            ID3D12Resource** fields[2] = {&forward, &backward};
+            ShaderConstants d = c;
+            d.searchRadius = dilateReach;
+            for (int i = 0; i < 2; ++i) {
+                if (!depths[i]) continue;
+                std::array<ID3D12Resource*, 6> in = {*fields[i], depths[i], nullptr, nullptr, nullptr, nullptr};
+                if (!dispatch.dispatch(list, kernels, Kernel::DepthDilate, in, dilated[i], d, (gw + 15) / 16, (gh + 15) / 16))
+                    return false;
+                *fields[i] = dilated[i];
+            }
+        }
+        const bool depth = depth0 && depth1;
+        std::array<ID3D12Resource*, 6> splat = {frame0, frame1, forward, backward, depth ? depth0 : nullptr,
+                                                depth ? depth1 : nullptr};
+        ShaderConstants s = c;
+        s.searchRadius = depth ? 1 : 0;   // ProjectSplatCS: AI depth bound
         if (!dispatch.dispatch(list, kernels, Kernel::ProjectClear, none, projection, c, (2 * gw + 15) / 16, (gh + 15) / 16) ||
-            !dispatch.dispatch(list, kernels, Kernel::ProjectSplat, splat, projection, c, (2 * gw + 15) / 16, (gh + 15) / 16,
+            !dispatch.dispatch(list, kernels, Kernel::ProjectSplat, splat, projection, s, (2 * gw + 15) / 16, (gh + 15) / 16,
                                implicitInputs & 0x3)) return false;
     }
     std::array<ID3D12Resource*, 6> in = {frame0, frame1, forward, backward, uiMask, project ? projection : nullptr};
-    return dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, c,
-                             (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs);
+    if (!dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, c,
+                           (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs)) return false;
+    if (static_cast<int>(c.neuralControl[1]) == 5) return recordDepthView(list, dispatch, kernels, c, depth0, depth1, output);
+    return true;
 }
 
 namespace {
@@ -484,7 +530,8 @@ void cycleDebugView() {
         "off", "motion (hue = direction, strength = speed)",
         "static UI (yellow = evidence building, green = confirmed)",
         "occlusion (red = frame0 sample distrusted, blue = frame1)",
-        "vector arrows (one per 16 px, quarter length, capped at 14 px, coloured by direction)"};
+        "vector arrows (one per 16 px, quarter length, capped at 14 px, coloured by direction)",
+        "AI depth (blue far .. red near; grey where there is none: AI depth off or not ready)"};
     const int view = (g_debugView.load() + 1) % kDebugViewCount;
     g_debugView.store(view);
     std::cout << "[Overlay] debug view " << view << ": " << names[view] << std::endl;
@@ -517,14 +564,21 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         std::array<ID3D12Resource*, 6> in = {source, nullptr, nullptr, nullptr, nullptr, nullptr};
         ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::PresentFrame, in, m_output.Get(), c,
                                  (m_width + 15) / 16, (m_height + 15) / 16, 0x1);
+        // Debug view 5: the shown frame's own AI depth.
+        if (ok && debugView() == 5) {
+            ID3D12Resource* depth = (job.alpha < 0.5f || !job.frame1) ? job.depth0 : job.depth1;
+            ok = recordDepthView(m_list.Get(), m_dispatch, *m_kernels, c, depth, depth, m_output.Get());
+        }
     } else {
         c.blockSize = c.parentBlockSize = job.flowBlockSize;
         c.timeT = std::clamp(job.alpha, 0.0f, 1.0f);
         c.flowScale = job.singleFlowField ? 1.0f : 0.0f;
         // The UI mask is promoted implicitly: the flow queue may be reading
         // it at the same moment as the next pair's prior evidence.
+        ID3D12Resource* const dilatedFields[2] = {m_dilated[0].Get(), m_dilated[1].Get()};
         ok = recordInterpolate(m_list.Get(), m_dispatch, *m_kernels, c, job.frame0, job.frame1, job.forwardFlow,
-                               job.backwardFlow, job.uiMask, m_projection.Get(), m_output.Get(), 0x13);
+                               job.backwardFlow, job.uiMask, m_projection.Get(), m_output.Get(), 0x13,
+                               job.depth0, job.depth1, dilatedFields);
     }
     if (!ok) {
         m_list->Close();

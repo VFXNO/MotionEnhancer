@@ -52,6 +52,12 @@
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Image.h">
@@ -103,6 +109,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\GuiApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthEstimator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image.h">

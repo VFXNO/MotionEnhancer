@@ -153,6 +153,262 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DepthDilateCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DepthDilateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthDilateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthDilateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthDilateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DepthDilateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthDilateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthDilateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthDilateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DepthDilateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthDilateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthDilateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthDilateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DepthDilateCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthDilateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthDilateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthDilateCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DepthFinishCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DepthFinishCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthFinishCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthFinishCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthFinishCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DepthFinishCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthFinishCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthFinishCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthFinishCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DepthFinishCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthFinishCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthFinishCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthFinishCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DepthFinishCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthFinishCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthFinishCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthFinishCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DepthInputCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DepthInputCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthInputCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DepthInputCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthInputCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DepthInputCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthInputCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DepthInputCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthInputCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DepthViewCS.cso.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DepthViewCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthViewCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating shaders/DepthViewCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthViewCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating shaders/DepthViewCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthViewCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating shaders/DepthViewCS.cso</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/DepthViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\DepthViewCS.hlsl;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Common.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Synthesis.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\Photometric.hlsli;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\shaders\FfxRefine.hlsli;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DisDensifyCS.cso.rule">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating shaders/DisDensifyCS.cso</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
@@ -1634,7 +1890,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</VerifyInputsAndOutputsExist>
@@ -1646,7 +1902,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</VerifyInputsAndOutputsExist>
@@ -1658,7 +1914,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</VerifyInputsAndOutputsExist>
@@ -1670,7 +1926,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LuminanceCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PyramidCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\MotionSearchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\InterpolateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PresentFrameCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\PackLumaCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\LearnedFeaturesCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FillFlowCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\UiMaskCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FrameStatsCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisPatchCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisDensifyCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DisToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\OcclusionFillCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectClearCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\ProjectSplatCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FlowMedianCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthInputCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthFinishCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthViewCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\DepthDilateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxFlowConvertCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineInitCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineIterateCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineToRingCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRefineConsistCS.cso;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\shaders\FfxRepairCS.cso;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\motion_enhancer_shaders</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</VerifyInputsAndOutputsExist>

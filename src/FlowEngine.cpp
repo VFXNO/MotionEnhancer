@@ -1,5 +1,7 @@
 #include "FlowEngine.h"
 
+#include "DepthService.h"
+
 #include <algorithm>
 #include <iostream>
 
@@ -61,6 +63,7 @@ FlowEngine::~FlowEngine() {
         if (SUCCEEDED(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent)))
             WaitForSingleObject(m_fenceEvent, kGpuWaitTimeoutMs);
     }
+    m_depth.reset();
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
 #endif
@@ -258,6 +261,15 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         }
     }
 
+
+    m_depth.reset();
+    if (m_settings.aiDepth) {
+        m_depth = std::make_unique<DepthService>();
+        if (!m_depth->initialize(m_device, m_kernels, m_fence.Get(), slotCount, m_settings.aiDepthStride)) {
+            std::cerr << "FlowEngine: AI depth unavailable; continuing without it.\n";
+            m_depth.reset();
+        }
+    }
 
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
@@ -915,12 +927,22 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     // test 0.1-0.3 dB.
     if (ok && m_usingFfx) ok = recordFlowMedian(scratch);
     if (ok) ok = recordUiMask(previous, current, entryIndex, scratch);
+    // AI depth: both frames' network input, once per frame (DepthService).
+    if (ok && m_depth) {
+        ok = m_depth->record(m_list.Get(), m_dispatch, previous, m_width, m_height) &&
+             m_depth->record(m_list.Get(), m_dispatch, current, m_width, m_height);
+    }
     if (!ok) {
         m_list->Close();
+        if (m_depth) m_depth->discarded();
         return result;
     }
     uint64_t fenceValue = 0;
-    if (!endList(previous, current, fenceValue)) return result;
+    if (!endList(previous, current, fenceValue)) {
+        if (m_depth) m_depth->discarded();
+        return result;
+    }
+    if (m_depth) m_depth->submitted(fenceValue);
 
     {
         std::lock_guard<std::mutex> lock(m_ringMutex);
@@ -985,4 +1007,12 @@ double FlowEngine::lastGpuTimeMs() {
         ++m_timestampsRead;
     }
     return m_lastGpuTimeMs;
+}
+
+ID3D12Resource* FlowEngine::depthFor(const FlowInput& frame) const {
+    return m_depth ? m_depth->depthFor(frame) : nullptr;
+}
+
+ID3D12Resource* FlowEngine::waitDepth(const FlowInput& frame, unsigned timeoutMs) {
+    return m_depth ? m_depth->waitFor(frame, timeoutMs) : nullptr;
 }

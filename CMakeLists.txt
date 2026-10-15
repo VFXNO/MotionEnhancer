@@ -49,6 +49,8 @@ set(SOURCES
     src/TrainingVideo.cpp
     src/WindowHelper.cpp
     src/GuiApp.cpp
+    src/DepthEstimator.cpp
+    src/DepthService.cpp
     app.rc
 )
 
@@ -71,6 +73,8 @@ set(HEADERS
     include/WallClock.h
     include/WindowHelper.h
     include/GuiApp.h
+    include/DepthEstimator.h
+    include/DepthService.h
     third_party/stb_image.h
     third_party/stb_image_write.h
 )
@@ -93,6 +97,30 @@ if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
     target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_FFX_OPTICAL_FLOW=1)
 endif()
 
+# Optional AI depth (DepthEstimator): ONNX Runtime with the DirectML execution
+# provider running MiDaS v2.1 small, from third_party/ai-depth (onnxruntime
+# 1.24.4 DirectML and DirectML 1.15.4 redistributables, the ONNX model).
+# onnxruntime.dll is delay-loaded, so the program still starts without it and
+# simply runs without depth.
+set(MOTION_ENHANCER_AI_DEPTH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ai-depth")
+if(WIN32 AND EXISTS "${MOTION_ENHANCER_AI_DEPTH_DIR}/lib/onnxruntime.lib")
+    target_include_directories(motion_enhancer PRIVATE "${MOTION_ENHANCER_AI_DEPTH_DIR}/include")
+    target_link_libraries(motion_enhancer PRIVATE "${MOTION_ENHANCER_AI_DEPTH_DIR}/lib/onnxruntime.lib" delayimp)
+    target_link_options(motion_enhancer PRIVATE "/DELAYLOAD:onnxruntime.dll")
+    target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_AI_DEPTH=1)
+    add_custom_command(TARGET motion_enhancer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/onnxruntime.dll"
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/onnxruntime_providers_shared.dll"
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/DirectML.dll"
+            "$<TARGET_FILE_DIR:motion_enhancer>"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:motion_enhancer>/models"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/models/midas_v21_small_256_fp16.onnx"
+            "$<TARGET_FILE_DIR:motion_enhancer>/models"
+        COMMENT "Staging the AI depth runtime and model next to the executable")
+endif()
+
 # OpenMP multi-threading support for CPU fallback
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
@@ -111,6 +139,7 @@ if(WIN32)
         avrt
         comctl32
         comdlg32
+        gdiplus
         mfplat
         mfreadwrite
         mfuuid
@@ -136,7 +165,8 @@ if(WIN32)
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
-                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl)
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
+                                      DepthDilateCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
                                                 FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl FfxRepairCS.hlsl)

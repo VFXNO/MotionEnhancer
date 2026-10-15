@@ -1,13 +1,23 @@
 #include "GuiApp.h"
+#include "Image.h"
 #include "WindowHelper.h"
 
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
 #include <dwmapi.h>
+#include <objidl.h>
+// GDI+ (anti-aliased shapes) uses min/max, which NOMINMAX removes.
+namespace Gdiplus {
+using std::max;
+using std::min;
+}
+#include <gdiplus.h>
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -17,8 +27,6 @@
 
 namespace {
 
-constexpr int IDC_TAB_LIVE = 120;
-constexpr int IDC_TAB_OFFLINE = 121;
 constexpr int IDC_WINDOW_LIST = 101;
 constexpr int IDC_REFRESH_WINDOWS = 102;
 constexpr int IDC_START_CAPTURE = 103;
@@ -32,6 +40,7 @@ constexpr int IDC_GPU_SMOOTHNESS = 111;
 constexpr int IDC_LIVE_MULTIPLIER = 112;
 constexpr int IDC_LIVE_FLOW_ENGINE = 113;
 constexpr int IDC_LIVE_ADAPTER = 114;
+constexpr int IDC_AI_DEPTH_RATE = 115;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -71,30 +80,32 @@ enum class JobType : LPARAM {
 };
 
 // ------------------------------------------------------------------
-// Gaming theme
+// Theme: monochrome, near-black surfaces, white accents, soft rounded
+// cards, a navigation sidebar on the left.
 // ------------------------------------------------------------------
-constexpr COLORREF ColBg        = RGB(9, 12, 17);
-constexpr COLORREF ColBgAlt     = RGB(12, 16, 22);
-constexpr COLORREF ColPanel     = RGB(15, 20, 28);
-constexpr COLORREF ColPanelHi   = RGB(22, 29, 40);
-constexpr COLORREF ColField     = RGB(11, 15, 21);
-constexpr COLORREF ColBorder    = RGB(38, 50, 66);
-constexpr COLORREF ColAccent    = RGB(0, 229, 255);
-constexpr COLORREF ColAccentDk  = RGB(0, 158, 178);
-constexpr COLORREF ColAccent2   = RGB(255, 45, 120);
-constexpr COLORREF ColText      = RGB(232, 238, 244);
-constexpr COLORREF ColDim       = RGB(132, 148, 164);
-constexpr COLORREF ColTextOn    = RGB(3, 14, 18);
+constexpr COLORREF ColBg        = RGB(8, 8, 10);
+constexpr COLORREF ColSidebar   = RGB(12, 12, 14);
+constexpr COLORREF ColPanel     = RGB(17, 17, 20);
+constexpr COLORREF ColPanelHi   = RGB(28, 28, 32);
+constexpr COLORREF ColField     = RGB(13, 13, 15);
+constexpr COLORREF ColBorder    = RGB(42, 42, 48);
+constexpr COLORREF ColBorderHi  = RGB(74, 74, 82);
+constexpr COLORREF ColAccent    = RGB(240, 240, 244);
+constexpr COLORREF ColAccentDk  = RGB(178, 178, 186);
+constexpr COLORREF ColText      = RGB(238, 238, 242);
+constexpr COLORREF ColDim       = RGB(138, 138, 148);
+constexpr COLORREF ColTextOn    = RGB(10, 10, 12);
 
-constexpr RECT LivePanelRect = { 36, 172, 36 + 794, 172 + 206 };
-constexpr RECT OfflinePanelRect = { 36, 272, 36 + 794, 272 + 330 };
-constexpr RECT TrainPanelRect = { 36, 514, 36 + 794, 514 + 240 };
+// The sidebar's width; every page control is placed right of it
+// (addControl adds g_offsetX).
+constexpr int kSidebarW = 232;
+constexpr RECT LivePanelRect = { kSidebarW + 36, 172, kSidebarW + 36 + 794, 172 + 206 };
+constexpr RECT OfflinePanelRect = { kSidebarW + 36, 272, kSidebarW + 36 + 794, 272 + 330 };
+constexpr RECT TrainPanelRect = { kSidebarW + 36, 514, kSidebarW + 36 + 794, 514 + 240 };
 
 struct GuiState {
     HWND hwnd = nullptr;
     int activeTab = 0;
-    HWND tabLive = nullptr;
-    HWND tabOffline = nullptr;
     HWND windowList = nullptr;
     HWND refreshButton = nullptr;
     HWND captureButton = nullptr;
@@ -119,6 +130,8 @@ struct GuiState {
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
     HWND ffxOcclusion = nullptr;
+    HWND aiDepth = nullptr;
+    HWND aiDepthRate = nullptr;
     HWND input0 = nullptr;
     HWND input1 = nullptr;
     HWND output = nullptr;
@@ -156,7 +169,54 @@ HBRUSH g_brField = nullptr;
 HBRUSH g_brBg = nullptr;
 HBRUSH g_brPanel = nullptr;
 HBRUSH g_brPanelHi = nullptr;
-HBRUSH g_brBgAlt = nullptr;
+HBRUSH g_brSidebar = nullptr;
+HFONT g_fontTitle = nullptr;
+HFONT g_fontBrand = nullptr;
+HFONT g_fontNav = nullptr;
+ULONG_PTR g_gdiplusToken = 0;
+int g_offsetX = 0;   // added to x by addControl: the page area starts right of the sidebar
+
+// ---- Animation (WM_TIMER kAnimTimer, animate()) ----
+// Ambient motion (the emblem, the sidebar's lines, the status dot) runs
+// only while the window is in front; transitions (the navigation
+// highlight, hover fades, the page title) always finish.
+constexpr UINT_PTR kAnimTimer = 1;
+constexpr RECT kNavRects[2] = { {16, 214, kSidebarW - 16, 260}, {16, 266, kSidebarW - 16, 312} };
+constexpr const char* kNavLabels[2] = { "Live Capture", "Offline Interpolation" };
+double g_time = 0.0;                 // seconds of ambient motion
+LARGE_INTEGER g_lastTick = {};
+float g_navY = -1.0f;                // top of the sliding navigation highlight
+float g_navHoverT[2] = {};           // hover fade per navigation item, 0..1
+int g_navHover = -1;
+bool g_trackingLeave = false;
+float g_pageT = 1.0f;                // page title entrance, 0..1
+std::vector<std::pair<HWND, float>> g_hoverFades;   // owner-drawn controls' hover fade, 0..1
+
+float& hoverFade(HWND control) {
+    for (auto& entry : g_hoverFades)
+        if (entry.first == control) return entry.second;
+    g_hoverFades.emplace_back(control, 0.0f);
+    return g_hoverFades.back().second;
+}
+
+float easeOut(float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+}
+
+bool fontExists(const char* face) {
+    HDC hdc = GetDC(nullptr);
+    LOGFONTA query = {};
+    query.lfCharSet = DEFAULT_CHARSET;
+    strncpy_s(query.lfFaceName, face, _TRUNCATE);
+    bool found = false;
+    EnumFontFamiliesExA(hdc, &query, [](const LOGFONTA*, const TEXTMETRICA*, DWORD, LPARAM found) -> int {
+        *reinterpret_cast<bool*>(found) = true;
+        return 0;
+    }, reinterpret_cast<LPARAM>(&found), 0);
+    ReleaseDC(nullptr, hdc);
+    return found;
+}
 
 HFONT createFont(const char* face, int height, int weight) {
     return CreateFontA(
@@ -167,15 +227,21 @@ HFONT createFont(const char* face, int height, int weight) {
 
 void ensureTheme() {
     if (g_fontBody) return;
-    g_fontBody = createFont("Segoe UI", -14, FW_NORMAL);
-    g_fontLabel = createFont("Segoe UI", -13, FW_NORMAL);
-    g_fontButton = createFont("Segoe UI", -14, FW_SEMIBOLD);
-    g_fontSection = createFont("Segoe UI", -15, FW_BOLD);
+    // Windows 11's variable Segoe where present.
+    const char* text = fontExists("Segoe UI Variable Text") ? "Segoe UI Variable Text" : "Segoe UI";
+    const char* display = fontExists("Segoe UI Variable Display") ? "Segoe UI Variable Display" : "Segoe UI";
+    g_fontBody = createFont(text, -14, FW_NORMAL);
+    g_fontLabel = createFont(text, -13, FW_NORMAL);
+    g_fontButton = createFont(text, -14, FW_SEMIBOLD);
+    g_fontSection = createFont(display, -16, FW_SEMIBOLD);
+    g_fontTitle = createFont(display, -30, FW_SEMIBOLD);
+    g_fontBrand = createFont(display, -13, FW_SEMIBOLD);
+    g_fontNav = createFont(text, -15, FW_NORMAL);
     g_brField = CreateSolidBrush(ColField);
     g_brBg = CreateSolidBrush(ColBg);
     g_brPanel = CreateSolidBrush(ColPanel);
     g_brPanelHi = CreateSolidBrush(ColPanelHi);
-    g_brBgAlt = CreateSolidBrush(ColBgAlt);
+    g_brSidebar = CreateSolidBrush(ColSidebar);
 }
 
 COLORREF lerpColor(COLORREF a, COLORREF b, double t) {
@@ -186,26 +252,86 @@ COLORREF lerpColor(COLORREF a, COLORREF b, double t) {
     return RGB(r, g, bl);
 }
 
-void fillRoundRect(HDC hdc, const RECT& rc, COLORREF color, int radius) {
-    HBRUSH brush = CreateSolidBrush(color);
-    HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(hdc, brush));
-    HPEN pen = CreatePen(PS_NULL, 0, 0);
-    HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
-    RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, radius * 2, radius * 2);
-    SelectObject(hdc, oldBrush);
-    SelectObject(hdc, oldPen);
-    DeleteObject(brush);
-    DeleteObject(pen);
+// Anti-aliased shapes (GDI+).
+Gdiplus::Color gpColor(COLORREF c, int alpha = 255) {
+    return Gdiplus::Color(static_cast<BYTE>(alpha), GetRValue(c), GetGValue(c), GetBValue(c));
 }
 
-void frameRoundRect(HDC hdc, const RECT& rc, COLORREF color, int radius) {
-    HPEN pen = CreatePen(PS_SOLID, 1, color);
-    HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
-    HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(hdc, GetStockObject(NULL_BRUSH)));
-    RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, radius * 2, radius * 2);
-    SelectObject(hdc, oldPen);
-    SelectObject(hdc, oldBrush);
-    DeleteObject(pen);
+void roundPath(Gdiplus::GraphicsPath& path, float x, float y, float w, float h, float r) {
+    r = std::min(r, std::min(w, h) / 2.0f);
+    if (r <= 0.5f) {
+        path.AddRectangle(Gdiplus::RectF(x, y, w, h));
+        return;
+    }
+    const float d = 2.0f * r;
+    path.AddArc(x, y, d, d, 180.0f, 90.0f);
+    path.AddArc(x + w - d, y, d, d, 270.0f, 90.0f);
+    path.AddArc(x + w - d, y + h - d, d, d, 0.0f, 90.0f);
+    path.AddArc(x, y + h - d, d, d, 90.0f, 90.0f);
+    path.CloseFigure();
+}
+
+void prepare(Gdiplus::Graphics& g) {
+    g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+    g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
+}
+
+void fillRoundRect(HDC hdc, const RECT& rc, COLORREF color, int radius, int alpha = 255) {
+    Gdiplus::Graphics g(hdc);
+    prepare(g);
+    Gdiplus::GraphicsPath path;
+    roundPath(path, static_cast<float>(rc.left), static_cast<float>(rc.top),
+              static_cast<float>(rc.right - rc.left), static_cast<float>(rc.bottom - rc.top), static_cast<float>(radius));
+    Gdiplus::SolidBrush brush(gpColor(color, alpha));
+    g.FillPath(&brush, &path);
+}
+
+void frameRoundRect(HDC hdc, const RECT& rc, COLORREF color, int radius, int alpha = 255, float width = 1.0f) {
+    Gdiplus::Graphics g(hdc);
+    prepare(g);
+    Gdiplus::GraphicsPath path;
+    roundPath(path, rc.left + 0.5f, rc.top + 0.5f, rc.right - rc.left - 1.0f, rc.bottom - rc.top - 1.0f,
+              static_cast<float>(radius));
+    Gdiplus::Pen pen(gpColor(color, alpha), width);
+    g.DrawPath(&pen, &path);
+}
+
+// A card: solid fill and a border lit from above (a glass edge).
+void paintCard(HDC hdc, const RECT& rc, COLORREF fill, int radius) {
+    Gdiplus::Graphics g(hdc);
+    prepare(g);
+    const float x = static_cast<float>(rc.left), y = static_cast<float>(rc.top);
+    const float w = static_cast<float>(rc.right - rc.left), h = static_cast<float>(rc.bottom - rc.top);
+    Gdiplus::GraphicsPath path;
+    roundPath(path, x, y, w, h, static_cast<float>(radius));
+    Gdiplus::SolidBrush brush(gpColor(fill));
+    g.FillPath(&brush, &path);
+    Gdiplus::GraphicsPath edge;
+    roundPath(edge, x + 0.5f, y + 0.5f, w - 1.0f, h - 1.0f, static_cast<float>(radius));
+    // Light at the top, fading to the plain border within 140 px.
+    Gdiplus::LinearGradientBrush light(Gdiplus::PointF(0.0f, y - 1.0f), Gdiplus::PointF(0.0f, y + h + 1.0f),
+                                       gpColor(RGB(92, 92, 102)), gpColor(ColBorder));
+    const Gdiplus::Color colors[3] = {gpColor(RGB(92, 92, 102)), gpColor(ColBorder), gpColor(ColBorder)};
+    const Gdiplus::REAL positions[3] = {0.0f, std::min(1.0f, 140.0f / std::max(h, 1.0f)), 1.0f};
+    light.SetInterpolationColors(colors, positions, 3);
+    Gdiplus::Pen pen(&light, 1.0f);
+    g.DrawPath(&pen, &edge);
+}
+
+// The surface a control sits on, for owner-drawn controls' corners.
+COLORREF surfaceUnder(HWND control) {
+    RECT rc = {};
+    GetWindowRect(control, &rc);
+    MapWindowPoints(HWND_DESKTOP, GetParent(control), reinterpret_cast<POINT*>(&rc), 2);
+    const int cx = (rc.left + rc.right) / 2;
+    const int cy = (rc.top + rc.bottom) / 2;
+    if (cx < kSidebarW) return ColSidebar;
+    auto within = [cx, cy](const RECT& panel) {
+        return cx >= panel.left && cx < panel.right && cy >= panel.top && cy < panel.bottom;
+    };
+    const bool onPanel = g_state.activeTab == 0 ? within(LivePanelRect) || within(TrainPanelRect)
+                                                : within(OfflinePanelRect);
+    return onPanel ? ColPanel : ColBg;
 }
 
 void setControlFont(HWND control, HFONT font) {
@@ -216,7 +342,7 @@ HWND addControl(const char* className, const char* text, DWORD style,
                 int x, int y, int w, int h, int id) {
     HWND control = CreateWindowExA(
         0, className, text, WS_CHILD | WS_VISIBLE | style,
-        x, y, w, h, g_state.hwnd,
+        x + g_offsetX, y, w, h, g_state.hwnd,
         reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),
         GetModuleHandleA(nullptr), nullptr);
     return control;
@@ -289,8 +415,7 @@ LRESULT CALLBACK comboNcProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             RECT rc = {};
             GetWindowRect(hwnd, &rc);
             OffsetRect(&rc, -rc.left, -rc.top);
-            bool active = (GetFocus() == hwnd);
-            HPEN pen = CreatePen(PS_SOLID, 1, active ? ColAccent : ColBorder);
+            HPEN pen = CreatePen(PS_SOLID, 1, ColField);
             HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
             HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(hdc, GetStockObject(NULL_BRUSH)));
             Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
@@ -305,12 +430,20 @@ LRESULT CALLBACK comboNcProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
         if (hdc) {
             RECT rc = {};
             GetClientRect(hwnd, &rc);
-            RECT button = { rc.right - 26, rc.top + 2, rc.right - 3, rc.bottom - 2 };
+            // The system's square border is painted over: the window behind
+            // draws a rounded frame around the combo (paintFieldFrames).
+            HBRUSH field = CreateSolidBrush(ColField);
+            for (int i = 0; i < 3; ++i) {
+                RECT edge = rc;
+                InflateRect(&edge, -i, -i);
+                FrameRect(hdc, &edge, field);
+            }
+            DeleteObject(field);
+            RECT button = { rc.right - 28, rc.top + 1, rc.right - 1, rc.bottom - 1 };
             FillRect(hdc, &button, g_brField);
-            frameRoundRect(hdc, button, ColBorder, 4);
             int cx = (button.left + button.right) / 2;
             int cy = (button.top + button.bottom) / 2;
-            HPEN pen = CreatePen(PS_SOLID, 2, ColAccent);
+            HPEN pen = CreatePen(PS_SOLID, 2, ColDim);
             HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
             MoveToEx(hdc, cx - 5, cy - 2, nullptr);
             LineTo(hdc, cx, cy + 3);
@@ -330,16 +463,18 @@ void drawStyledButton(const DRAWITEMSTRUCT* draw) {
     char text[96] = {};
     GetWindowTextA(hwnd, text, sizeof(text));
 
-    // Defensive base fill: guarantees the item is never left system-white.
-    FillRect(hdc, &rc, g_brPanelHi);
+    // Base fill in the colour under the control, so rounded corners blend.
+    {
+        HBRUSH base = CreateSolidBrush(surfaceUnder(hwnd));
+        FillRect(hdc, &rc, base);
+        DeleteObject(base);
+    }
 
     bool pressed = (draw->itemState & ODS_SELECTED) != 0;
     bool disabled = (draw->itemState & ODS_DISABLED) != 0;
-    bool hovered = (g_hover == hwnd) && !disabled;
+    const float hover = disabled ? 0.0f : hoverFade(hwnd);
     int id = draw->CtlID;
 
-    bool isTab = (id == IDC_TAB_LIVE || id == IDC_TAB_OFFLINE);
-    bool tabActive = isTab && ((id == IDC_TAB_LIVE) == (g_state.activeTab == 0));
     bool primary = (id == IDC_START_CAPTURE || id == IDC_RUN_OFFLINE);
     // Style bits are ambiguous (BS_OWNERDRAW overlaps BS_CHECKBOX), so
     // checkboxes are tagged explicitly with a window property.
@@ -347,11 +482,11 @@ void drawStyledButton(const DRAWITEMSTRUCT* draw) {
 
     if (isCheckbox) {
         bool checked = SendMessageA(hwnd, BM_GETCHECK, 0, 0) == BST_CHECKED;
-        if (hovered) fillRoundRect(hdc, rc, ColPanelHi, 6);
+        if (hover > 0.01f) fillRoundRect(hdc, rc, ColPanelHi, 8, static_cast<int>(255 * hover));
         RECT box = { rc.left + 2, rc.top + (rc.bottom - rc.top - 16) / 2,
                      rc.left + 18, rc.top + (rc.bottom - rc.top + 16) / 2 };
-        fillRoundRect(hdc, box, checked ? ColAccent : ColField, 4);
-        frameRoundRect(hdc, box, checked ? ColAccent : (hovered ? ColAccentDk : ColBorder), 4);
+        fillRoundRect(hdc, box, checked ? ColAccent : ColField, 5);
+        frameRoundRect(hdc, box, checked ? ColAccent : lerpColor(ColBorderHi, ColAccentDk, hover), 5);
         if (checked) {
             HPEN pen = CreatePen(PS_SOLID, 2, ColTextOn);
             HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
@@ -368,34 +503,46 @@ void drawStyledButton(const DRAWITEMSTRUCT* draw) {
         return;
     }
 
-    if (isTab) {
-        int radius = std::max(2, static_cast<int>((rc.bottom - rc.top) / 2 - 1));
-        if (tabActive) {
-            fillRoundRect(hdc, rc, ColAccent, radius);
-            SetBkMode(hdc, TRANSPARENT);
-            SetTextColor(hdc, ColTextOn);
-        } else {
-            fillRoundRect(hdc, rc, ColPanelHi, radius);
-            frameRoundRect(hdc, rc, hovered ? ColAccentDk : ColBorder, radius);
-            SetBkMode(hdc, TRANSPARENT);
-            SetTextColor(hdc, hovered ? ColText : ColDim);
-        }
-        DrawTextA(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        return;
-    }
-
-    int radius = 9;
+    int radius = (rc.bottom - rc.top) / 2;   // pills
     if (primary) {
-        COLORREF fill = disabled ? RGB(30, 40, 52) : pressed ? ColAccentDk : ColAccent;
-        fillRoundRect(hdc, rc, fill, radius);
-        if (hovered && !disabled) frameRoundRect(hdc, rc, RGB(180, 245, 255), radius);
+        if (disabled) {
+            fillRoundRect(hdc, rc, ColPanelHi, radius);
+        } else {
+            // A white pill lit from above; on hover a light band sweeps
+            // across it.
+            Gdiplus::Graphics g(hdc);
+            prepare(g);
+            const float x = static_cast<float>(rc.left), y = static_cast<float>(rc.top);
+            const float w = static_cast<float>(rc.right - rc.left), h = static_cast<float>(rc.bottom - rc.top);
+            Gdiplus::GraphicsPath pill;
+            roundPath(pill, x, y, w, h, h / 2.0f);
+            const COLORREF top = pressed ? ColAccentDk : lerpColor(RGB(236, 236, 240), RGB(255, 255, 255), hover);
+            const COLORREF bottom = pressed ? ColAccentDk : lerpColor(RGB(196, 196, 204), RGB(228, 228, 234), hover);
+            Gdiplus::LinearGradientBrush fill(Gdiplus::PointF(0.0f, y), Gdiplus::PointF(0.0f, y + h),
+                                              gpColor(top), gpColor(bottom));
+            g.FillPath(&fill, &pill);
+            if (hover > 0.01f) {
+                g.SetClip(&pill);
+                const float sweep = static_cast<float>(std::fmod(g_time * 0.9, 1.6)) / 1.6f;
+                const float bx = x - 60.0f + (w + 120.0f) * sweep;
+                Gdiplus::LinearGradientBrush band(Gdiplus::PointF(bx - 40.0f, y), Gdiplus::PointF(bx + 40.0f, y),
+                                                  gpColor(RGB(255, 255, 255), 0), gpColor(RGB(255, 255, 255), 0));
+                const Gdiplus::Color colors[3] = {gpColor(RGB(255, 255, 255), 0),
+                                                  gpColor(RGB(255, 255, 255), static_cast<int>(150 * hover)),
+                                                  gpColor(RGB(255, 255, 255), 0)};
+                const Gdiplus::REAL positions[3] = {0.0f, 0.5f, 1.0f};
+                band.SetInterpolationColors(colors, positions, 3);
+                g.FillRectangle(&band, bx - 40.0f, y, 80.0f, h);
+                g.ResetClip();
+            }
+        }
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, disabled ? ColDim : ColTextOn);
     } else {
-        fillRoundRect(hdc, rc, disabled ? ColPanel : ColPanelHi, radius);
-        frameRoundRect(hdc, rc, hovered ? ColAccent : ColBorder, radius);
+        fillRoundRect(hdc, rc, disabled ? ColPanel : lerpColor(ColPanelHi, RGB(38, 38, 44), hover), radius);
+        frameRoundRect(hdc, rc, lerpColor(ColBorder, RGB(110, 110, 120), hover), radius);
         SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, disabled ? ColDim : (hovered ? ColAccent : ColText));
+        SetTextColor(hdc, disabled ? ColDim : ColText);
     }
     RECT textRect = rc;
     if (pressed) OffsetRect(&textRect, 1, 1);
@@ -430,8 +577,7 @@ void drawStyledComboItem(const DRAWITEMSTRUCT* draw) {
     bool highlighted = !isEditPart &&
         ((draw->itemState & ODS_SELECTED) != 0 || (draw->itemState & ODS_FOCUS) != 0);
 
-    FillRect(hdc, &rc, highlighted ? g_brPanel : g_brField);
-    if (highlighted) frameRoundRect(hdc, rc, ColAccent, 0);
+    FillRect(hdc, &rc, highlighted ? g_brPanelHi : g_brField);
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, highlighted ? ColAccent : ColText);
 
@@ -905,6 +1051,12 @@ void startCapture() {
     if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
     if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
+    if (SendMessageA(g_state.aiDepth, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+        captureArgs.push_back("--ai-depth");
+        const LRESULT rate = SendMessageA(g_state.aiDepthRate, CB_GETCURSEL, 0, 0);
+        captureArgs.push_back("--ai-depth-every");
+        captureArgs.push_back(std::to_string(rate > 0 ? rate + 1 : 1));
+    }
     if (!launchJob(captureArgs, JobType::Live, true, modelPath)) {
         CloseHandle(stopEvent);
         SetWindowTextA(g_state.liveStatus, "Could not start the capture process.");
@@ -987,9 +1139,14 @@ void applyPageVisibility() {
     bool live = g_state.activeTab == 0;
     for (HWND control : g_state.liveControls) ShowWindow(control, live ? SW_SHOW : SW_HIDE);
     for (HWND control : g_state.offlineControls) ShowWindow(control, live ? SW_HIDE : SW_SHOW);
-    InvalidateRect(g_state.tabLive, nullptr, FALSE);
-    InvalidateRect(g_state.tabOffline, nullptr, FALSE);
     InvalidateRect(g_state.hwnd, nullptr, FALSE);
+}
+
+void switchPage(int page) {
+    if (page == g_state.activeTab) return;
+    g_state.activeTab = page;
+    g_pageT = 0.0f;   // the title slides in
+    applyPageVisibility();
 }
 
 HWND makeCombo(int x, int y, int w, int id) {
@@ -1048,8 +1205,9 @@ HWND makeCheckbox(const char* text, int x, int y, int w, bool checked) {
 void createControls() {
     ensureTheme();
 
-    g_state.tabLive = makeButton("LIVE CAPTURE", 36, 14, 170, 38, IDC_TAB_LIVE);
-    g_state.tabOffline = makeButton("OFFLINE INTERPOLATION", 216, 14, 240, 38, IDC_TAB_OFFLINE);
+    // The pages are placed right of the sidebar; its navigation is painted
+    // (paintSidebar) and clicked through the window itself.
+    g_offsetX = kSidebarW;
 
     // ---- Live page ----
     HWND liveHeading = makeLabel("TARGET WINDOW", 36, 68, 300);
@@ -1103,9 +1261,20 @@ void createControls() {
     // whole-pixel 8x8 field per pixel, and - experimental, off by default -
     // estimate both directions so occlusions are handled as with DIS.
     g_state.ffxRefine = makeCheckbox("FFX: refine motion", 56, 346, 220, true);
-    g_state.ffxOcclusion = makeCheckbox("FFX: occlusion handling (experimental)", 290, 346, 400, false);
+    g_state.ffxOcclusion = makeCheckbox("FFX: occlusion handling (experimental)", 290, 346, 290, false);
+    // AI depth (FlowSettings::aiDepth): the nearer surface wins where two fit
+    // equally well. Two-field modes only (DIS, FFX occlusion handling).
+    g_state.aiDepth = makeCheckbox("AI depth (DIS, FFX occl.)", 590, 346, 200, true);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
+    // How often the AI depth network runs (FlowSettings::aiDepthStride):
+    // every frame, or every n-th with the frames between borrowing a
+    // neighbour's depth (about 1.3-1.6 ms per run on an RX 9070 XT).
+    HWND aiDepthRateLabel = makeLabel("AI DEPTH RATE", 430, 398, 175);
+    g_state.aiDepthRate = makeCombo(610, 394, 180, IDC_AI_DEPTH_RATE);
+    for (const char* rate : {"Every frame", "Every 2nd frame", "Every 3rd frame", "Every 4th frame"})
+        SendMessageA(g_state.aiDepthRate, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(rate));
+    SendMessageA(g_state.aiDepthRate, CB_SETCURSEL, 0, 0);
     HWND liveHelp = addControl(
         "STATIC",
         "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay, Ctrl+Alt+F3 cycles debug views.",
@@ -1138,7 +1307,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.captureButton, liveHelp, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
@@ -1157,35 +1326,35 @@ void createControls() {
     HWND timeLabel = makeLabel("INTERPOLATION TIME (0-1)", 36, 246, 200);
     g_state.time = makeEdit("0.5", 240, 242, 80, IDC_TIME, false);
 
-    HWND levelsLabel = makeLabel("Pyramid levels", 56, 302, 145);
-    g_state.offlineLevels = makeEdit("8", 205, 298, 70, IDC_OFFLINE_LEVELS, true);
-    HWND blockLabel = makeLabel("Block size", 56, 334, 145);
-    g_state.offlineBlockSize = makeEdit("8", 205, 330, 70, IDC_OFFLINE_BLOCK_SIZE, true);
-    HWND minBlockLabel = makeLabel("Minimum block", 56, 366, 145);
-    g_state.offlineMinBlock = makeEdit("6", 205, 362, 70, IDC_OFFLINE_MIN_BLOCK, true);
-    HWND maxBlockLabel = makeLabel("Maximum block", 56, 398, 145);
-    g_state.offlineMaxBlock = makeEdit("14", 205, 394, 70, IDC_OFFLINE_MAX_BLOCK, true);
-    HWND coarseLabel = makeLabel("Coarse radius", 56, 430, 145);
-    g_state.offlineCoarseRadius = makeEdit("8", 205, 426, 70, IDC_OFFLINE_COARSE_RADIUS, true);
-    HWND refineLabel = makeLabel("Refine radius", 56, 462, 145);
-    g_state.offlineRefineRadius = makeEdit("4", 205, 458, 70, IDC_OFFLINE_REFINE_RADIUS, true);
-    HWND gridLabel = makeLabel("Grid step", 56, 494, 145);
-    g_state.offlineGridStep = makeEdit("2", 205, 490, 70, IDC_OFFLINE_GRID_STEP, true);
-    HWND subpelLabel = makeLabel("Subpixel mode", 56, 526, 145);
-    g_state.offlineSubpel = makeCombo(205, 522, 120, IDC_OFFLINE_SUBPEL);
+    HWND levelsLabel = makeLabel("Pyramid levels", 56, 312, 145);
+    g_state.offlineLevels = makeEdit("8", 205, 308, 70, IDC_OFFLINE_LEVELS, true);
+    HWND blockLabel = makeLabel("Block size", 56, 344, 145);
+    g_state.offlineBlockSize = makeEdit("8", 205, 340, 70, IDC_OFFLINE_BLOCK_SIZE, true);
+    HWND minBlockLabel = makeLabel("Minimum block", 56, 376, 145);
+    g_state.offlineMinBlock = makeEdit("6", 205, 372, 70, IDC_OFFLINE_MIN_BLOCK, true);
+    HWND maxBlockLabel = makeLabel("Maximum block", 56, 408, 145);
+    g_state.offlineMaxBlock = makeEdit("14", 205, 404, 70, IDC_OFFLINE_MAX_BLOCK, true);
+    HWND coarseLabel = makeLabel("Coarse radius", 56, 440, 145);
+    g_state.offlineCoarseRadius = makeEdit("8", 205, 436, 70, IDC_OFFLINE_COARSE_RADIUS, true);
+    HWND refineLabel = makeLabel("Refine radius", 56, 472, 145);
+    g_state.offlineRefineRadius = makeEdit("4", 205, 468, 70, IDC_OFFLINE_REFINE_RADIUS, true);
+    HWND gridLabel = makeLabel("Grid step", 56, 504, 145);
+    g_state.offlineGridStep = makeEdit("2", 205, 500, 70, IDC_OFFLINE_GRID_STEP, true);
+    HWND subpelLabel = makeLabel("Subpixel mode", 56, 536, 145);
+    g_state.offlineSubpel = makeCombo(205, 532, 120, IDC_OFFLINE_SUBPEL);
     populateSubpixelModes(g_state.offlineSubpel);
 
-    HWND smoothnessLabel = makeLabel("Smoothness", 430, 302, 150);
-    g_state.offlineSmoothness = makeEdit("0.0005", 580, 298, 80, IDC_OFFLINE_SMOOTHNESS, false);
-    HWND detailLabel = makeLabel("Detail strength", 430, 334, 150);
-    g_state.offlineDetailStrength = makeEdit("0.65", 580, 330, 80, IDC_OFFLINE_DETAIL_STRENGTH, false);
+    HWND smoothnessLabel = makeLabel("Smoothness", 430, 312, 150);
+    g_state.offlineSmoothness = makeEdit("0.0005", 580, 308, 80, IDC_OFFLINE_SMOOTHNESS, false);
+    HWND detailLabel = makeLabel("Detail strength", 430, 344, 150);
+    g_state.offlineDetailStrength = makeEdit("0.65", 580, 340, 80, IDC_OFFLINE_DETAIL_STRENGTH, false);
 
-    g_state.adaptiveBlock = makeCheckbox("Adaptive blocks", 430, 462, 150, true);
-    g_state.spatialPredictors = makeCheckbox("Spatial predictors", 580, 462, 170, true);
-    g_state.gaussianWeights = makeCheckbox("Gaussian weights", 430, 488, 150, true);
-    g_state.bidirectional = makeCheckbox("Bidirectional", 580, 488, 170, true);
-    g_state.detailRestore = makeCheckbox("Detail restoration", 430, 514, 150, true);
-    g_state.colorClamp = makeCheckbox("Color clamp", 580, 514, 170, true);
+    g_state.adaptiveBlock = makeCheckbox("Adaptive blocks", 430, 472, 150, true);
+    g_state.spatialPredictors = makeCheckbox("Spatial predictors", 580, 472, 170, true);
+    g_state.gaussianWeights = makeCheckbox("Gaussian weights", 430, 498, 150, true);
+    g_state.bidirectional = makeCheckbox("Bidirectional", 580, 498, 170, true);
+    g_state.detailRestore = makeCheckbox("Detail restoration", 430, 524, 150, true);
+    g_state.colorClamp = makeCheckbox("Color clamp", 580, 524, 170, true);
 
     g_state.offlineButton = makeButton("INTERPOLATE", 36, 620, 180, 40, IDC_RUN_OFFLINE);
     g_state.offlineStatus = addControl("STATIC", "Select two PNG frames to begin.",
@@ -1208,6 +1377,7 @@ void createControls() {
         g_state.offlineButton, g_state.offlineStatus
     };
 
+    g_offsetX = 0;
     applyPageVisibility();
     refreshWindowList();
 }
@@ -1215,51 +1385,414 @@ void createControls() {
 // ------------------------------------------------------------------
 // Custom painting
 // ------------------------------------------------------------------
-void paintSectionPanel(HDC hdc, const RECT& rc, const char* title) {
-    fillRoundRect(hdc, rc, ColPanel, 10);
-    frameRoundRect(hdc, rc, ColBorder, 10);
+// A section card: a small icon tile and the title.
+enum class SectionIcon { Chip, Spark, Sliders };
 
-    RECT dot = { rc.left + 16, rc.top + 15, rc.left + 24, rc.top + 23 };
-    fillRoundRect(hdc, dot, ColAccent, 4);
-
+void paintSectionPanel(HDC hdc, const RECT& rc, const char* title, SectionIcon icon) {
+    paintCard(hdc, rc, ColPanel, 18);
+    {
+        Gdiplus::Graphics g(hdc);
+        prepare(g);
+        const float x = rc.left + 18.0f, y = rc.top + 8.0f, size = 22.0f;
+        Gdiplus::GraphicsPath tile;
+        roundPath(tile, x, y, size, size, 6.0f);
+        Gdiplus::SolidBrush fill(gpColor(ColPanelHi));
+        g.FillPath(&fill, &tile);
+        Gdiplus::Pen edge(gpColor(ColBorderHi), 1.0f);
+        g.DrawPath(&edge, &tile);
+        Gdiplus::Pen pen(gpColor(ColText), 1.4f);
+        const float cx = x + size / 2.0f, cy = y + size / 2.0f;
+        if (icon == SectionIcon::Chip) {
+            g.DrawRectangle(&pen, cx - 4.5f, cy - 4.5f, 9.0f, 9.0f);
+            for (float d : {-2.5f, 2.5f}) {
+                g.DrawLine(&pen, cx + d, cy - 7.5f, cx + d, cy - 5.0f);
+                g.DrawLine(&pen, cx + d, cy + 5.0f, cx + d, cy + 7.5f);
+                g.DrawLine(&pen, cx - 7.5f, cy + d, cx - 5.0f, cy + d);
+                g.DrawLine(&pen, cx + 5.0f, cy + d, cx + 7.5f, cy + d);
+            }
+        } else if (icon == SectionIcon::Spark) {
+            Gdiplus::PointF star[8];
+            for (int k = 0; k < 8; ++k) {
+                const float r = k % 2 ? 2.0f : 7.0f;
+                const float a = k * 3.14159265f / 4.0f - 3.14159265f / 2.0f;
+                star[k] = Gdiplus::PointF(cx + r * std::cos(a), cy + r * std::sin(a));
+            }
+            Gdiplus::SolidBrush ink(gpColor(ColText));
+            g.FillPolygon(&ink, star, 8);
+        } else {
+            Gdiplus::SolidBrush knob(gpColor(ColText));
+            for (int k = 0; k < 3; ++k) {
+                const float ly = cy - 5.0f + 5.0f * k;
+                g.DrawLine(&pen, cx - 7.0f, ly, cx + 7.0f, ly);
+                const float kx = cx + (k == 1 ? 3.0f : -3.0f);
+                g.FillEllipse(&knob, kx - 2.2f, ly - 2.2f, 4.4f, 4.4f);
+            }
+        }
+    }
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, ColText);
-    RECT titleRect = { rc.left + 32, rc.top + 8, rc.right - 16, rc.top + 30 };
+    RECT titleRect = { rc.left + 50, rc.top + 8, rc.right - 16, rc.top + 30 };
     HFONT oldFont = static_cast<HFONT>(SelectObject(hdc, g_fontSection));
     DrawTextA(hdc, title, -1, &titleRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
 }
 
-void paintHeader(HDC hdc, const RECT& client) {
-    // Single clean accent divider under the tab row.
-    int width = client.right - client.left;
-    for (int x = 36; x < std::min(828, width); x += 3) {
-        double t = static_cast<double>(x - 36) / 792.0;
-        COLORREF color = lerpColor(ColAccent, ColBg, t);
-        RECT segment = { x, 62, x + 3, 65 };
-        HBRUSH brush = CreateSolidBrush(color);
-        FillRect(hdc, &segment, brush);
-        DeleteObject(brush);
+// How far the emblem has built itself (the splash animates these from 0;
+// the sidebar draws it complete) and its clock.
+struct EmblemState {
+    float ring = 1.0f;     // the rings, drawn round from the top
+    float nodes = 1.0f;    // the circuit nodes, shooting out
+    float trails = 1.0f;   // the motion trails, sweeping in
+    float flash = 0.0f;    // a flash of the core, 0..1
+    float time = -1.0f;    // seconds; < 0 = g_time
+    float spark = -1e9f;   // the spark's angle in degrees; < -1e8 = from the time
+};
+
+// The emblem: a ring with circuit nodes around a frame in motion - a bright
+// core and the trails it leaves - with a soft glow behind. Animated by its
+// clock: the nodes orbit slowly, a spark runs round the ring, the glow
+// breathes and the trails flicker.
+void paintEmblem(Gdiplus::Graphics& g, float cx, float cy, const EmblemState& e = {}) {
+    const float t = e.time >= 0.0f ? e.time : static_cast<float>(g_time);
+    const float breath = 0.5f + 0.5f * std::sin(t * 1.6f);
+    for (int i = 7; i >= 1; --i) {
+        const float r = 32.0f + (5.0f + 1.5f * breath) * i;
+        Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), static_cast<int>((4 + 2 * breath) * e.ring)));
+        g.FillEllipse(&glow, cx - r, cy - r, 2 * r, 2 * r);
+    }
+    Gdiplus::Pen ring(gpColor(RGB(255, 255, 255), 215), 1.6f);
+    Gdiplus::Pen thin(gpColor(RGB(255, 255, 255), 80), 1.0f);
+    if (e.ring >= 1.0f) {
+        g.DrawEllipse(&ring, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f);
+        g.DrawEllipse(&thin, cx - 38.0f, cy - 38.0f, 76.0f, 76.0f);
+    } else if (e.ring > 0.0f) {
+        g.DrawArc(&ring, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f, -90.0f, 360.0f * e.ring);
+        g.DrawArc(&thin, cx - 38.0f, cy - 38.0f, 76.0f, 76.0f, -90.0f, -360.0f * e.ring);
+    }
+    // A spark running round the ring, its tail a thinning, fading arc.
+    const float head = e.spark > -1e8f ? e.spark : t * 70.0f;
+    for (int k = 0; k < 14; ++k) {
+        const float f = k / 14.0f;
+        Gdiplus::Pen tail(gpColor(RGB(255, 255, 255), static_cast<int>(220 * (1.0f - f) * (1.0f - f))),
+                          2.6f - 1.8f * f);
+        tail.SetStartCap(Gdiplus::LineCapRound);
+        tail.SetEndCap(Gdiplus::LineCapRound);
+        g.DrawArc(&tail, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f, head - 4.0f * (k + 1), 4.2f);
+    }
+    {
+        const float a = head * 3.14159265f / 180.0f;
+        const float sx = cx + 30.0f * std::cos(a), sy = cy + 30.0f * std::sin(a);
+        Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), 40));
+        g.FillEllipse(&glow, sx - 6.0f, sy - 6.0f, 12.0f, 12.0f);
+        Gdiplus::SolidBrush spark(gpColor(RGB(255, 255, 255)));
+        g.FillEllipse(&spark, sx - 2.4f, sy - 2.4f, 4.8f, 4.8f);
+    }
+    // Circuit nodes on the outer ring, orbiting slowly, with traces outward.
+    if (e.nodes > 0.0f) {
+        Gdiplus::SolidBrush node(gpColor(RGB(255, 255, 255), 230));
+        int k = 0;
+        for (float a0 : {-140.0f, -40.0f, 40.0f, 140.0f, -90.0f, 90.0f}) {
+            // One after another, each with a small overshoot.
+            const float p = std::clamp(e.nodes * 1.6f - 0.12f * k++, 0.0f, 1.0f);
+            if (p <= 0.0f) continue;
+            const float reach = 10.0f * (1.0f + 0.25f * std::sin(3.14159265f * p)) * p;
+            const float rad = (a0 + t * 8.0f) * 3.14159265f / 180.0f;
+            const float x = cx + 38.0f * std::cos(rad), y = cy + 38.0f * std::sin(rad);
+            const float ox = cx + (38.0f + reach) * std::cos(rad), oy = cy + (38.0f + reach) * std::sin(rad);
+            g.DrawLine(&thin, x, y, ox, oy);
+            const float r = 2.5f * p;
+            g.FillEllipse(&node, ox - r, oy - r, 2 * r, 2 * r);
+        }
+    }
+    // Motion trails left of the core, flickering.
+    for (int i = 0; i < 3 && e.trails > 0.0f; ++i) {
+        const float y = cy - 9.0f + 9.0f * i;
+        const float sweep = std::clamp(e.trails * 1.5f - 0.25f * i, 0.0f, 1.0f);
+        if (sweep <= 0.0f) continue;
+        const float len = (i == 1 ? 26.0f : 18.0f) * (1.0f + 0.12f * std::sin(t * 4.0f + i * 2.1f)) * sweep;
+        Gdiplus::LinearGradientBrush fade(Gdiplus::PointF(cx - len - 4.0f, y), Gdiplus::PointF(cx, y),
+                                          gpColor(RGB(255, 255, 255), 0),
+                                          gpColor(RGB(255, 255, 255), static_cast<int>(220 * sweep)));
+        Gdiplus::Pen trail(&fade, i == 1 ? 2.4f : 1.6f);
+        trail.SetStartCap(Gdiplus::LineCapRound);
+        trail.SetEndCap(Gdiplus::LineCapRound);
+        g.DrawLine(&trail, cx - len - 4.0f, y, cx + 2.0f, y);
+    }
+    if (e.flash > 0.0f)
+        for (int i = 6; i >= 1; --i) {
+            const float r = 7.0f + 5.0f * i * e.flash;
+            Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), static_cast<int>(36 * e.flash)));
+            g.FillEllipse(&glow, cx + 8.0f - r, cy - r, 2 * r, 2 * r);
+        }
+    const float coreR = 7.0f * std::clamp(e.ring * 1.4f, 0.0f, 1.0f);
+    if (coreR > 0.0f) {
+        Gdiplus::SolidBrush core(gpColor(RGB(255, 255, 255)));
+        g.FillEllipse(&core, cx + 8.0f - coreR, cy - coreR, 2 * coreR, 2 * coreR);
+    }
+    Gdiplus::Pen halo(gpColor(RGB(255, 255, 255), static_cast<int>((80 + 80 * breath) * e.ring)), 1.2f);
+    const float hr = 11.0f + 2.0f * breath;
+    g.DrawEllipse(&halo, cx + 8.0f - hr, cy - hr, 2 * hr, 2 * hr);
+}
+
+// The navigation icons: a live signal, and two frames with the one made
+// between them.
+void paintNavIcon(Gdiplus::Graphics& g, int item, float cx, float cy, COLORREF ink) {
+    Gdiplus::Pen pen(gpColor(ink), 1.7f);
+    if (item == 0) {
+        Gdiplus::SolidBrush dot(gpColor(ink));
+        g.FillEllipse(&dot, cx - 3.0f, cy - 3.0f, 6.0f, 6.0f);
+        for (float r : {7.0f, 11.5f}) {
+            g.DrawArc(&pen, cx - r, cy - r, 2 * r, 2 * r, -50.0f, 100.0f);
+            g.DrawArc(&pen, cx - r, cy - r, 2 * r, 2 * r, 130.0f, 100.0f);
+        }
+    } else {
+        Gdiplus::GraphicsPath a, b;
+        roundPath(a, cx - 10.0f, cy - 8.0f, 12.0f, 10.0f, 2.5f);
+        roundPath(b, cx - 2.0f, cy - 2.0f, 12.0f, 10.0f, 2.5f);
+        g.DrawPath(&pen, &a);
+        g.DrawPath(&pen, &b);
+    }
+}
+
+void paintSidebar(HDC hdc, const RECT& client) {
+    RECT side = { 0, 0, kSidebarW, client.bottom };
+    FillRect(hdc, &side, g_brSidebar);
+    RECT edge = { kSidebarW - 1, 0, kSidebarW, client.bottom };
+    HBRUSH line = CreateSolidBrush(RGB(30, 30, 34));
+    FillRect(hdc, &edge, line);
+    DeleteObject(line);
+    const float t = static_cast<float>(g_time);
+
+    Gdiplus::Graphics g(hdc);
+    prepare(g);
+
+    // Flowing lines drifting slowly, and twinkling points of light.
+    const float top = 330.0f, bottom = static_cast<float>(client.bottom) - 116.0f;
+    if (bottom > top + 40.0f) {
+        for (int i = 0; i < 5; ++i) {
+            const float o = 16.0f * i;
+            const float drift = 14.0f * std::sin(t * 0.5f + i * 0.8f);
+            Gdiplus::Pen wave(gpColor(RGB(255, 255, 255), 36 - 6 * i), 1.0f);
+            g.DrawBezier(&wave, -10.0f, bottom - o, 70.0f + drift, bottom - 120.0f - o - drift,
+                         140.0f - drift, top + 60.0f + o + drift, static_cast<float>(kSidebarW) + 10.0f, top + o);
+        }
+        const float stars[][2] = {{38, 380}, {176, 410}, {96, 470}, {200, 520}, {54, 560}, {150, 600}, {120, 360}};
+        int k = 0;
+        for (const auto& p : stars) {
+            const float twinkle = 0.5f + 0.5f * std::sin(t * 1.3f + k++ * 1.9f);
+            if (p[1] >= bottom) continue;
+            Gdiplus::SolidBrush star(gpColor(RGB(255, 255, 255), 50 + static_cast<int>(150 * twinkle)));
+            const float r = 0.8f + 0.7f * twinkle;
+            g.FillEllipse(&star, p[0] - r, p[1] - r, 2 * r, 2 * r);
+        }
+    }
+
+    paintEmblem(g, kSidebarW / 2.0f, 84.0f);
+
+    // Navigation: a highlight card gliding to the active item (g_navY),
+    // hover fades, and a small lit marker on the highlight's edge.
+    if (g_navY < 0.0f) g_navY = static_cast<float>(kNavRects[g_state.activeTab].top);
+    for (int i = 0; i < 2; ++i)
+        if (g_navHoverT[i] > 0.01f) {
+            Gdiplus::GraphicsPath hover;
+            const RECT& r = kNavRects[i];
+            roundPath(hover, static_cast<float>(r.left), static_cast<float>(r.top), static_cast<float>(r.right - r.left),
+                      static_cast<float>(r.bottom - r.top), 12.0f);
+            Gdiplus::SolidBrush fill(gpColor(RGB(24, 24, 28), static_cast<int>(255 * g_navHoverT[i])));
+            g.FillPath(&fill, &hover);
+        }
+    g.Flush(Gdiplus::FlushIntentionSync);
+    const int highlightTop = static_cast<int>(std::lround(g_navY));
+    RECT highlight = { 16, highlightTop, kSidebarW - 16, highlightTop + 46 };
+    paintCard(hdc, highlight, ColPanelHi, 12);
+    {
+        const float my = highlightTop + 23.0f;
+        for (int i = 3; i >= 1; --i) {
+            Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), 14));
+            g.FillEllipse(&glow, 16.0f - 2.0f * i, my - 10.0f - 2.0f * i, 6.0f + 4.0f * i, 20.0f + 4.0f * i);
+        }
+        Gdiplus::GraphicsPath marker;
+        roundPath(marker, 17.0f, my - 9.0f, 3.0f, 18.0f, 1.5f);
+        Gdiplus::SolidBrush white(gpColor(RGB(255, 255, 255)));
+        g.FillPath(&white, &marker);
+    }
+    HFONT oldFont = static_cast<HFONT>(SelectObject(hdc, g_fontNav));
+    SetBkMode(hdc, TRANSPARENT);
+    for (int i = 0; i < 2; ++i) {
+        const RECT& r = kNavRects[i];
+        // Lit by the highlight as it passes, and by the hover.
+        const float lit = std::max(g_navHoverT[i], 1.0f - std::min(1.0f, std::fabs(g_navY - r.top) / 52.0f));
+        const COLORREF ink = lerpColor(ColDim, ColText, lit);
+        paintNavIcon(g, i, r.left + 30.0f, (r.top + r.bottom) / 2.0f, ink);
+        g.Flush(Gdiplus::FlushIntentionSync);
+        SetTextColor(hdc, ink);
+        RECT label = { r.left + 52, r.top, r.right - 8, r.bottom };
+        DrawTextA(hdc, kNavLabels[i], -1, &label, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    }
+
+    SelectObject(hdc, g_fontBrand);
+    SetTextColor(hdc, ColText);
+    RECT brand = { 0, 144, kSidebarW, 164 };
+    DrawTextA(hdc, "M O T I O N   E N H A N C E R", -1, &brand, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(hdc, g_fontLabel);
+    SetTextColor(hdc, ColDim);
+    RECT tagline = { 0, 166, kSidebarW, 184 };
+    DrawTextA(hdc, "Real-time frame generation", -1, &tagline, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    // Status card: what the program is doing now; the dot breathes while
+    // something runs.
+    const bool capturing = g_state.captureStopEvent != nullptr;
+    const bool busy = !capturing && g_state.trainButton && !IsWindowEnabled(g_state.trainButton);
+    RECT card = { 16, client.bottom - 92, kSidebarW - 16, client.bottom - 16 };
+    paintCard(hdc, card, ColPanel, 14);
+    {
+        const float dx = card.left + 26.0f, dy = (card.top + card.bottom) / 2.0f;
+        if (capturing || busy) {
+            const float pulse = 0.5f + 0.5f * std::sin(t * 3.0f);
+            for (int i = 4; i >= 1; --i) {
+                Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), 10 + static_cast<int>(18 * pulse)));
+                const float r = 5.0f + (2.0f + 2.0f * pulse) * i;
+                g.FillEllipse(&glow, dx - r, dy - r, 2 * r, 2 * r);
+            }
+        }
+        Gdiplus::SolidBrush dot(gpColor(capturing || busy ? RGB(255, 255, 255) : RGB(90, 90, 98)));
+        g.FillEllipse(&dot, dx - 5.0f, dy - 5.0f, 10.0f, 10.0f);
+        g.Flush(Gdiplus::FlushIntentionSync);
+    }
+    SelectObject(hdc, g_fontButton);
+    SetTextColor(hdc, ColText);
+    RECT state = { card.left + 46, card.top + 16, card.right - 10, card.top + 38 };
+    DrawTextA(hdc, capturing ? "Capturing" : (busy ? "Working..." : "Idle"), -1, &state,
+              DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(hdc, g_fontLabel);
+    SetTextColor(hdc, ColDim);
+    RECT hint = { card.left + 46, card.top + 38, card.right - 10, card.top + 58 };
+    DrawTextA(hdc, capturing ? "Ctrl+Alt+F1 overlay" : "Ready", -1, &hint, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(hdc, oldFont);
+}
+
+// The page title and subtitle; after a page switch they slide up and fade
+// in (g_pageT).
+constexpr RECT kHeaderRect = { kSidebarW + 30, 0, kSidebarW + 840, 64 };
+
+void paintPageHeader(HDC hdc) {
+    const bool live = g_state.activeTab == 0;
+    const float e = easeOut(g_pageT);
+    const int rise = static_cast<int>(std::lround((1.0f - e) * 12.0f));
+    SetBkMode(hdc, TRANSPARENT);
+    HFONT oldFont = static_cast<HFONT>(SelectObject(hdc, g_fontTitle));
+    SetTextColor(hdc, lerpColor(ColBg, ColText, e));
+    RECT title = { kSidebarW + 36, 6 + rise, kSidebarW + 830, 44 + rise };
+    DrawTextA(hdc, live ? "Live Capture" : "Offline Interpolation", -1, &title, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(hdc, g_fontLabel);
+    const float e2 = easeOut(g_pageT * 1.4f - 0.3f);
+    SetTextColor(hdc, lerpColor(ColBg, ColDim, e2));
+    const int rise2 = static_cast<int>(std::lround((1.0f - e2) * 8.0f));
+    RECT subtitle = { kSidebarW + 36, 42 + rise2, kSidebarW + 830, 60 + rise2 };
+    DrawTextA(hdc, live ? "Generate frames for any window in real time on the GPU."
+                        : "Interpolate a frame between two images.",
+              -1, &subtitle, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(hdc, oldFont);
+}
+
+// Rounded frames around the visible edit fields, drawn on the window
+// behind them (they have no border of their own).
+void paintFieldFrames(HDC hdc, HWND hwnd) {
+    for (HWND child = GetWindow(hwnd, GW_CHILD); child; child = GetWindow(child, GW_HWNDNEXT)) {
+        if (!IsWindowVisible(child)) continue;
+        char cls[16] = {};
+        GetClassNameA(child, cls, sizeof(cls));
+        const bool combo = _stricmp(cls, "ComboBox") == 0;
+        if (!combo && _stricmp(cls, "Edit") != 0) continue;
+        RECT rc = {};
+        GetWindowRect(child, &rc);
+        MapWindowPoints(HWND_DESKTOP, hwnd, reinterpret_cast<POINT*>(&rc), 2);
+        InflateRect(&rc, combo ? 2 : 6, combo ? 2 : 3);
+        fillRoundRect(hdc, rc, ColField, 8);
+        frameRoundRect(hdc, rc, GetFocus() == child ? ColAccentDk : ColBorder, 8);
     }
 }
 
 void paintClient(HWND hwnd) {
     PAINTSTRUCT paint = {};
-    HDC hdc = BeginPaint(hwnd, &paint);
+    HDC screen = BeginPaint(hwnd, &paint);
     RECT client = {};
     GetClientRect(hwnd, &client);
+    // Drawn off screen, then copied: no flicker. Only the parts the update
+    // touches are drawn: an animation frame usually redraws the sidebar.
+    HDC hdc = CreateCompatibleDC(screen);
+    HBITMAP bitmap = CreateCompatibleBitmap(screen, client.right, client.bottom);
+    HGDIOBJ oldBitmap = SelectObject(hdc, bitmap);
+    const RECT& dirty = paint.rcPaint;
 
-    FillRect(hdc, &client, g_brBg);
-
-    paintHeader(hdc, client);
-    if (g_state.activeTab == 0) {
-        paintSectionPanel(hdc, LivePanelRect, "ADVANCED GPU FLOW");
-        paintSectionPanel(hdc, TrainPanelRect, "TRAIN NEURAL FLOW");
-    } else {
-        paintSectionPanel(hdc, OfflinePanelRect, "ADVANCED INTERPOLATION");
+    if (dirty.left < kSidebarW) paintSidebar(hdc, client);
+    if (dirty.right > kSidebarW) {
+        RECT page = { kSidebarW, 0, client.right, client.bottom };
+        FillRect(hdc, &page, g_brBg);
+        paintPageHeader(hdc);
+        if (dirty.bottom > kHeaderRect.bottom || dirty.right > kHeaderRect.right) {
+            if (g_state.activeTab == 0) {
+                paintSectionPanel(hdc, LivePanelRect, "Advanced GPU flow", SectionIcon::Chip);
+                paintSectionPanel(hdc, TrainPanelRect, "Train neural flow", SectionIcon::Spark);
+            } else {
+                paintSectionPanel(hdc, OfflinePanelRect, "Advanced interpolation", SectionIcon::Sliders);
+            }
+            paintFieldFrames(hdc, hwnd);
+        }
     }
 
+    BitBlt(screen, dirty.left, dirty.top, dirty.right - dirty.left, dirty.bottom - dirty.top, hdc, dirty.left,
+           dirty.top, SRCCOPY);
+    SelectObject(hdc, oldBitmap);
+    DeleteObject(bitmap);
+    DeleteDC(hdc);
     EndPaint(hwnd, &paint);
+}
+
+// One animation step (kAnimTimer, about 60 per second).
+void animate(HWND hwnd) {
+    LARGE_INTEGER now, frequency;
+    QueryPerformanceCounter(&now);
+    QueryPerformanceFrequency(&frequency);
+    const float dt = g_lastTick.QuadPart
+        ? std::min(0.1f, static_cast<float>(now.QuadPart - g_lastTick.QuadPart) / frequency.QuadPart) : 0.016f;
+    g_lastTick = now;
+    const bool front = GetForegroundWindow() == hwnd && !IsIconic(hwnd);
+    bool sidebar = false;
+    if (front) {
+        g_time += dt;
+        sidebar = true;
+    }
+    const auto approach = [dt](float& value, float target, float rate) {
+        const float next = target + (value - target) * std::exp(-rate * dt);
+        const bool moved = std::fabs(next - value) > 0.002f;
+        value = std::fabs(next - target) < 0.004f ? target : next;
+        return moved;
+    };
+    const float navTarget = static_cast<float>(kNavRects[g_state.activeTab].top);
+    if (g_navY >= 0.0f && g_navY != navTarget) {
+        const float before = g_navY;
+        approach(g_navY, navTarget, 14.0f);
+        if (std::fabs(g_navY - navTarget) < 0.3f) g_navY = navTarget;
+        sidebar |= g_navY != before;
+    }
+    for (int i = 0; i < 2; ++i) sidebar |= approach(g_navHoverT[i], g_navHover == i ? 1.0f : 0.0f, 12.0f);
+    if (sidebar) {
+        RECT side = { 0, 0, kSidebarW, 4000 };
+        InvalidateRect(hwnd, &side, FALSE);
+    }
+    if (g_pageT < 1.0f) {
+        g_pageT = std::min(1.0f, g_pageT + dt / 0.45f);
+        InvalidateRect(hwnd, &kHeaderRect, FALSE);
+    }
+    for (auto& [control, fade] : g_hoverFades) {
+        const bool hot = g_hover == control && IsWindowEnabled(control);
+        const bool moved = approach(fade, hot ? 1.0f : 0.0f, 12.0f);
+        // A hovered primary button keeps animating (its light sweep).
+        const int id = GetDlgCtrlID(control);
+        const bool sweep = hot && front && (id == IDC_START_CAPTURE || id == IDC_RUN_OFFLINE);
+        if (moved || sweep) InvalidateRect(control, nullptr, FALSE);
+    }
 }
 
 // ------------------------------------------------------------------
@@ -1270,7 +1803,59 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         case WM_CREATE:
             g_state.hwnd = hwnd;
             createControls();
+            SetTimer(hwnd, kAnimTimer, 16, nullptr);
             return 0;
+
+        case WM_TIMER:
+            if (wParam == kAnimTimer) {
+                animate(hwnd);
+                return 0;
+            }
+            break;
+
+        // The sidebar's navigation is painted, so the window itself tracks
+        // the pointer over it.
+        case WM_MOUSEMOVE: {
+            const POINT p = { static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam)) };
+            g_navHover = -1;
+            for (int i = 0; i < 2; ++i)
+                if (PtInRect(&kNavRects[i], p)) g_navHover = i;
+            if (!g_trackingLeave) {
+                TRACKMOUSEEVENT track = {};
+                track.cbSize = sizeof(track);
+                track.dwFlags = TME_LEAVE;
+                track.hwndTrack = hwnd;
+                g_trackingLeave = TrackMouseEvent(&track) != FALSE;
+            }
+            return 0;
+        }
+
+        case WM_MOUSELEAVE:
+            g_navHover = -1;
+            g_trackingLeave = false;
+            return 0;
+
+        case WM_LBUTTONDOWN: {
+            const POINT p = { static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam)) };
+            for (int i = 0; i < 2; ++i)
+                if (PtInRect(&kNavRects[i], p)) switchPage(i);
+            return 0;
+        }
+
+        case WM_SETCURSOR:
+            if (reinterpret_cast<HWND>(wParam) == hwnd && LOWORD(lParam) == HTCLIENT && g_navHover >= 0) {
+                SetCursor(LoadCursor(nullptr, IDC_HAND));
+                return TRUE;
+            }
+            break;
+
+        // Ctrl+Tab switches the page from the keyboard.
+        case WM_KEYDOWN:
+            if (wParam == VK_TAB && (GetKeyState(VK_CONTROL) & 0x8000)) {
+                switchPage(1 - g_state.activeTab);
+                return 0;
+            }
+            break;
 
         case WM_PAINT:
             paintClient(hwnd);
@@ -1343,6 +1928,19 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         case WM_COMMAND:
             // A click (or Space) on a checkbox flips its state; they keep
             // it themselves (styledControlProc).
+            // The sidebar's status card follows the jobs.
+            if (HIWORD(wParam) == BN_CLICKED) {
+                RECT side = { 0, 0, kSidebarW, 4000 };
+                InvalidateRect(hwnd, &side, FALSE);
+            }
+            // Edit focus changes repaint their frames.
+            if (HIWORD(wParam) == EN_SETFOCUS || HIWORD(wParam) == EN_KILLFOCUS) {
+                RECT rc = {};
+                GetWindowRect(reinterpret_cast<HWND>(lParam), &rc);
+                MapWindowPoints(HWND_DESKTOP, hwnd, reinterpret_cast<POINT*>(&rc), 2);
+                InflateRect(&rc, 8, 5);
+                InvalidateRect(hwnd, &rc, FALSE);
+            }
             if (HIWORD(wParam) == BN_CLICKED && lParam &&
                 GetPropA(reinterpret_cast<HWND>(lParam), "MeCheckbox")) {
                 HWND box = reinterpret_cast<HWND>(lParam);
@@ -1351,18 +1949,6 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 return 0;
             }
             switch (LOWORD(wParam)) {
-                case IDC_TAB_LIVE:
-                    if (g_state.activeTab != 0) {
-                        g_state.activeTab = 0;
-                        applyPageVisibility();
-                    }
-                    return 0;
-                case IDC_TAB_OFFLINE:
-                    if (g_state.activeTab != 1) {
-                        g_state.activeTab = 1;
-                        applyPageVisibility();
-                    }
-                    return 0;
                 case IDC_REFRESH_WINDOWS: refreshWindowList(); return 0;
                 case IDC_START_CAPTURE: startCapture(); return 0;
                 case IDC_TRAIN_IMAGES: selectTrainingImages(); return 0;
@@ -1377,6 +1963,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
             break;
 
         case WM_PROCESS_COMPLETE: {
+            InvalidateRect(hwnd, nullptr, FALSE);
             DWORD exitCode = static_cast<DWORD>(wParam);
             JobType jobType = static_cast<JobType>(lParam);
             if (jobType == JobType::Live) {
@@ -1406,6 +1993,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         }
 
         case WM_TRAIN_COMPLETE: {
+            InvalidateRect(hwnd, nullptr, FALSE);
             const DWORD exitCode = static_cast<DWORD>(wParam);
             std::string* result = reinterpret_cast<std::string*>(lParam);
             EnableWindow(g_state.trainButton, TRUE);
@@ -1435,12 +2023,296 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 CloseHandle(g_state.captureStopEvent);
                 g_state.captureStopEvent = nullptr;
             }
+            KillTimer(hwnd, kAnimTimer);
             g_state.hwnd = nullptr;
             PostQuitMessage(0);
             return 0;
         }
     }
     return DefWindowProcA(hwnd, message, wParam, lParam);
+}
+
+// ------------------------------------------------------------------
+// Splash: the emblem builds itself before the window appears, then the
+// window fades in under it. A click or a key skips to the end.
+// ------------------------------------------------------------------
+constexpr int kSplashW = 460, kSplashH = 360;
+constexpr float kSplashLength = 2.6f;    // seconds, the last kSplashFade of them crossfading
+constexpr float kSplashFade = 0.45f;
+bool g_splashSkip = false;
+
+float phase(float t, float start, float length) {
+    return std::clamp((t - start) / length, 0.0f, 1.0f);
+}
+
+std::wstring widen(const char* text) {
+    std::wstring wide;
+    for (const char* p = text; *p; ++p) wide += static_cast<wchar_t>(*p);
+    return wide;
+}
+
+// One frame of the splash at time t, on a transparent ARGB surface.
+void paintSplash(Gdiplus::Graphics& target, float t) {
+    target.Clear(Gdiplus::Color(0, 0, 0, 0));
+    // Everything is drawn at full strength into a layer, then put on the
+    // surface scaled and faded as a whole.
+    Gdiplus::Bitmap layer(kSplashW, kSplashH, PixelFormat32bppPARGB);
+    Gdiplus::Graphics g(&layer);
+    prepare(g);
+    g.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAliasGridFit);
+    g.Clear(Gdiplus::Color(0, 0, 0, 0));
+
+    // The card, with a soft shadow-glow around it.
+    const float m = 24.0f;
+    const float cw = kSplashW - 2 * m, ch = kSplashH - 2 * m;
+    for (int i = 8; i >= 1; --i) {
+        Gdiplus::GraphicsPath shade;
+        roundPath(shade, m - 2.5f * i, m - 2.5f * i + 3.0f, cw + 5.0f * i, ch + 5.0f * i, 26.0f + 2.5f * i);
+        Gdiplus::SolidBrush brush(Gdiplus::Color(static_cast<BYTE>(16), 0, 0, 0));
+        g.FillPath(&brush, &shade);
+    }
+    Gdiplus::GraphicsPath card;
+    roundPath(card, m, m, cw, ch, 26.0f);
+    Gdiplus::LinearGradientBrush fill(Gdiplus::PointF(0.0f, m), Gdiplus::PointF(0.0f, m + ch),
+                                      gpColor(RGB(20, 20, 24), 250), gpColor(RGB(10, 10, 12), 250));
+    g.FillPath(&fill, &card);
+    {
+        Gdiplus::GraphicsPath edge;
+        roundPath(edge, m + 0.5f, m + 0.5f, cw - 1.0f, ch - 1.0f, 26.0f);
+        Gdiplus::LinearGradientBrush light(Gdiplus::PointF(0.0f, m - 1.0f), Gdiplus::PointF(0.0f, m + ch + 1.0f),
+                                           gpColor(RGB(110, 110, 120)), gpColor(ColBorder));
+        const Gdiplus::Color colors[3] = {gpColor(RGB(110, 110, 120)), gpColor(ColBorder), gpColor(ColBorder)};
+        const Gdiplus::REAL positions[3] = {0.0f, 0.45f, 1.0f};
+        light.SetInterpolationColors(colors, positions, 3);
+        Gdiplus::Pen pen(&light, 1.0f);
+        g.DrawPath(&pen, &edge);
+    }
+
+    // The emblem builds itself: the rings drawn round behind the spark,
+    // the nodes shooting out, the trails sweeping in, the core flashing.
+    EmblemState e;
+    e.time = t;
+    e.ring = easeOut(phase(t, 0.15f, 0.8f));
+    e.nodes = easeOut(phase(t, 0.6f, 0.6f));
+    e.trails = easeOut(phase(t, 0.85f, 0.5f));
+    e.flash = std::sin(3.14159265f * phase(t, 0.95f, 0.7f));
+    // The spark leads the ring, then keeps circling at the sidebar's speed.
+    const float drawn = phase(t, 0.15f, 0.8f);
+    e.spark = drawn < 1.0f ? -90.0f + 360.0f * easeOut(drawn) : 270.0f + (t - 0.95f) * 160.0f;
+    const float ex = kSplashW / 2.0f - 4.0f, ey = 140.0f;
+    g.TranslateTransform(ex, ey);
+    g.ScaleTransform(1.35f, 1.35f);
+    paintEmblem(g, 0.0f, 0.0f, e);
+    g.ResetTransform();
+
+    // The name, letter by letter, its spacing settling in.
+    const wchar_t* family = fontExists("Segoe UI Variable Display") ? L"Segoe UI Variable Display" : L"Segoe UI";
+    {
+        Gdiplus::FontFamily face(family);
+        Gdiplus::Font font(&face, 17.0f, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
+        const std::wstring name = L"MOTION ENHANCER";
+        const float track = 7.0f + 4.0f * (1.0f - easeOut(phase(t, 1.0f, 0.9f)));
+        std::vector<float> widths;
+        float total = 0.0f;
+        for (wchar_t c : name) {
+            Gdiplus::RectF box;
+            const wchar_t one[2] = {c, 0};
+            g.MeasureString(one, 1, &font, Gdiplus::PointF(0.0f, 0.0f), Gdiplus::StringFormat::GenericTypographic(), &box);
+            const float w = c == L' ' ? 6.0f : box.Width;
+            widths.push_back(w);
+            total += w + track;
+        }
+        total -= track;
+        float x = kSplashW / 2.0f - total / 2.0f;
+        for (size_t i = 0; i < name.size(); ++i) {
+            const float a = easeOut(phase(t, 1.05f + 0.035f * i, 0.35f));
+            if (a > 0.0f && name[i] != L' ') {
+                Gdiplus::SolidBrush ink(gpColor(RGB(255, 255, 255), static_cast<int>(255 * a)));
+                const wchar_t one[2] = {name[i], 0};
+                g.DrawString(one, 1, &font, Gdiplus::PointF(x, 232.0f + 6.0f * (1.0f - a)),
+                             Gdiplus::StringFormat::GenericTypographic(), &ink);
+            }
+            x += widths[i] + track;
+        }
+    }
+    {
+        Gdiplus::FontFamily face(family);
+        Gdiplus::Font font(&face, 13.0f, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+        const float a = easeOut(phase(t, 1.55f, 0.45f));
+        Gdiplus::SolidBrush ink(gpColor(ColDim, static_cast<int>(255 * a)));
+        Gdiplus::StringFormat centred;
+        centred.SetAlignment(Gdiplus::StringAlignmentCenter);
+        g.DrawString(L"Real-time frame generation", -1, &font,
+                     Gdiplus::RectF(0.0f, 262.0f + 4.0f * (1.0f - a), static_cast<float>(kSplashW), 20.0f), &centred, &ink);
+    }
+    // A thin progress line filling under it.
+    {
+        const float w = 140.0f, x = kSplashW / 2.0f - w / 2.0f, y = 296.0f;
+        const float a = phase(t, 0.3f, 0.4f);
+        Gdiplus::Pen track(gpColor(RGB(255, 255, 255), static_cast<int>(26 * a)), 2.0f);
+        track.SetStartCap(Gdiplus::LineCapRound);
+        track.SetEndCap(Gdiplus::LineCapRound);
+        g.DrawLine(&track, x, y, x + w, y);
+        const float p = easeOut(phase(t, 0.3f, kSplashLength - kSplashFade - 0.4f));
+        if (p > 0.0f) {
+            Gdiplus::LinearGradientBrush lit(Gdiplus::PointF(x - 1.0f, y), Gdiplus::PointF(x + w * p + 1.0f, y),
+                                             gpColor(RGB(255, 255, 255), static_cast<int>(60 * a)),
+                                             gpColor(RGB(255, 255, 255), static_cast<int>(240 * a)));
+            Gdiplus::Pen bar(&lit, 2.0f);
+            bar.SetStartCap(Gdiplus::LineCapRound);
+            bar.SetEndCap(Gdiplus::LineCapRound);
+            g.DrawLine(&bar, x, y, x + w * p, y);
+        }
+    }
+
+    // The whole card: in with a slight zoom, out with a slight zoom.
+    const float appear = easeOut(phase(t, 0.0f, 0.4f));
+    const float vanish = phase(t, kSplashLength - kSplashFade, kSplashFade);
+    const float alpha = appear * (1.0f - vanish * vanish);
+    const float scale = (0.94f + 0.06f * appear) * (1.0f + 0.05f * vanish);
+    Gdiplus::ColorMatrix fade = {{{1, 0, 0, 0, 0}, {0, 1, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 0, alpha, 0}, {0, 0, 0, 0, 1}}};
+    Gdiplus::ImageAttributes attributes;
+    attributes.SetColorMatrix(&fade);
+    prepare(target);
+    target.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+    const float w = kSplashW * scale, h = kSplashH * scale;
+    target.DrawImage(&layer, Gdiplus::RectF((kSplashW - w) / 2.0f, (kSplashH - h) / 2.0f, w, h), 0.0f, 0.0f,
+                     static_cast<float>(kSplashW), static_cast<float>(kSplashH), Gdiplus::UnitPixel, &attributes);
+}
+
+LRESULT CALLBACK splashProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_KEYDOWN:
+            g_splashSkip = true;
+            return 0;
+        case WM_SETCURSOR:
+            SetCursor(LoadCursor(nullptr, IDC_APPSTARTING));
+            return TRUE;
+    }
+    return DefWindowProcA(hwnd, message, wParam, lParam);
+}
+
+// Plays the splash centred on `area`, and fades `window` (created hidden,
+// WS_EX_LAYERED) in under its end. Returns once the window is shown.
+void playSplash(HWND window, const RECT& area) {
+    HINSTANCE instance = GetModuleHandleA(nullptr);
+    WNDCLASSEXA splashClass = {};
+    splashClass.cbSize = sizeof(splashClass);
+    splashClass.lpfnWndProc = splashProc;
+    splashClass.hInstance = instance;
+    splashClass.lpszClassName = "MotionEnhancerSplashClass";
+    RegisterClassExA(&splashClass);
+    const int x = (area.left + area.right - kSplashW) / 2;
+    const int y = (area.top + area.bottom - kSplashH) / 2;
+    // Topmost while it plays, so the window can fade in beneath it.
+    HWND splash = CreateWindowExA(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST, splashClass.lpszClassName,
+                                  "Motion Enhancer", WS_POPUP, x, y, kSplashW, kSplashH, nullptr, nullptr, instance,
+                                  nullptr);
+    if (!splash) {
+        SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA);
+        ShowWindow(window, SW_SHOW);
+        return;
+    }
+    BITMAPINFO info = {};
+    info.bmiHeader.biSize = sizeof(info.bmiHeader);
+    info.bmiHeader.biWidth = kSplashW;
+    info.bmiHeader.biHeight = -kSplashH;
+    info.bmiHeader.biPlanes = 1;
+    info.bmiHeader.biBitCount = 32;
+    void* bits = nullptr;
+    HDC screen = GetDC(nullptr);
+    HDC memory = CreateCompatibleDC(screen);
+    HBITMAP dib = CreateDIBSection(screen, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
+    HGDIOBJ old = SelectObject(memory, dib);
+    Gdiplus::Bitmap surface(kSplashW, kSplashH, kSplashW * 4, PixelFormat32bppPARGB, static_cast<BYTE*>(bits));
+
+    LARGE_INTEGER start, now, frequency;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
+    float skipShift = 0.0f;
+    bool shown = false, first = true;
+    for (;;) {
+        QueryPerformanceCounter(&now);
+        float t = static_cast<float>(now.QuadPart - start.QuadPart) / frequency.QuadPart + skipShift;
+        // A skip jumps to the crossfade.
+        if (g_splashSkip && t < kSplashLength - kSplashFade) {
+            skipShift += kSplashLength - kSplashFade - t;
+            t = kSplashLength - kSplashFade;
+        }
+        if (t >= kSplashLength) break;
+        {
+            Gdiplus::Graphics g(&surface);
+            paintSplash(g, t);
+        }
+        POINT position = {x, y}, origin = {0, 0};
+        SIZE size = {kSplashW, kSplashH};
+        BLENDFUNCTION blend = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
+        UpdateLayeredWindow(splash, screen, &position, &size, memory, &origin, 0, &blend, ULW_ALPHA);
+        if (first) {
+            ShowWindow(splash, SW_SHOWNOACTIVATE);
+            SetForegroundWindow(splash);
+            first = false;
+        }
+        // The window fades in under the splash's end.
+        if (t >= kSplashLength - kSplashFade) {
+            const BYTE alpha = static_cast<BYTE>(255.0f * easeOut(phase(t, kSplashLength - kSplashFade, kSplashFade)));
+            SetLayeredWindowAttributes(window, 0, alpha, LWA_ALPHA);
+            if (!shown) {
+                ShowWindow(window, SW_SHOWNOACTIVATE);
+                UpdateWindow(window);
+                shown = true;
+            }
+        }
+        MSG pending;
+        while (PeekMessageA(&pending, nullptr, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&pending);
+            DispatchMessageA(&pending);
+        }
+        DwmFlush();   // one frame per screen refresh
+    }
+    SelectObject(memory, old);
+    DeleteObject(dib);
+    DeleteDC(memory);
+    ReleaseDC(nullptr, screen);
+    DestroyWindow(splash);
+    UnregisterClassA(splashClass.lpszClassName, instance);
+
+    if (!shown) ShowWindow(window, SW_SHOW);
+    // Fully opaque, and not layered any more (layering costs a copy of every frame).
+    SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA);
+    SetWindowLongA(window, GWL_EXSTYLE, GetWindowLongA(window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+    RedrawWindow(window, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    SetForegroundWindow(window);
+}
+
+// Offline check: MOTION_ENHANCER_SPLASH_FRAMES=<prefix> writes the splash's
+// frames (every 0.1 s, over black) as <prefix>_NN.png.
+bool writeSplashFrames(const char* prefix) {
+    Gdiplus::Bitmap surface(kSplashW, kSplashH, PixelFormat32bppPARGB);
+    int index = 0;
+    for (float t = 0.0f; t < kSplashLength; t += 0.1f, ++index) {
+        {
+            Gdiplus::Graphics g(&surface);
+            paintSplash(g, t);
+        }
+        Image image(kSplashW, kSplashH, 3);
+        for (int y = 0; y < kSplashH; ++y)
+            for (int x = 0; x < kSplashW; ++x) {
+                Gdiplus::Color c;
+                surface.GetPixel(x, y, &c);
+                // Over a dark grey desktop, to show the transparency.
+                const float a = c.GetA() / 255.0f;
+                image.set(x, y, 0, c.GetR() * a + 46.0f * (1.0f - a));
+                image.set(x, y, 1, c.GetG() * a + 52.0f * (1.0f - a));
+                image.set(x, y, 2, c.GetB() * a + 64.0f * (1.0f - a));
+            }
+        char name[MAX_PATH];
+        std::snprintf(name, sizeof(name), "%s_%02d.png", prefix, index);
+        if (!image.savePNG(name)) return false;
+    }
+    return true;
 }
 
 } // namespace
@@ -1455,6 +2327,8 @@ int runGuiApplication() {
     controls.dwICC = ICC_STANDARD_CLASSES;
     InitCommonControlsEx(&controls);
 
+    Gdiplus::GdiplusStartupInput gdiplusInput;
+    Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusInput, nullptr);
     ensureTheme();
 
     HINSTANCE instance = GetModuleHandleA(nullptr);
@@ -1469,30 +2343,134 @@ int runGuiApplication() {
     windowClass.lpszClassName = "MotionEnhancerGuiClass";
     RegisterClassExA(&windowClass);
 
+    char splashFrames[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_SPLASH_FRAMES", splashFrames, sizeof(splashFrames))) {
+        const bool written = writeSplashFrames(splashFrames);
+        Gdiplus::GdiplusShutdown(g_gdiplusToken);
+        return written ? 0 : 1;
+    }
+
+    // Centred on the primary monitor's work area, where the splash plays.
+    RECT area = {};
+    SystemParametersInfoA(SPI_GETWORKAREA, 0, &area, 0);
+    // Offline check: MOTION_ENHANCER_SPLASH_TEST plays the splash and the
+    // fade-in far off screen, reports the window's state and exits.
+    const bool splashTest = GetEnvironmentVariableA("MOTION_ENHANCER_SPLASH_TEST", nullptr, 0) > 0;
+    if (splashTest) OffsetRect(&area, -30000, -30000);
+    const int windowW = 900 + kSidebarW, windowH = 820;
+    // Created hidden and layered: it fades in under the splash's end.
     HWND window = CreateWindowExA(
-        0,
+        WS_EX_LAYERED,
         windowClass.lpszClassName,
         "Motion Enhancer",
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 900, 820,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
+        std::max<int>(area.left, (area.left + area.right - windowW) / 2),
+        std::max<int>(area.top, (area.top + area.bottom - windowH) / 2), windowW, windowH,
         nullptr, nullptr, instance, nullptr
     );
     if (!window) return 1;
+    SetLayeredWindowAttributes(window, 0, 0, LWA_ALPHA);
 
     // Dark immersive title bar where supported.
     BOOL dark = TRUE;
     DwmSetWindowAttribute(window, 20, &dark, sizeof(dark));
     DwmSetWindowAttribute(window, 19, &dark, sizeof(dark));
-    COLORREF captionColor = ColBg;
-    DwmSetWindowAttribute(window, 1024, &captionColor, sizeof(captionColor));
+    // Windows 11: rounded corners, a dark border, caption and title text.
+    const DWORD round = 2;   // DWMWCP_ROUND
+    DwmSetWindowAttribute(window, 33, &round, sizeof(round));
+    const COLORREF borderColor = RGB(34, 34, 38), captionColor = ColSidebar, captionText = ColText;
+    DwmSetWindowAttribute(window, 34, &borderColor, sizeof(borderColor));
+    DwmSetWindowAttribute(window, 35, &captionColor, sizeof(captionColor));
+    DwmSetWindowAttribute(window, 36, &captionText, sizeof(captionText));
 
-    ShowWindow(window, SW_SHOW);
-    UpdateWindow(window);
+    // Test hook for offline UI checks: MOTION_ENHANCER_GUI_SNAPSHOT=<png>
+    // renders this window off screen into a PNG and exits (page 1 when
+    // MOTION_ENHANCER_GUI_PAGE=1). Nothing on the screen is read.
+    char snapshot[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_SNAPSHOT", snapshot, sizeof(snapshot))) {
+        char page[4] = {};
+        if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_PAGE", page, sizeof(page)) && page[0] == '1') {
+            g_state.activeTab = 1;
+            g_navY = static_cast<float>(kNavRects[1].top);
+            applyPageVisibility();
+        }
+        // MOTION_ENHANCER_GUI_TIME: the ambient animation's time in seconds,
+        // to render its frames one by one.
+        char seconds[32] = {};
+        if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_TIME", seconds, sizeof(seconds))) g_time = atof(seconds);
+        SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA);
+        SetWindowLongA(window, GWL_EXSTYLE, GetWindowLongA(window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+        SetWindowPos(window, nullptr, -12000, -12000, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        ShowWindow(window, SW_SHOWNOACTIVATE);
+        UpdateWindow(window);
+        MSG pending;
+        for (int i = 0; i < 50; ++i) {
+            while (PeekMessageA(&pending, nullptr, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&pending);
+                DispatchMessageA(&pending);
+            }
+            Sleep(10);
+        }
+        RECT client = {};
+        GetClientRect(window, &client);
+        HDC screen = GetDC(window);
+        HDC memory = CreateCompatibleDC(screen);
+        HBITMAP bitmap = CreateCompatibleBitmap(screen, client.right, client.bottom);
+        HGDIOBJ old = SelectObject(memory, bitmap);
+        PrintWindow(window, memory, PW_CLIENTONLY | 2 /* PW_RENDERFULLCONTENT */);
+        BITMAPINFO info = {};
+        info.bmiHeader.biSize = sizeof(info.bmiHeader);
+        info.bmiHeader.biWidth = client.right;
+        info.bmiHeader.biHeight = -client.bottom;
+        info.bmiHeader.biPlanes = 1;
+        info.bmiHeader.biBitCount = 32;
+        std::vector<uint8_t> pixels(static_cast<size_t>(client.right) * client.bottom * 4);
+        SelectObject(memory, old);
+        GetDIBits(memory, bitmap, 0, client.bottom, pixels.data(), &info, DIB_RGB_COLORS);
+        Image image(client.right, client.bottom, 3);
+        for (int y = 0; y < client.bottom; ++y)
+            for (int x = 0; x < client.right; ++x)
+                for (int c = 0; c < 3; ++c)
+                    image.set(x, y, c, pixels[(static_cast<size_t>(y) * client.right + x) * 4 + (2 - c)]);
+        DeleteObject(bitmap);
+        DeleteDC(memory);
+        ReleaseDC(window, screen);
+        const bool saved = image.savePNG(snapshot);
+        DestroyWindow(window);
+        Gdiplus::GdiplusShutdown(g_gdiplusToken);
+        return saved ? 0 : 1;
+    }
+
+    // The splash, unless MOTION_ENHANCER_NO_SPLASH is set.
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_NO_SPLASH", nullptr, 0) > 0) {
+        SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA);
+        SetWindowLongA(window, GWL_EXSTYLE, GetWindowLongA(window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+        ShowWindow(window, SW_SHOW);
+        UpdateWindow(window);
+    } else {
+        LARGE_INTEGER start, end, frequency;
+        QueryPerformanceFrequency(&frequency);
+        QueryPerformanceCounter(&start);
+        playSplash(window, area);
+        QueryPerformanceCounter(&end);
+        if (splashTest) {
+            const bool layered = (GetWindowLongA(window, GWL_EXSTYLE) & WS_EX_LAYERED) != 0;
+            char report[160];
+            std::snprintf(report, sizeof(report), "splash %.2f s, window visible %d, layered %d\n",
+                          static_cast<double>(end.QuadPart - start.QuadPart) / frequency.QuadPart,
+                          IsWindowVisible(window) ? 1 : 0, layered ? 1 : 0);
+            HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+            DWORD written = 0;
+            if (out && out != INVALID_HANDLE_VALUE) WriteFile(out, report, static_cast<DWORD>(strlen(report)), &written, nullptr);
+            DestroyWindow(window);
+        }
+    }
 
     MSG message;
     while (GetMessageA(&message, nullptr, 0, 0) > 0) {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
+    Gdiplus::GdiplusShutdown(g_gdiplusToken);
     return static_cast<int>(message.wParam);
 }

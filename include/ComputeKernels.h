@@ -29,6 +29,10 @@ enum class Kernel : int {
     ProjectClear,
     ProjectSplat,
     FlowMedian,
+    DepthInput,
+    DepthFinish,
+    DepthView,
+    DepthDilate,
     Count
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ComputeKernels.h"
+#include "DepthService.h"
 #include "GraphicsDevice.h"
 #include "NeuralFlow.h"
 
@@ -90,6 +91,14 @@ struct FlowSettings {
     // per pair, removing isolated outlier vectors the refinement leaves
     // where the picture does not decide (FlowMedianCS).
     bool flowMedian = true;
+    // AI depth for every frame (DepthService, DepthEstimator), used by the
+    // motion projection to put the nearer of two equally plausible surfaces
+    // in front. Two-field pairs only (DIS, FFX --ffx-occlusion). Needs the
+    // ONNX Runtime / DirectML DLLs and the model next to the executable.
+    bool aiDepth = false;
+    // The network on every n-th new frame (1-4); the frames between borrow
+    // a neighbour's depth. 1 = every frame (about 1.3-1.6 ms of GPU each).
+    int aiDepthStride = 1;
 };
 
 // A frame's contribution to the flow queue: the shared capture texture and
@@ -186,6 +195,10 @@ public:
     }
     // Waits on the CPU (offline path only).
     bool waitFence(uint64_t value);
+    // AI depth: the frame's nearness texture once complete, else null
+    // (non-blocking); waitDepth blocks up to timeoutMs (offline paths).
+    ID3D12Resource* depthFor(const FlowInput& frame) const;
+    ID3D12Resource* waitDepth(const FlowInput& frame, unsigned timeoutMs);
     Entry entry(int index) const;
     void noteEntryPresented(int index, uint64_t presentFenceValue);
 
@@ -287,6 +300,7 @@ private:
     // pair's flow is estimated from that pair alone: no previous pair's
     // vectors are carried into the search.
     std::array<Pyramid, kMaxSlots> m_pyramids;
+    std::unique_ptr<DepthService> m_depth;   // FlowSettings::aiDepth
     int m_slotCount = 0;
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_estimatedFlow; // [dir][level]
     // Raw matcher output, before FillFlowCS writes the filled field into
