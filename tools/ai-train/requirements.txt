@@ -1,0 +1,7 @@
+# The trainer window, video decoding and ONNX export. PyTorch with ROCm is
+# installed separately from AMD's index (see README.md).
+PySide6-Essentials>=6.8
+opencv-python>=4.10
+onnx>=1.17
+onnxscript>=0.2
+numpy

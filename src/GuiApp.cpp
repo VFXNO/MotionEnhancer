@@ -18,6 +18,9 @@ using std::min;
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
+#include <regex>
+#include <sstream>
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -41,6 +44,10 @@ constexpr int IDC_LIVE_MULTIPLIER = 112;
 constexpr int IDC_LIVE_FLOW_ENGINE = 113;
 constexpr int IDC_LIVE_ADAPTER = 114;
 constexpr int IDC_AI_DEPTH_RATE = 115;
+constexpr int IDC_OPEN_TRAINER = 116;
+constexpr int IDC_USE_AI_ENGINE = 117;
+constexpr int IDC_AI_REFRESH = 118;
+constexpr int IDC_AI_STATUS = 119;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -102,6 +109,7 @@ constexpr int kSidebarW = 232;
 constexpr RECT LivePanelRect = { kSidebarW + 36, 172, kSidebarW + 36 + 794, 172 + 206 };
 constexpr RECT OfflinePanelRect = { kSidebarW + 36, 272, kSidebarW + 36 + 794, 272 + 330 };
 constexpr RECT TrainPanelRect = { kSidebarW + 36, 514, kSidebarW + 36 + 794, 514 + 240 };
+constexpr RECT AiPanelRect = { kSidebarW + 36, 84, kSidebarW + 36 + 794, 84 + 340 };
 
 struct GuiState {
     HWND hwnd = nullptr;
@@ -156,6 +164,8 @@ struct GuiState {
     HWND colorClamp = nullptr;
     std::vector<HWND> liveControls;
     std::vector<HWND> offlineControls;
+    std::vector<HWND> aiControls;
+    HWND aiStatus = nullptr;
 };
 
 GuiState g_state;
@@ -181,12 +191,14 @@ int g_offsetX = 0;   // added to x by addControl: the page area starts right of 
 // only while the window is in front; transitions (the navigation
 // highlight, hover fades, the page title) always finish.
 constexpr UINT_PTR kAnimTimer = 1;
-constexpr RECT kNavRects[2] = { {16, 214, kSidebarW - 16, 260}, {16, 266, kSidebarW - 16, 312} };
-constexpr const char* kNavLabels[2] = { "Live Capture", "Offline Interpolation" };
+constexpr int kNavCount = 3;
+constexpr RECT kNavRects[kNavCount] = { {16, 214, kSidebarW - 16, 260}, {16, 266, kSidebarW - 16, 312},
+                                        {16, 318, kSidebarW - 16, 364} };
+constexpr const char* kNavLabels[kNavCount] = { "Live Capture", "Offline Interpolation", "AI Model" };
 double g_time = 0.0;                 // seconds of ambient motion
 LARGE_INTEGER g_lastTick = {};
 float g_navY = -1.0f;                // top of the sliding navigation highlight
-float g_navHoverT[2] = {};           // hover fade per navigation item, 0..1
+float g_navHoverT[kNavCount] = {};           // hover fade per navigation item, 0..1
 int g_navHover = -1;
 bool g_trackingLeave = false;
 float g_pageT = 1.0f;                // page title entrance, 0..1
@@ -330,7 +342,7 @@ COLORREF surfaceUnder(HWND control) {
         return cx >= panel.left && cx < panel.right && cy >= panel.top && cy < panel.bottom;
     };
     const bool onPanel = g_state.activeTab == 0 ? within(LivePanelRect) || within(TrainPanelRect)
-                                                : within(OfflinePanelRect);
+                         : g_state.activeTab == 1 ? within(OfflinePanelRect) : within(AiPanelRect);
     return onPanel ? ColPanel : ColBg;
 }
 
@@ -375,6 +387,10 @@ LRESULT CALLBACK styledControlProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
         }
     }
     switch (message) {
+        case WM_ERASEBKGND:
+            // Everything is painted in WM_DRAWITEM, off screen; erasing
+            // first flashed the system's light button colour on a click.
+            return 1;
         case WM_MOUSEMOVE:
             if (g_hover != hwnd) {
                 g_hover = hwnd;
@@ -406,8 +422,72 @@ LRESULT CALLBACK changingStaticProc(HWND hwnd, UINT message, WPARAM wParam, LPAR
     return result;
 }
 
+void paintStyledComboItem(const DRAWITEMSTRUCT* draw);
+
+// The theme's parts of a combo, over what the system drew into `hdc`: its
+// square border painted out (the window behind draws a rounded frame,
+// paintFieldFrames) and a plain caret for the dropdown button.
+void paintComboChrome(HDC hdc, const RECT& rc) {
+    HBRUSH field = CreateSolidBrush(ColField);
+    for (int i = 0; i < 3; ++i) {
+        RECT edge = rc;
+        InflateRect(&edge, -i, -i);
+        FrameRect(hdc, &edge, field);
+    }
+    DeleteObject(field);
+    RECT button = { rc.right - 28, rc.top + 1, rc.right - 1, rc.bottom - 1 };
+    FillRect(hdc, &button, g_brField);
+    const int cx = (button.left + button.right) / 2;
+    const int cy = (button.top + button.bottom) / 2;
+    HPEN pen = CreatePen(PS_SOLID, 2, ColDim);
+    HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
+    MoveToEx(hdc, cx - 5, cy - 2, nullptr);
+    LineTo(hdc, cx, cy + 3);
+    LineTo(hdc, cx + 5, cy - 2);
+    SelectObject(hdc, oldPen);
+    DeleteObject(pen);
+}
+
 LRESULT CALLBACK comboNcProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
                              UINT_PTR subclassId, DWORD_PTR refData) {
+    switch (message) {
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_PAINT: {
+            // Painted entirely here, off screen, and copied once: the field,
+            // the selected item (the same painter as the list's items) and
+            // the caret. The system's own paint drew a white square border
+            // that the theme then painted over, which flickered on hover.
+            PAINTSTRUCT paint = {};
+            HDC screen = BeginPaint(hwnd, &paint);
+            RECT rc = {};
+            GetClientRect(hwnd, &rc);
+            HDC memory = CreateCompatibleDC(screen);
+            HBITMAP bitmap = CreateCompatibleBitmap(screen, std::max(1L, rc.right), std::max(1L, rc.bottom));
+            HGDIOBJ old = SelectObject(memory, bitmap);
+            HFONT font = reinterpret_cast<HFONT>(SendMessageA(hwnd, WM_GETFONT, 0, 0));
+            HGDIOBJ oldFont = font ? SelectObject(memory, font) : nullptr;
+            FillRect(memory, &rc, g_brField);
+            DRAWITEMSTRUCT item = {};
+            item.CtlType = ODT_COMBOBOX;
+            item.CtlID = static_cast<UINT>(GetDlgCtrlID(hwnd));
+            item.itemID = static_cast<UINT>(SendMessageA(hwnd, CB_GETCURSEL, 0, 0));
+            item.itemAction = ODA_DRAWENTIRE;
+            item.itemState = ODS_COMBOBOXEDIT | (IsWindowEnabled(hwnd) ? 0 : ODS_DISABLED);
+            item.hwndItem = hwnd;
+            item.hDC = memory;
+            item.rcItem = { 1, 1, rc.right - 1, rc.bottom - 1 };
+            paintStyledComboItem(&item);
+            paintComboChrome(memory, rc);
+            BitBlt(screen, 0, 0, rc.right, rc.bottom, memory, 0, 0, SRCCOPY);
+            if (oldFont) SelectObject(memory, oldFont);
+            SelectObject(memory, old);
+            DeleteObject(bitmap);
+            DeleteDC(memory);
+            EndPaint(hwnd, &paint);
+            return 0;
+        }
+    }
     LRESULT result = DefSubclassProc(hwnd, message, wParam, lParam);
     if (message == WM_NCPAINT) {
         HDC hdc = GetWindowDC(hwnd);
@@ -424,39 +504,11 @@ LRESULT CALLBACK comboNcProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             DeleteObject(pen);
             ReleaseDC(hwnd, hdc);
         }
-    } else if (message == WM_PAINT) {
-        // Replace the system's light dropdown button with a themed one.
-        HDC hdc = GetDC(hwnd);
-        if (hdc) {
-            RECT rc = {};
-            GetClientRect(hwnd, &rc);
-            // The system's square border is painted over: the window behind
-            // draws a rounded frame around the combo (paintFieldFrames).
-            HBRUSH field = CreateSolidBrush(ColField);
-            for (int i = 0; i < 3; ++i) {
-                RECT edge = rc;
-                InflateRect(&edge, -i, -i);
-                FrameRect(hdc, &edge, field);
-            }
-            DeleteObject(field);
-            RECT button = { rc.right - 28, rc.top + 1, rc.right - 1, rc.bottom - 1 };
-            FillRect(hdc, &button, g_brField);
-            int cx = (button.left + button.right) / 2;
-            int cy = (button.top + button.bottom) / 2;
-            HPEN pen = CreatePen(PS_SOLID, 2, ColDim);
-            HPEN oldPen = static_cast<HPEN>(SelectObject(hdc, pen));
-            MoveToEx(hdc, cx - 5, cy - 2, nullptr);
-            LineTo(hdc, cx, cy + 3);
-            LineTo(hdc, cx + 5, cy - 2);
-            SelectObject(hdc, oldPen);
-            DeleteObject(pen);
-            ReleaseDC(hwnd, hdc);
-        }
     }
     return result;
 }
 
-void drawStyledButton(const DRAWITEMSTRUCT* draw) {
+void paintStyledButton(const DRAWITEMSTRUCT* draw) {
     HWND hwnd = draw->hwndItem;
     HDC hdc = draw->hDC;
     RECT rc = draw->rcItem;
@@ -475,7 +527,7 @@ void drawStyledButton(const DRAWITEMSTRUCT* draw) {
     const float hover = disabled ? 0.0f : hoverFade(hwnd);
     int id = draw->CtlID;
 
-    bool primary = (id == IDC_START_CAPTURE || id == IDC_RUN_OFFLINE);
+    bool primary = (id == IDC_START_CAPTURE || id == IDC_RUN_OFFLINE || id == IDC_OPEN_TRAINER);
     // Style bits are ambiguous (BS_OWNERDRAW overlaps BS_CHECKBOX), so
     // checkboxes are tagged explicitly with a window property.
     bool isCheckbox = GetPropA(hwnd, "MeCheckbox") != nullptr;
@@ -549,7 +601,38 @@ void drawStyledButton(const DRAWITEMSTRUCT* draw) {
     DrawTextA(hdc, text, -1, &textRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
+// Runs `paint` on a copy of `draw` whose DC is an off-screen bitmap of the
+// item, with the control's font, then copies the bitmap to the item.
+template <typename Paint>
+void drawBuffered(const DRAWITEMSTRUCT* draw, Paint paint) {
+    const RECT& rc = draw->rcItem;
+    const int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    if (w <= 0 || h <= 0) return;
+    HDC memory = CreateCompatibleDC(draw->hDC);
+    HBITMAP bitmap = CreateCompatibleBitmap(draw->hDC, w, h);
+    HGDIOBJ oldBitmap = SelectObject(memory, bitmap);
+    HFONT font = reinterpret_cast<HFONT>(SendMessageA(draw->hwndItem, WM_GETFONT, 0, 0));
+    HGDIOBJ oldFont = font ? SelectObject(memory, font) : nullptr;
+    DRAWITEMSTRUCT local = *draw;
+    local.hDC = memory;
+    OffsetRect(&local.rcItem, -rc.left, -rc.top);
+    paint(&local);
+    BitBlt(draw->hDC, rc.left, rc.top, w, h, memory, 0, 0, SRCCOPY);
+    if (oldFont) SelectObject(memory, oldFont);
+    SelectObject(memory, oldBitmap);
+    DeleteObject(bitmap);
+    DeleteDC(memory);
+}
+
+void drawStyledButton(const DRAWITEMSTRUCT* draw) {
+    drawBuffered(draw, paintStyledButton);
+}
+
 void drawStyledComboItem(const DRAWITEMSTRUCT* draw) {
+    drawBuffered(draw, paintStyledComboItem);
+}
+
+void paintStyledComboItem(const DRAWITEMSTRUCT* draw) {
     HDC hdc = draw->hDC;
     RECT rc = draw->rcItem;
 
@@ -990,7 +1073,8 @@ void startCapture() {
     }
 
     int flowSelection = static_cast<int>(SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0));
-    const char* flowEngineArg = flowSelection == 3 ? "dis" :
+    const char* flowEngineArg = flowSelection == 4 ? "ai" :
+                                flowSelection == 3 ? "dis" :
                                 flowSelection == 2 ? "neural" :
                                 flowSelection == 1 ? "sad" : "ffx";
     int adapterSelection = static_cast<int>(SendMessageA(g_state.liveAdapter, CB_GETCURSEL, 0, 0));
@@ -1136,10 +1220,88 @@ void runOffline() {
 // Layout
 // ------------------------------------------------------------------
 void applyPageVisibility() {
-    bool live = g_state.activeTab == 0;
-    for (HWND control : g_state.liveControls) ShowWindow(control, live ? SW_SHOW : SW_HIDE);
-    for (HWND control : g_state.offlineControls) ShowWindow(control, live ? SW_HIDE : SW_SHOW);
+    const int page = g_state.activeTab;
+    for (HWND control : g_state.liveControls) ShowWindow(control, page == 0 ? SW_SHOW : SW_HIDE);
+    for (HWND control : g_state.offlineControls) ShowWindow(control, page == 1 ? SW_SHOW : SW_HIDE);
+    for (HWND control : g_state.aiControls) ShowWindow(control, page == 2 ? SW_SHOW : SW_HIDE);
     InvalidateRect(g_state.hwnd, nullptr, FALSE);
+}
+
+// ---- AI Model page ----
+
+std::wstring executableFolder() {
+    wchar_t path[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, path, MAX_PATH);
+    std::wstring folder(path);
+    const size_t slash = folder.find_last_of(L"\\/");
+    return slash == std::wstring::npos ? L"." : folder.substr(0, slash);
+}
+
+// tools\ai-train (the trainer app and its Python), searched upwards from
+// the executable: the build folders sit inside the repository.
+std::wstring trainerFolder() {
+    std::wstring folder = executableFolder();
+    for (int up = 0; up < 6; ++up) {
+        const std::wstring candidate = folder + L"\\tools\\ai-train";
+        if (GetFileAttributesW((candidate + L"\\app.py").c_str()) != INVALID_FILE_ATTRIBUTES) return candidate;
+        const size_t slash = folder.find_last_of(L"\\/");
+        if (slash == std::wstring::npos) break;
+        folder = folder.substr(0, slash);
+    }
+    return std::wstring();
+}
+
+// What models\ai_flow.onnx (and its .json from the trainer's export) says.
+std::string aiModelSummary() {
+    const std::wstring model = executableFolder() + L"\\models\\ai_flow.onnx";
+    WIN32_FILE_ATTRIBUTE_DATA info = {};
+    if (!GetFileAttributesExW(model.c_str(), GetFileExInfoStandard, &info))
+        return "No AI model yet: open the trainer, build a dataset from your videos, train and export.";
+    std::ifstream file(executableFolder() + L"\\models\\ai_flow.json");
+    std::stringstream text;
+    text << file.rdbuf();
+    const std::string json = text.str();
+    auto field = [&json](const char* name) {
+        std::smatch m;
+        const std::regex pattern(std::string("\"") + name + "\"\\s*:\\s*\"?([^\",}\\n]+)");
+        return std::regex_search(json, m, pattern) ? m[1].str() : std::string("?");
+    };
+    SYSTEMTIME utc = {}, local = {};
+    FileTimeToSystemTime(&info.ftLastWriteTime, &utc);
+    SystemTimeToTzSpecificLocalTime(nullptr, &utc, &local);
+    char line[400];
+    std::string psnr = field("psnr");
+    if (psnr.size() > 5) psnr = psnr.substr(0, 5);
+    std::snprintf(line, sizeof(line), "Installed: models\\ai_flow.onnx - %sx%s, %s model, %s dB on held-out video, exported %04d-%02d-%02d %02d:%02d",
+                  field("width").c_str(), field("height").c_str(), field("preset").c_str(), psnr.c_str(),
+                  local.wYear, local.wMonth, local.wDay, local.wHour, local.wMinute);
+    return line;
+}
+
+void refreshAiStatus() {
+    if (g_state.aiStatus) SetWindowTextA(g_state.aiStatus, aiModelSummary().c_str());
+}
+
+void openTrainer() {
+    const std::wstring folder = trainerFolder();
+    const std::wstring python = folder + L"\\.venv\\Scripts\\pythonw.exe";
+    if (folder.empty() || GetFileAttributesW(python.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        SetWindowTextA(g_state.aiStatus, folder.empty()
+            ? "The trainer (tools\\ai-train) was not found above this program's folder."
+            : "The trainer's Python environment is missing: see tools\\ai-train\\README.md to set it up.");
+        return;
+    }
+    std::wstring command = L"\"" + python + L"\" \"" + folder + L"\\app.py\"";
+    STARTUPINFOW startup = {};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process = {};
+    if (CreateProcessW(nullptr, command.data(), nullptr, nullptr, FALSE, 0, nullptr, folder.c_str(), &startup, &process)) {
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+        SetWindowTextA(g_state.aiStatus, "Trainer opened. Export there, then press Refresh.");
+    } else {
+        SetWindowTextA(g_state.aiStatus, "Could not start the trainer.");
+    }
 }
 
 void switchPage(int page) {
@@ -1250,6 +1412,8 @@ void createControls() {
                  reinterpret_cast<LPARAM>("Neural motion estimator"));
     SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
                  reinterpret_cast<LPARAM>("DIS optical flow"));
+    SendMessageA(g_state.liveFlowEngine, CB_ADDSTRING, 0,
+                 reinterpret_cast<LPARAM>("AI pyramid (trained model)"));
     SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 3, 0);   // DIS
     // Static UI (HUD, subtitles, logos) is shown where it is instead of
     // being dragged along by the motion underneath it. See UiMaskCS.hlsl.
@@ -1376,6 +1540,29 @@ void createControls() {
         g_state.detailRestore, g_state.colorClamp,
         g_state.offlineButton, g_state.offlineStatus
     };
+
+    // ---- AI Model page ----
+    HWND aiIntro = addControl("STATIC",
+        "Train your own frame-interpolation model on footage like what you play, then use it as the flow engine. "
+        "The model is a small pyramid network: at a quarter of 1440p it runs in about 1 ms on an RX 9070 XT "
+        "(the whole engine, input scaling included).",
+        SS_LEFT, 56, 124, 740, 60, 0);
+    setControlFont(aiIntro, g_fontBody);
+    g_state.aiStatus = addControl("STATIC", "", SS_LEFT, 56, 196, 740, 40, IDC_AI_STATUS);
+    setControlFont(g_state.aiStatus, g_fontBody);
+    SetWindowSubclass(g_state.aiStatus, changingStaticProc, 3, 0);
+    HWND aiSteps = addControl("STATIC",
+        "1.  Dataset - add your videos; the trainer cuts them into triplets of frames (repeats, cuts and stills left out).\n"
+        "2.  Train - on the GPU with ROCm; it shows the quality on videos it never trained on.\n"
+        "3.  Export - writes models\\ai_flow.onnx next to this program.\n"
+        "4.  Choose \"AI pyramid (trained model)\" as the flow engine on the Live Capture page.",
+        SS_LEFT, 56, 248, 740, 92, 0);
+    setControlFont(aiSteps, g_fontLabel);
+    HWND openTrainerButton = makeButton("OPEN AI TRAINER", 56, 360, 200, 40, IDC_OPEN_TRAINER);
+    HWND useAiButton = makeButton("Use AI engine", 272, 365, 150, 30, IDC_USE_AI_ENGINE);
+    HWND refreshAiButton = makeButton("Refresh", 434, 365, 110, 30, IDC_AI_REFRESH);
+    g_state.aiControls = {aiIntro, g_state.aiStatus, aiSteps, openTrainerButton, useAiButton, refreshAiButton};
+    refreshAiStatus();
 
     g_offsetX = 0;
     applyPageVisibility();
@@ -1545,6 +1732,13 @@ void paintNavIcon(Gdiplus::Graphics& g, int item, float cx, float cy, COLORREF i
             g.DrawArc(&pen, cx - r, cy - r, 2 * r, 2 * r, -50.0f, 100.0f);
             g.DrawArc(&pen, cx - r, cy - r, 2 * r, 2 * r, 130.0f, 100.0f);
         }
+    } else if (item == 2) {
+        // A pyramid of three levels, the network's coarse-to-fine.
+        Gdiplus::PointF tri[3] = {Gdiplus::PointF(cx, cy - 9.0f), Gdiplus::PointF(cx + 10.0f, cy + 8.0f),
+                                  Gdiplus::PointF(cx - 10.0f, cy + 8.0f)};
+        g.DrawPolygon(&pen, tri, 3);
+        g.DrawLine(&pen, cx - 4.2f, cy - 1.8f, cx + 4.2f, cy - 1.8f);
+        g.DrawLine(&pen, cx - 7.0f, cy + 3.2f, cx + 7.0f, cy + 3.2f);
     } else {
         Gdiplus::GraphicsPath a, b;
         roundPath(a, cx - 10.0f, cy - 8.0f, 12.0f, 10.0f, 2.5f);
@@ -1567,7 +1761,7 @@ void paintSidebar(HDC hdc, const RECT& client) {
     prepare(g);
 
     // Flowing lines drifting slowly, and twinkling points of light.
-    const float top = 330.0f, bottom = static_cast<float>(client.bottom) - 116.0f;
+    const float top = 384.0f, bottom = static_cast<float>(client.bottom) - 116.0f;
     if (bottom > top + 40.0f) {
         for (int i = 0; i < 5; ++i) {
             const float o = 16.0f * i;
@@ -1592,7 +1786,7 @@ void paintSidebar(HDC hdc, const RECT& client) {
     // Navigation: a highlight card gliding to the active item (g_navY),
     // hover fades, and a small lit marker on the highlight's edge.
     if (g_navY < 0.0f) g_navY = static_cast<float>(kNavRects[g_state.activeTab].top);
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < kNavCount; ++i)
         if (g_navHoverT[i] > 0.01f) {
             Gdiplus::GraphicsPath hover;
             const RECT& r = kNavRects[i];
@@ -1618,7 +1812,7 @@ void paintSidebar(HDC hdc, const RECT& client) {
     }
     HFONT oldFont = static_cast<HFONT>(SelectObject(hdc, g_fontNav));
     SetBkMode(hdc, TRANSPARENT);
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < kNavCount; ++i) {
         const RECT& r = kNavRects[i];
         // Lit by the highlight as it passes, and by the hover.
         const float lit = std::max(g_navHoverT[i], 1.0f - std::min(1.0f, std::fabs(g_navY - r.top) / 52.0f));
@@ -1683,14 +1877,15 @@ void paintPageHeader(HDC hdc) {
     HFONT oldFont = static_cast<HFONT>(SelectObject(hdc, g_fontTitle));
     SetTextColor(hdc, lerpColor(ColBg, ColText, e));
     RECT title = { kSidebarW + 36, 6 + rise, kSidebarW + 830, 44 + rise };
-    DrawTextA(hdc, live ? "Live Capture" : "Offline Interpolation", -1, &title, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    DrawTextA(hdc, kNavLabels[g_state.activeTab], -1, &title, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, g_fontLabel);
     const float e2 = easeOut(g_pageT * 1.4f - 0.3f);
     SetTextColor(hdc, lerpColor(ColBg, ColDim, e2));
     const int rise2 = static_cast<int>(std::lround((1.0f - e2) * 8.0f));
     RECT subtitle = { kSidebarW + 36, 42 + rise2, kSidebarW + 830, 60 + rise2 };
     DrawTextA(hdc, live ? "Generate frames for any window in real time on the GPU."
-                        : "Interpolate a frame between two images.",
+                   : g_state.activeTab == 1 ? "Interpolate a frame between two images."
+                                            : "Your own AI motion model, trained on your videos.",
               -1, &subtitle, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
 }
@@ -1734,8 +1929,10 @@ void paintClient(HWND hwnd) {
             if (g_state.activeTab == 0) {
                 paintSectionPanel(hdc, LivePanelRect, "Advanced GPU flow", SectionIcon::Chip);
                 paintSectionPanel(hdc, TrainPanelRect, "Train neural flow", SectionIcon::Spark);
-            } else {
+            } else if (g_state.activeTab == 1) {
                 paintSectionPanel(hdc, OfflinePanelRect, "Advanced interpolation", SectionIcon::Sliders);
+            } else {
+                paintSectionPanel(hdc, AiPanelRect, "AI pyramid model", SectionIcon::Spark);
             }
             paintFieldFrames(hdc, hwnd);
         }
@@ -1776,7 +1973,7 @@ void animate(HWND hwnd) {
         if (std::fabs(g_navY - navTarget) < 0.3f) g_navY = navTarget;
         sidebar |= g_navY != before;
     }
-    for (int i = 0; i < 2; ++i) sidebar |= approach(g_navHoverT[i], g_navHover == i ? 1.0f : 0.0f, 12.0f);
+    for (int i = 0; i < kNavCount; ++i) sidebar |= approach(g_navHoverT[i], g_navHover == i ? 1.0f : 0.0f, 12.0f);
     if (sidebar) {
         RECT side = { 0, 0, kSidebarW, 4000 };
         InvalidateRect(hwnd, &side, FALSE);
@@ -1818,7 +2015,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         case WM_MOUSEMOVE: {
             const POINT p = { static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam)) };
             g_navHover = -1;
-            for (int i = 0; i < 2; ++i)
+            for (int i = 0; i < kNavCount; ++i)
                 if (PtInRect(&kNavRects[i], p)) g_navHover = i;
             if (!g_trackingLeave) {
                 TRACKMOUSEEVENT track = {};
@@ -1837,7 +2034,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
         case WM_LBUTTONDOWN: {
             const POINT p = { static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam)) };
-            for (int i = 0; i < 2; ++i)
+            for (int i = 0; i < kNavCount; ++i)
                 if (PtInRect(&kNavRects[i], p)) switchPage(i);
             return 0;
         }
@@ -1852,7 +2049,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         // Ctrl+Tab switches the page from the keyboard.
         case WM_KEYDOWN:
             if (wParam == VK_TAB && (GetKeyState(VK_CONTROL) & 0x8000)) {
-                switchPage(1 - g_state.activeTab);
+                switchPage((g_state.activeTab + 1) % kNavCount);
                 return 0;
             }
             break;
@@ -1899,16 +2096,26 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
             auto within = [cx, cy](const RECT& panel) {
                 return cx >= panel.left && cx < panel.right && cy >= panel.top && cy < panel.bottom;
             };
-            const bool onPanel = g_state.activeTab == 0
-                ? within(LivePanelRect) || within(TrainPanelRect) : within(OfflinePanelRect);
+            const bool onPanel = g_state.activeTab == 0 ? within(LivePanelRect) || within(TrainPanelRect)
+                                 : g_state.activeTab == 1 ? within(OfflinePanelRect) : within(AiPanelRect);
             SetBkMode(hdc, OPAQUE);
             SetBkColor(hdc, onPanel ? ColPanel : ColBg);
-            if (controlId == IDC_LIVE_STATUS || controlId == IDC_OFFLINE_STATUS || controlId == IDC_TRAIN_STATUS) {
+            if (controlId == IDC_LIVE_STATUS || controlId == IDC_OFFLINE_STATUS || controlId == IDC_TRAIN_STATUS ||
+                controlId == IDC_AI_STATUS) {
                 SetTextColor(hdc, ColAccent);
             } else {
                 SetTextColor(hdc, ColDim);
             }
             return reinterpret_cast<LRESULT>(onPanel ? g_brPanel : g_brBg);
+        }
+
+        case WM_CTLCOLORBTN: {
+            HWND control = reinterpret_cast<HWND>(lParam);
+            HDC hdc = reinterpret_cast<HDC>(wParam);
+            const COLORREF surface = surfaceUnder(control);
+            SetBkColor(hdc, surface);
+            return reinterpret_cast<LRESULT>(surface == ColSidebar ? g_brSidebar
+                                             : surface == ColPanel ? g_brPanel : g_brBg);
         }
 
         case WM_CTLCOLOREDIT: {
@@ -1959,6 +2166,12 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 case IDC_BROWSE_INPUT1: selectFile(g_state.input1, false); return 0;
                 case IDC_BROWSE_OUTPUT: selectFile(g_state.output, true); return 0;
                 case IDC_RUN_OFFLINE: runOffline(); return 0;
+                case IDC_OPEN_TRAINER: openTrainer(); return 0;
+                case IDC_AI_REFRESH: refreshAiStatus(); return 0;
+                case IDC_USE_AI_ENGINE:
+                    SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 4, 0);
+                    switchPage(0);
+                    return 0;
             }
             break;
 
@@ -2389,9 +2602,9 @@ int runGuiApplication() {
     char snapshot[MAX_PATH] = {};
     if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_SNAPSHOT", snapshot, sizeof(snapshot))) {
         char page[4] = {};
-        if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_PAGE", page, sizeof(page)) && page[0] == '1') {
-            g_state.activeTab = 1;
-            g_navY = static_cast<float>(kNavRects[1].top);
+        if (GetEnvironmentVariableA("MOTION_ENHANCER_GUI_PAGE", page, sizeof(page)) && page[0] >= '1' && page[0] <= '2') {
+            g_state.activeTab = page[0] - '0';
+            g_navY = static_cast<float>(kNavRects[g_state.activeTab].top);
             applyPageVisibility();
         }
         // MOTION_ENHANCER_GUI_TIME: the ambient animation's time in seconds,

@@ -36,6 +36,9 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter);
 // AI depth on one image (DepthEstimator): average time over 20 runs, and the
 // nearness map written to `output` as an 8-bit PNG (white = near).
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter);
+// Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
+// the GPU: input and outputs in D3D12 buffers, one fence wait per run.
+int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);
 
 // Replays <prefix>_f000.png, _f001.png, ... as consecutive pairs through one
 // engine, carrying cross-pair state (FFX's history, the static-UI evidence)

@@ -1,3 +1,27 @@
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-FFX-TEST\CMAKEFILES\18069A6E1202CCC472A8A9AEA61017AA\AIFLOWINPUTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/AiFlowInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/AiFlowInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-FFX-TEST\CMAKEFILES\18069A6E1202CCC472A8A9AEA61017AA\AIFLOWTORINGCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders/AiFlowToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/AiFlowToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
 ^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-FFX-TEST\CMAKEFILES\18069A6E1202CCC472A8A9AEA61017AA\DEPTHDILATECS.CSO.RULE
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-ffx-test/shaders

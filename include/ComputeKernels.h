@@ -33,6 +33,8 @@ enum class Kernel : int {
     DepthFinish,
     DepthView,
     DepthDilate,
+    AiFlowInput,
+    AiFlowToRing,
     Count
 };
 

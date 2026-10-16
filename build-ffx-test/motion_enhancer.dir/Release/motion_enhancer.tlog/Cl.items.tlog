@@ -17,3 +17,5 @@ C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\WindowHelper.cpp;C:\Users\bs
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\motion_enhancer.dir\Release\GuiApp.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\motion_enhancer.dir\Release\DepthEstimator.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\motion_enhancer.dir\Release\DepthService.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\OrtRuntime.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\motion_enhancer.dir\Release\OrtRuntime.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\AiFlowEstimator.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\motion_enhancer.dir\Release\AiFlowEstimator.obj

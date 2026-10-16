@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\AiFlowInputCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\AiFlowToRingCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-ffx-test\CMakeFiles\18069a6e1202ccc472a8a9aea61017aa\DepthDilateCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>

@@ -51,6 +51,8 @@ set(SOURCES
     src/GuiApp.cpp
     src/DepthEstimator.cpp
     src/DepthService.cpp
+    src/OrtRuntime.cpp
+    src/AiFlowEstimator.cpp
     app.rc
 )
 
@@ -166,7 +168,7 @@ if(WIN32)
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
                                       ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
-                                      DepthDilateCS.hlsl)
+                                      DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
                                                 FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl FfxRepairCS.hlsl)

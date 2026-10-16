@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AiFlowEstimator.h"
 #include "ComputeKernels.h"
 #include "DepthService.h"
 #include "GraphicsDevice.h"
@@ -60,6 +61,11 @@ struct FlowSettings {
     // pairs it measured 45.7 dB against SAD's 44.6, ahead on 9 of 10, and
     // 48.3 against 37.5 on the CS2-style sequence.
     bool disFlow = true;
+    // The AI pyramid flow engine: the network trained and exported with
+    // tools/ai-train (models\ai_flow.onnx), run by ONNX Runtime on the flow
+    // queue (AiFlowEstimator), its two fields filling DIS's 2x2 ring. Falls
+    // back to DIS when there is no model.
+    bool aiFlow = false;
     // With FFX: refine its whole-pixel 8x8 field into a per-pixel one at half
     // resolution by variational refinement (FfxRefine.hlsli), stored on a
     // 2x2 grid. Off = FFX's field as it comes.
@@ -205,6 +211,7 @@ public:
     bool usingFfx() const { return m_usingFfx; }
     bool usingNeural() const { return m_neuralModelLoaded && !m_usingFfx; }
     bool usingDis() const { return m_usingDis; }
+    bool usingAi() const { return m_usingAi; }
     bool ffxAvailable() const { return m_ffxReady; }
     uint32_t width() const { return m_width; }
     uint32_t height() const { return m_height; }
@@ -257,7 +264,7 @@ private:
     // FFX's field is refined: refined FFX fills DIS's 2x2 ring, plain FFX
     // fills an 8x8 one and falls back to SAD, which fills the same grid.
     bool disActive() const {
-        if (m_neuralModelLoaded) return false;
+        if (m_neuralModelLoaded || aiFlowActive()) return false;
         return m_settings.preferFfxOpticalFlow ? m_settings.ffxRefine : m_settings.disFlow;
     }
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
@@ -269,6 +276,14 @@ private:
 #endif
     bool recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex, Entry& out);
     bool recordOcclusionFill(const FlowInput& previous, const FlowInput& current, Entry& out);
+    // The AI pyramid flow engine (FlowSettings::aiFlow).
+    bool aiFlowActive() const { return m_aiFlow && m_aiFlow->ready(); }
+    bool recordAiFlow(const FlowInput& previous, const FlowInput& current, Entry& out);
+    // Executes what the list holds so far (after the capture-ready waits)
+    // and reopens it on the same allocator: work queued on the flow queue in
+    // between - the AI network - runs after the first part, before the rest.
+    bool splitList(const FlowInput& previous, const FlowInput& current);
+    void releaseAiBuffers();
     bool recordFlowMedian(Entry& out);
     void readTimestamps(UINT set);
 
@@ -301,6 +316,15 @@ private:
     // vectors are carried into the search.
     std::array<Pyramid, kMaxSlots> m_pyramids;
     std::unique_ptr<DepthService> m_depth;   // FlowSettings::aiDepth
+    std::unique_ptr<AiFlowEstimator> m_aiFlow;   // FlowSettings::aiFlow
+    ComPtr<ID3D12Resource> m_aiPlanar;    // network input, planar, W x 6H R32 (AiFlowInputCS)
+    ComPtr<ID3D12Resource> m_aiInput;     // ... as the network's input buffer
+    ComPtr<ID3D12Resource> m_aiFlowOut;   // network outputs (buffers)
+    ComPtr<ID3D12Resource> m_aiMaskOut;
+    ComPtr<ID3D12Resource> m_aiFlowTex;   // flow output as W x 4H R32, for AiFlowToRingCS
+    void* m_aiInputHandle = nullptr;
+    void* m_aiFlowHandle = nullptr;
+    void* m_aiMaskHandle = nullptr;
     int m_slotCount = 0;
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_estimatedFlow; // [dir][level]
     // Raw matcher output, before FillFlowCS writes the filled field into
@@ -334,6 +358,7 @@ private:
     // copied back.
     std::array<ComPtr<ID3D12Resource>, 2> m_medianScratch;
     bool m_usingDis = false;
+    bool m_usingAi = false;
 
 
     // GPU timestamps for the status line.

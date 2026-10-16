@@ -1,4 +1,5 @@
 #include "RealtimeSession.h"
+#include "AiFlowEstimator.h"
 
 #include "DepthEstimator.h"
 
@@ -490,7 +491,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << " | wgc " << cs.arrivals << " dup " << cs.duplicates << " acc " << cs.accepted
                           << " def " << ts.deferred << " drop " << ts.dropped + cs.queueDrops << " rep " << ts.replaced
                           << " cut " << cs.sceneCuts
-                           << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
+                           << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames << "\n";
                 log.write(status.str());
@@ -689,7 +690,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     if (interpolateMs > 0.0) std::cout << "  Interpolate pass: " << interpolateMs << " ms GPU (mean of " << interpolateRepeats << ")\n";
     std::cout
               << "  Flow estimator: " << (flow.usingFfx() ? "AMD FidelityFX Optical Flow" :
-                                             flow.usingNeural() ? "neural learned-feature flow" : flow.usingDis() ? "DIS optical flow" : "native SAD shader graph")
+                                             flow.usingAi() ? "AI pyramid flow (ONNX)" : flow.usingNeural() ? "neural learned-feature flow" : flow.usingDis() ? "DIS optical flow" : "native SAD shader graph")
               << " (" << entry.blockSize << "x" << entry.blockSize << " blocks)\n";
 
     if (!flowOutputPath.empty()) {
@@ -918,7 +919,7 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
                   << "   (" << vx << ", " << vy << ")\n";
     }
     std::cout << "  engine: "
-              << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n";
+              << (flow.usingFfx() ? "ffx" : flow.usingAi() ? "ai" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << "\n";
     if (settings.aiDepth)
         std::cout << "  AI depth used for " << depthPairs << " of " << (frames.size() - 1) << " pairs\n";
     if (measured >= 2) {
@@ -1020,7 +1021,7 @@ int runFlowLevelEval(const std::vector<std::string>& prefixes, const FlowSetting
         }
 
         std::cout << prefix << " (" << width << "x" << height << ", engine "
-                  << (flow.usingFfx() ? "ffx" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << ")\n"
+                  << (flow.usingFfx() ? "ffx" : flow.usingAi() ? "ai" : flow.usingNeural() ? "neural" : flow.usingDis() ? "dis" : "sad") << ")\n"
                   << "  level  scored textured |   textured: search  mean  >0.5px   >2px |  filled  mean  >0.5px   >2px"
                   << " |  all filled mean   (errors in that level's pixels)\n";
         // MOTION_ENHANCER_FLOW_EVAL_DUMP=1: every scored block's raw search
@@ -1479,6 +1480,54 @@ static std::vector<uint8_t> depthInput(const Image& image) {
     return rgb;
 }
 
+int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    AiFlowEstimator ai;
+    const std::wstring path(model.begin(), model.end());
+    if (!ai.initialize(device.device(), device.flowQueue(), path)) return 1;
+    ComPtr<ID3D12Resource> input, flow, mask;
+    if (FAILED(device.createBuffer(ai.inputBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                   D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, input)) ||
+        FAILED(device.createBuffer(ai.flowBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                   D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, flow)) ||
+        FAILED(device.createBuffer(ai.maskBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                   D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, mask))) return 1;
+    void* hi = ai.registerBuffer(input.Get());
+    void* hf = ai.registerBuffer(flow.Get());
+    void* hm = ai.registerBuffer(mask.Get());
+    ComPtr<ID3D12Fence> fence;
+    if (!hi || !hf || !hm || FAILED(device.device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) return 1;
+    HANDLE event = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    uint64_t value = 0;
+    auto once = [&]() {
+        if (!ai.run(hi, hf, hm)) return false;
+        device.flowQueue()->Signal(fence.Get(), ++value);
+        fence->SetEventOnCompletion(value, event);
+        return WaitForSingleObject(event, 5000) == WAIT_OBJECT_0;
+    };
+    for (int i = 0; i < 10; ++i)
+        if (!once()) return 1;
+    const int runs = 200;
+    double best = 1e30, total = 0.0;
+    for (int i = 0; i < runs; ++i) {
+        const auto t0 = std::chrono::steady_clock::now();
+        if (!once()) return 1;
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        best = std::min(best, ms);
+        total += ms;
+    }
+    std::cout << "AI flow network at " << ai.width() << "x" << ai.height() << ": " << total / runs
+              << " ms per frame pair (mean of " << runs << ", fence wait included), best " << best << " ms\n"
+              << "The whole engine (input scaling and conversion included): "
+                 "--flow-engine ai with MOTION_ENHANCER_BENCH_ITERS=40 --gpu-offline a.png b.png out.png\n";
+    ai.releaseBuffer(hi);
+    ai.releaseBuffer(hf);
+    ai.releaseBuffer(hm);
+    CloseHandle(event);
+    return 0;
+}
+
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter) {
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;
@@ -1593,7 +1642,7 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
         return 1;
     }
     device.dumpInfoQueue("self-test");
-    std::cout << "D3D12 self-test: PASS (" << (flow.usingFfx() ? "FFX" :
+    std::cout << "D3D12 self-test: PASS (" << (flow.usingFfx() ? "FFX" : flow.usingAi() ? "AI" :
                                                 flow.usingNeural() ? "neural" : flow.usingDis() ? "DIS" : "SAD") << ", "
               << std::fixed << std::setprecision(2) << flow.lastGpuTimeMs() << " ms flow)\n";
     return 0;

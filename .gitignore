@@ -1,0 +1,5 @@
+
+# AI trainer: Python environment, datasets and training runs
+tools/ai-train/.venv/
+tools/ai-train/datasets/
+tools/ai-train/runs/

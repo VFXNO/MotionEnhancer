@@ -244,6 +244,7 @@ int main(int argc, char** argv) {
     bool neuralParityCheck = false;
     std::string sequencePrefix;
     std::string depthTestInput, depthTestOutput;
+    std::string aiFlowTestModel;
     bool flowEval = false;   // --gpu-flow-eval <prefix>...: positional prefixes
 
     std::vector<std::string> positionalArgs;
@@ -259,6 +260,8 @@ int main(int argc, char** argv) {
             d3d12SelfTest = true;
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
+        } else if (arg == "--ai-flow-test" && i + 1 < argc) {
+            aiFlowTestModel = argv[++i];
         } else if (arg == "--depth-test" && i + 2 < argc) {
             depthTestInput = argv[++i];
             depthTestOutput = argv[++i];
@@ -333,10 +336,11 @@ int main(int argc, char** argv) {
                            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
             gpuSettings.preferFfxOpticalFlow = engine == "ffx" || engine == "amd";
             gpuSettings.neuralFlow = engine == "neural";
-            gpuSettings.disFlow = engine == "dis";
+            gpuSettings.disFlow = engine == "dis" || engine == "ai";   // DIS is the AI engine's fallback
+            gpuSettings.aiFlow = engine == "ai";
             if (!gpuSettings.preferFfxOpticalFlow && !gpuSettings.neuralFlow && !gpuSettings.disFlow &&
                 engine != "sad" && engine != "msad" && engine != "native") {
-                throw std::invalid_argument("flow engine must be 'sad', 'dis', 'ffx', or 'neural'");
+                throw std::invalid_argument("flow engine must be 'sad', 'dis', 'ffx', 'neural' or 'ai'");
             }
         } else if (arg == "--adapter" && i + 1 < argc) {
             std::string adapter = argv[++i];
@@ -450,6 +454,7 @@ int main(int argc, char** argv) {
         return runD3D12SelfTest(adapterPreference);
     }
 
+    if (!aiFlowTestModel.empty()) return runAiFlowTest(aiFlowTestModel, adapterPreference);
     if (!depthTestInput.empty()) {
         return runDepthTest(depthTestInput, depthTestOutput, adapterPreference);
     }

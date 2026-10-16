@@ -13,9 +13,9 @@
 
 #ifdef MOTION_ENHANCER_AI_DEPTH
 // onnxruntime.dll is delay-loaded: the C++ API must not bind to it during
-// static initialisation, only after initialize() has loaded it from the
+// static initialisation, only once OrtRuntime has loaded it from the
 // executable's folder (Windows ships an older onnxruntime.dll of its own).
-#define ORT_API_MANUAL_INIT
+#include "OrtRuntime.h"
 #include <d3d12.h>
 #include <wrl/client.h>
 #include "DirectML.h"
@@ -37,7 +37,6 @@ struct DepthEstimator::Impl {
 #ifdef MOTION_ENHANCER_AI_DEPTH
     Microsoft::WRL::ComPtr<IDMLDevice> dml;
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
-    std::unique_ptr<Ort::Env> env;
     std::unique_ptr<Ort::Session> session;
     std::string inputName;
     std::string outputName;
@@ -68,13 +67,8 @@ bool DepthEstimator::initialize(ID3D12Device* device, const std::wstring& modelP
 #else
     Impl& m = *m_impl;
     m.ready = false;
-    const std::wstring directory = executableDirectory();
-    HMODULE dmlModule = LoadLibraryExW((directory + L"\\DirectML.dll").c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
-    HMODULE ortModule = LoadLibraryExW((directory + L"\\onnxruntime.dll").c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
-    if (!dmlModule || !ortModule) {
-        std::cerr << "AI depth: DirectML.dll or onnxruntime.dll missing next to the executable.\n";
-        return false;
-    }
+    if (!ortruntime::load("AI depth")) return false;
+    HMODULE dmlModule = ortruntime::directml();
     if (GetFileAttributesW(modelPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
         std::cerr << "AI depth: model not found (models\\midas_v21_small_256_fp16.onnx).\n";
         return false;
@@ -94,8 +88,6 @@ bool DepthEstimator::initialize(ID3D12Device* device, const std::wstring& modelP
     m.queue->SetName(L"AiDepthQueue");
 
     try {
-        Ort::InitApi();
-        m.env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "MotionEnhancerDepth");
         Ort::SessionOptions options;
         // Required by the DirectML execution provider.
         options.DisableMemPattern();
@@ -104,7 +96,7 @@ bool DepthEstimator::initialize(ID3D12Device* device, const std::wstring& modelP
         Ort::ThrowOnError(Ort::GetApi().GetExecutionProviderApi("DML", ORT_API_VERSION,
                                                                reinterpret_cast<const void**>(&m.dmlApi)));
         Ort::ThrowOnError(m.dmlApi->SessionOptionsAppendExecutionProvider_DML1(options, m.dml.Get(), m.queue.Get()));
-        m.session = std::make_unique<Ort::Session>(*m.env, modelPath.c_str(), options);
+        m.session = std::make_unique<Ort::Session>(ortruntime::env(), modelPath.c_str(), options);
 
         Ort::AllocatorWithDefaultOptions allocator;
         m.inputName = m.session->GetInputNameAllocated(0, allocator).get();

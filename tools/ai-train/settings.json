@@ -1,0 +1,39 @@
+{
+ "page": 2,
+ "videos": [
+  "C:/Users/bsher/Downloads/Video/71292-537986749_medium.mp4",
+  "C:/Users/bsher/Downloads/Video/y4CMRwBmhI-kakashi-red-glow-live-wallpaper.mp4",
+  "C:/Users/bsher/Downloads/Video/Bom Diggy Diggy _ Ishpreet Dang _ Trending Short Dance Video _ Dancefit Live _ Dancefit Live Shorts.mp4",
+  "C:/Users/bsher/Downloads/Video/26493-360248645_medium.mp4",
+  "C:/Users/bsher/Downloads/Video/71292-537986749_medium.mp4",
+  "C:/Users/bsher/Downloads/Video/237643.mp4",
+  "C:/Users/bsher/Downloads/Video/353078.mov",
+  "C:/Users/bsher/Downloads/Video/video_preview_h264.mp4",
+  "C:/Users/bsher/Downloads/Video/mixkit-52476-video-52476-full-hd.mp4",
+  "C:/Users/bsher/Downloads/Video/100223-video-1080.mp4",
+  "C:/Users/bsher/Downloads/Video/rXAoP6MEWb-neon-queen-live-wallpaper.mp4"
+ ],
+ "dataset": "C:/Users/bsher/Downloads/Video",
+ "height": 360,
+ "max_per_video": 600,
+ "gap": 6,
+ "min_motion": 1.0,
+ "max_motion": 40.0,
+ "duplicate": 0.6,
+ "cut": 45.0,
+ "strides": [
+  1,
+  2
+ ],
+ "train_datasets": [
+  "C:/Users/bsher/Downloads/Video"
+ ],
+ "preset": "large",
+ "epochs": 60,
+ "batch": 16,
+ "lr": 0.0003,
+ "crop": 256,
+ "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/run1/last.pt",
+ "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-ffx-local\\Release\\models\\ai_flow.onnx"
+}

@@ -66,10 +66,21 @@ FlowEngine::~FlowEngine() {
             WaitForSingleObject(m_fenceEvent, kGpuWaitTimeoutMs);
     }
     m_depth.reset();
+    releaseAiBuffers();
+    m_aiFlow.reset();
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     destroyFfx();
 #endif
     if (m_fenceEvent) CloseHandle(m_fenceEvent);
+}
+
+void FlowEngine::releaseAiBuffers() {
+    if (m_aiFlow) {
+        m_aiFlow->releaseBuffer(m_aiInputHandle);
+        m_aiFlow->releaseBuffer(m_aiFlowHandle);
+        m_aiFlow->releaseBuffer(m_aiMaskHandle);
+    }
+    m_aiInputHandle = m_aiFlowHandle = m_aiMaskHandle = nullptr;
 }
 
 bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernels,
@@ -93,6 +104,14 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
         }
     }
     ID3D12Device* d3d = device->device();
+    m_aiFlow.reset();
+    if (settings.aiFlow) {
+        m_aiFlow = std::make_unique<AiFlowEstimator>();
+        if (!m_aiFlow->initialize(d3d, device->flowQueue(), AiFlowEstimator::defaultModelPath())) {
+            std::cerr << "FlowEngine: AI pyramid flow unavailable; using DIS.\n";
+            m_aiFlow.reset();
+        }
+    }
 
     for (auto& set : m_commands) {
         if (FAILED(d3d->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -232,10 +251,11 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
     // every reader takes xy, so its entries hold just the vector: at a
     // 2-pixel grid that is half the memory of the four-channel format SAD's
     // copies need (2 x 16 entries x 7.4 MB at 1440p).
-    const uint32_t ringBlock = disActive() ? kDisRingBlock : sadBlockSize(0);
+    const bool denseRing = disActive() || aiFlowActive();
+    const uint32_t ringBlock = denseRing ? kDisRingBlock : sadBlockSize(0);
     const uint32_t ringW = (width + ringBlock - 1) / ringBlock;
     const uint32_t ringH = (height + ringBlock - 1) / ringBlock;
-    const DXGI_FORMAT ringFormat = disActive() ? DXGI_FORMAT_R32G32_FLOAT : kFlowFormat;
+    const DXGI_FORMAT ringFormat = denseRing ? DXGI_FORMAT_R32G32_FLOAT : kFlowFormat;
     for (auto& entry : m_ring) {
         if (FAILED(m_device->createTexture2D(ringW, ringH, ringFormat,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
@@ -248,14 +268,14 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
     }
-    if ((disActive() || m_neuralModelLoaded) && m_settings.flowMedian) {
+    if ((denseRing || m_neuralModelLoaded) && m_settings.flowMedian) {
         for (auto& scratch : m_medianScratch) {
             if (FAILED(m_device->createTexture2D(ringW, ringH, ringFormat,
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                  D3D12_RESOURCE_STATE_COMMON, scratch, L"FlowMedian"))) return false;
         }
     }
-    if (disActive() && m_settings.occlusionFill) {
+    if (denseRing && m_settings.occlusionFill) {
         for (auto& scratch : m_fillScratch) {
             if (FAILED(m_device->createTexture2D(ringW, ringH, DXGI_FORMAT_R32G32_FLOAT,
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
@@ -263,6 +283,27 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         }
     }
 
+
+    // The AI flow network's tensors (AiFlowEstimator), at its resolution.
+    releaseAiBuffers();
+    if (aiFlowActive()) {
+        const uint32_t aw = static_cast<uint32_t>(m_aiFlow->width());
+        const uint32_t ah = static_cast<uint32_t>(m_aiFlow->height());
+        if (FAILED(m_device->createTexture2D(aw, 6 * ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                             D3D12_RESOURCE_STATE_COMMON, m_aiPlanar, L"AiFlowInput")) ||
+            FAILED(m_device->createTexture2D(aw, 4 * ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_NONE,
+                                             D3D12_RESOURCE_STATE_COMMON, m_aiFlowTex, L"AiFlowOutput")) ||
+            FAILED(m_device->createBuffer(m_aiFlow->inputBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_aiInput)) ||
+            FAILED(m_device->createBuffer(m_aiFlow->flowBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_aiFlowOut)) ||
+            FAILED(m_device->createBuffer(m_aiFlow->maskBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_aiMaskOut))) return false;
+        m_aiInputHandle = m_aiFlow->registerBuffer(m_aiInput.Get());
+        m_aiFlowHandle = m_aiFlow->registerBuffer(m_aiFlowOut.Get());
+        m_aiMaskHandle = m_aiFlow->registerBuffer(m_aiMaskOut.Get());
+        if (!m_aiInputHandle || !m_aiFlowHandle || !m_aiMaskHandle) return false;
+    }
 
     m_depth.reset();
     if (m_settings.aiDepth) {
@@ -478,6 +519,76 @@ bool FlowEngine::recordFfxRefine(const FlowInput& previous, const FlowInput& cur
 #endif
 
 // ------------------------------------------------------------------ SAD
+
+// ------------------------------------------------------------------ AI
+
+bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) {
+    if (FAILED(m_list->Close())) return false;
+    ID3D12CommandQueue* queue = m_device->flowQueue();
+    ID3D12Fence* ready = m_device->captureReadyFence12();
+    if (previous.readyValue && FAILED(queue->Wait(ready, previous.readyValue))) return false;
+    if (current.readyValue && FAILED(queue->Wait(ready, current.readyValue))) return false;
+    ID3D12CommandList* lists[] = {m_list.Get()};
+    queue->ExecuteCommandLists(1, lists);
+    // An allocator may record a new list while its earlier ones execute.
+    const UINT idx = static_cast<UINT>(m_submitCount % kListsInFlight);
+    return SUCCEEDED(m_list->Reset(m_commands[idx].allocator.Get(), nullptr));
+}
+
+// The AI pyramid flow engine: both frames scaled to the network's
+// resolution (AiFlowInputCS), the network on the flow queue between the two
+// halves of this pair's list (splitList), and its two fields into the ring
+// at DIS's 2x2 grid (AiFlowToRingCS).
+bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& current, Entry& out) {
+    ID3D12GraphicsCommandList* list = m_list.Get();
+    const uint32_t aw = static_cast<uint32_t>(m_aiFlow->width());
+    const uint32_t ah = static_cast<uint32_t>(m_aiFlow->height());
+    ShaderConstants c = {};
+    c.width = m_width;
+    c.height = m_height;
+    c.levelWidth = aw;
+    c.levelHeight = ah;
+    // The capture textures are shared: implicit promotion.
+    std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, nullptr, nullptr, nullptr, nullptr};
+    if (!m_dispatch.dispatch(list, *m_kernels, Kernel::AiFlowInput, in, m_aiPlanar.Get(), c,
+                             (aw + 15) / 16, (ah + 15) / 16, 0x3)) return false;
+    // The planar rows are exactly the [1, 6, H, W] tensor (W * 4 bytes is a
+    // multiple of 256: the width is a multiple of 64).
+    D3D12_TEXTURE_COPY_LOCATION buffer = {};
+    buffer.pResource = m_aiInput.Get();
+    buffer.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    buffer.PlacedFootprint.Footprint = {DXGI_FORMAT_R32_FLOAT, aw, 6 * ah, 1, aw * 4};
+    D3D12_TEXTURE_COPY_LOCATION texture = {};
+    texture.pResource = m_aiPlanar.Get();
+    texture.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    DispatchContext::transition(list, m_aiPlanar.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    list->CopyTextureRegion(&buffer, 0, 0, 0, &texture, nullptr);
+    DispatchContext::transition(list, m_aiPlanar.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
+
+    if (!splitList(previous, current)) return false;
+    if (!m_aiFlow->run(m_aiInputHandle, m_aiFlowHandle, m_aiMaskHandle)) return false;
+    list = m_list.Get();
+
+    buffer.pResource = m_aiFlowOut.Get();
+    buffer.PlacedFootprint.Footprint = {DXGI_FORMAT_R32_FLOAT, aw, 4 * ah, 1, aw * 4};
+    texture.pResource = m_aiFlowTex.Get();
+    DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+    list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
+    DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+    c.blockSize = c.parentBlockSize = static_cast<int32_t>(kDisRingBlock);
+    const uint32_t rw = (m_width + kDisRingBlock - 1) / kDisRingBlock;
+    const uint32_t rh = (m_height + kDisRingBlock - 1) / kDisRingBlock;
+    in = {m_aiFlowTex.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int direction = 0; direction < 2; ++direction) {
+        c.levelIndex = direction;
+        ID3D12Resource* ring = direction == 0 ? out.forward.Get() : out.backward.Get();
+        if (!m_dispatch.dispatch(list, *m_kernels, Kernel::AiFlowToRing, in, ring, c, (rw + 15) / 16, (rh + 15) / 16))
+            return false;
+    }
+    out.blockSize = kDisRingBlock;
+    out.singleField = false;   // forward and backward are the network's own
+    return true;
+}
 
 bool FlowEngine::recordPyramid(const FlowInput& frame, Pyramid& pyramid) {
     ID3D12GraphicsCommandList* list = m_list.Get();
@@ -903,8 +1014,17 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     if (!beginList()) return result;
 
     bool ok = false;
+    m_usingAi = false;
+    if (aiFlowActive()) {
+        ok = recordAiFlow(previous, current, scratch);
+        if (!ok) {
+            m_list->Close();
+            return result;
+        }
+        m_usingAi = true;
+    }
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
-    if (m_settings.preferFfxOpticalFlow && m_ffxReady) {
+    if (!m_usingAi && m_settings.preferFfxOpticalFlow && m_ffxReady) {
         ok = recordFfx(previous, current, scratch);
         if (!ok) {
             // Never execute a partially recorded FFX list; rebuild it with
@@ -920,17 +1040,23 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         }
     }
 #endif
-    m_usingFfx = ok;
+    m_usingFfx = ok && !m_usingAi;
     m_usingDis = !ok && disActive();
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
     if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
+    // Experiments on the AI engine's fields: DIS's occlusion fill and the
+    // 3x3 median (MOTION_ENHANCER_AI_FILL / MOTION_ENHANCER_AI_MEDIAN).
+    static const bool aiFill = GetEnvironmentVariableA("MOTION_ENHANCER_AI_FILL", nullptr, 0) > 0;
+    static const bool aiMedian = GetEnvironmentVariableA("MOTION_ENHANCER_AI_MEDIAN", nullptr, 0) > 0;
+    if (ok && m_usingAi && aiFill) ok = recordOcclusionFill(previous, current, scratch);
+    if (ok && m_usingAi && aiMedian) ok = recordFlowMedian(scratch);
     // The neural estimator's 8x8 fields are median filtered as well: on the
     // user's real frames +0.14 dB (24.52 -> 24.66, the two sequences with
     // fast near grass +0.4 dB each), and less speckle beside the character
     // on the third-person test (6.60 -> 6.46). DIS's occlusion fill on top
     // gained 0.04 dB more on the real frames but added speckle there
     // (-> 7.24) and cost the hardest fast-turn pair 2 dB, so it stays DIS's.
-    if (ok && !m_usingFfx && !m_usingDis && m_neuralModelLoaded) ok = recordFlowMedian(scratch);
+    if (ok && !m_usingFfx && !m_usingDis && !m_usingAi && m_neuralModelLoaded) ok = recordFlowMedian(scratch);
     // Refined FFX's field is median filtered (FlowMedianCS). DIS's is not:
     // there the median removed some noise (-6%) but cost the third-person
     // test 0.1-0.3 dB.
