@@ -1270,10 +1270,12 @@ std::string aiModelSummary() {
     FileTimeToSystemTime(&info.ftLastWriteTime, &utc);
     SystemTimeToTzSpecificLocalTime(nullptr, &utc, &local);
     char line[400];
+    // A model exported without a validation score has "psnr": null.
     std::string psnr = field("psnr");
     if (psnr.size() > 5) psnr = psnr.substr(0, 5);
-    std::snprintf(line, sizeof(line), "Installed: models\\ai_flow.onnx - %sx%s, %s model, %s dB on held-out video, exported %04d-%02d-%02d %02d:%02d",
-                  field("width").c_str(), field("height").c_str(), field("preset").c_str(), psnr.c_str(),
+    const std::string score = psnr == "null" || psnr == "?" ? std::string() : ", " + psnr + " dB on held-out clips";
+    std::snprintf(line, sizeof(line), "Installed: models\\ai_flow.onnx - %sx%s, %s model%s, exported %04d-%02d-%02d %02d:%02d",
+                  field("width").c_str(), field("height").c_str(), field("preset").c_str(), score.c_str(),
                   local.wYear, local.wMonth, local.wDay, local.wHour, local.wMinute);
     return line;
 }
@@ -1544,8 +1546,8 @@ void createControls() {
     // ---- AI Model page ----
     HWND aiIntro = addControl("STATIC",
         "Train your own frame-interpolation model on footage like what you play, then use it as the flow engine. "
-        "The model is a small pyramid network: at a quarter of 1440p it runs in about 1 ms on an RX 9070 XT "
-        "(the whole engine, input scaling included).",
+        "The model is a small pyramid network whose depth follows its resolution; DIS then refines its motion "
+        "against the full frames. At a quarter of 1440p the whole engine takes about 2.5 ms on an RX 9070 XT.",
         SS_LEFT, 56, 124, 740, 60, 0);
     setControlFont(aiIntro, g_fontBody);
     g_state.aiStatus = addControl("STATIC", "", SS_LEFT, 56, 196, 740, 40, IDC_AI_STATUS);
@@ -1553,7 +1555,7 @@ void createControls() {
     SetWindowSubclass(g_state.aiStatus, changingStaticProc, 3, 0);
     HWND aiSteps = addControl("STATIC",
         "1.  Dataset - add your videos; the trainer cuts them into triplets of frames (repeats, cuts and stills left out).\n"
-        "2.  Train - on the GPU with ROCm; it shows the quality on videos it never trained on.\n"
+        "2.  Train - on the GPU with ROCm; it shows the quality on the part of each video it never trains on.\n"
         "3.  Export - writes models\\ai_flow.onnx next to this program.\n"
         "4.  Choose \"AI pyramid (trained model)\" as the flow engine on the Live Capture page.",
         SS_LEFT, 56, 248, 740, 92, 0);

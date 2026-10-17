@@ -42,15 +42,37 @@ def emit(**event):
 
 
 def probe(path):
-    """Width, height, frame rate and frame count of a video (ffprobe)."""
+    """Displayed width and height, frame rate and frame count (ffprobe).
+
+    The displayed size, not the stored one: a phone video is often stored
+    landscape with a rotation flag, and ffmpeg outputs it rotated, so its
+    stored size squashed every portrait frame into a landscape one; and a
+    non-square pixel aspect (some DVD/broadcast files) stretches it."""
     out = subprocess.run(
         ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-count_packets',
-         '-show_entries', 'stream=width,height,r_frame_rate,nb_read_packets', '-of', 'json', path],
+         '-show_entries', 'stream=width,height,r_frame_rate,nb_read_packets,sample_aspect_ratio'
+         ':stream_side_data=rotation:stream_tags=rotate', '-of', 'json', path],
         capture_output=True, text=True, check=True).stdout
     s = json.loads(out)['streams'][0]
     num, den = s['r_frame_rate'].split('/')
     fps = float(num) / max(float(den), 1.0)
-    return int(s['width']), int(s['height']), fps, int(s.get('nb_read_packets', 0) or 0)
+    w, h = int(s['width']), int(s['height'])
+    sar = s.get('sample_aspect_ratio', '1:1')
+    try:
+        a, b = (int(v) for v in sar.split(':'))
+        if a > 0 and b > 0:
+            w = int(round(w * a / b))
+    except ValueError:
+        pass
+    rotation = 0.0
+    for side in s.get('side_data_list', []):
+        if 'rotation' in side:
+            rotation = float(side['rotation'])
+    if not rotation and 'rotate' in s.get('tags', {}):
+        rotation = float(s['tags']['rotate'])
+    if int(round(abs(rotation))) % 180 == 90:
+        w, h = h, w
+    return w, h, fps, int(s.get('nb_read_packets', 0) or 0)
 
 
 def frames(path, height):
@@ -102,6 +124,11 @@ def build(args):
     if os.path.exists(index_path):
         with open(index_path, encoding='utf-8') as f:
             index = json.load(f)
+    # Entries whose images are gone (a deleted `triplets` folder) are
+    # forgotten, so this build makes them again instead of skipping them as
+    # already made.
+    index = [e for e in index
+             if all(os.path.exists(os.path.join(args.out, 'triplets', e['dir'], f'im{i}.jpg')) for i in range(3))]
     known = {e['dir'] for e in index}
     meter = MotionMeter()
     strides = sorted(set(args.strides))
@@ -116,9 +143,15 @@ def build(args):
         except Exception as e:  # noqa: BLE001 - reported to the app
             emit(event='error', video=video, message=f'cannot read: {e}')
             continue
-        emit(event='video', index=v, videos=len(args.videos), video=video, frames=count, fps=fps)
+        # The video's triplets spread over all of it: with the plain gap the
+        # limit per video was reached early in a long one (600 triplets every
+        # 6 frames took the first 4065 frames, about a minute, of an 11-minute
+        # gameplay video) and the rest was never used.
+        gap = max(args.gap, count // max(1, args.max_per_video)) if count else args.gap
+        emit(event='video', index=v, videos=len(args.videos), video=video, frames=count, fps=fps, gap=gap)
         history = []            # the last `reach` + 1 frames
         kept = 0
+        taken = 0               # kept now or already in the dataset
         last_kept = -10 ** 9
         rejected = {'duplicate': 0, 'cut': 0, 'still': 0, 'fast': 0}
         for i, frame in enumerate(frames(video, args.height)):
@@ -127,9 +160,9 @@ def build(args):
                 history.pop(0)
             if i % 30 == 0:
                 emit(event='progress', index=v, frame=i, frames=count, kept=kept, rejected=rejected)
-            if kept >= args.max_per_video:
+            if taken >= args.max_per_video:
                 break
-            if i - last_kept < args.gap:
+            if i - last_kept < gap:
                 continue
             for s in strides:
                 if len(history) < 2 * s + 1:
@@ -152,7 +185,13 @@ def build(args):
                 name = f'{stem}_{i - 2 * s:06d}_s{s}'
                 folder = os.path.join(args.out, 'triplets', name)
                 if name in known:
-                    continue
+                    # Made by an earlier build: the slot is taken, as it was
+                    # then. Skipping it to try the next stride shifted the
+                    # sampling and added near-copies of the clips already
+                    # there (73 of them when one video was built twice).
+                    taken += 1
+                    last_kept = i
+                    break
                 os.makedirs(folder, exist_ok=True)
                 for k, img in enumerate((f0, f1, f2)):
                     cv2.imwrite(os.path.join(folder, f'im{k}.jpg'), cv2.cvtColor(img, cv2.COLOR_RGB2BGR),
@@ -163,6 +202,7 @@ def build(args):
                 index.append(entry)
                 known.add(name)
                 kept += 1
+                taken += 1
                 total_kept += 1
                 last_kept = i
                 emit(event='sample', path=folder, motion=entry['motion'], kept=kept)

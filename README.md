@@ -340,12 +340,24 @@ FFX flow readback or per-frame FFX logging.
 
 ### AI pyramid flow (`--flow-engine ai`, your own trained model)
 
-A small pyramid network trained on your own videos with **`tools/ai-train`** (PyTorch on ROCm, a trainer window: dataset → train → export; see [its README](tools/ai-train/README.md)), opened from the GUI's **AI Model** page. It is exported to `modelsi_flow.onnx` and run by ONNX Runtime's DirectML provider on the flow queue (`AiFlowEstimator`). The flow list is split around it (`FlowEngine::splitList`):
+A small pyramid network (its depth follows the resolution: 7 levels at 640×352) trained on your own videos with **`tools/ai-train`** (PyTorch on ROCm, a trainer window: dataset → train → export; see [its README](tools/ai-train/README.md)), opened from the GUI's **AI Model** page. It is exported to `models\ai_flow.onnx` and run by ONNX Runtime's DirectML provider on the flow queue (`AiFlowEstimator`). The flow list is split around it (`FlowEngine::splitList`):
 1. `AiFlowInputCS` scales both captured frames to the network resolution (a quarter of the capture).
 2. The network runs on the same queue, so it needs no fences.
-3. `AiFlowToRingCS` writes its forward and backward fields to DIS's 2×2 ring, so occlusion handling, projection, static UI and interpolation read it exactly as they read DIS.
+3. `AiFlowToRingCS` writes its forward and backward fields into DIS's dense field at level 4 (160×90 at 1440p).
+4. DIS also runs its own coarse levels down to level 4. At level 3 each patch starts from whichever is better, the network's vector or DIS's own; DIS's replaces the network's only where it matches the frames clearly better. Without this, a fast motion the network missed stayed missed: the two frames were blended out of register and looked motion-blurred. On the fast captures the output kept 52–54% of the real frame's fine detail, against DIS's 80–81%; with the fallback it keeps 83–92%, for 0.11 ms.
+5. DIS's levels 3 to 1 refine the result against the frames themselves (2 Lucas–Kanade steps per patch), and the half-resolution field becomes DIS's 2×2 ring (one pixel per block). Occlusion handling, projection, static UI and interpolation read it exactly as they read DIS.
 
-At 640×352 the whole engine measured 1.0 ms per 1440p pair on an RX 9070 XT (the network alone 0.78 ms), against DIS's 3.2 ms. `--ai-flow-test model.onnx` times the network alone. Without a model it falls back to DIS. `MOTION_ENHANCER_AI_FLOW_MODEL` points it at another file, and `MOTION_ENHANCER_AI_FILL` / `MOTION_ENHANCER_AI_MEDIAN` try DIS's occlusion fill and the 3×3 median on its fields. Its quality is only as good as its training: train it on footage like what you play.
+The network supplies the coarse motion; the frames, at the resolution the picture is warped at, supply the sub-pixel detail. Scaling the network's field straight up to 1440p carried its errors with it. On a synthetic 7×2 px camera pan cut from a real capture, the trained model found about 2×1 px:
+
+| | Midpoint PSNR | Frame-to-frame error change (flicker) |
+|---|---|---|
+| Network scaled up | 22–23 dB | 0.94–0.98 |
+| Network + refinement | 46.1–46.2 dB | 0.09–0.11 |
+| DIS | 46.9–47.0 dB | 0.03 |
+
+On the real captures the mean went from 24.01 to 24.29 dB (edges 17.80 → 18.24). Two other approaches were measured and dropped: joint bilateral upsampling guided by the full-resolution frame (no difference) and refining down to full resolution (2 ms more for the same result).
+
+At 640×352 the whole engine measured 2.55 ms per 1440p pair on an RX 9070 XT (the network alone about 1.3 ms, medium model, plus about 1 ms of DIS), against DIS's 4.3 ms. `--ai-flow-test model.onnx` times the network alone. Without a model it falls back to DIS. `MOTION_ENHANCER_AI_FLOW_MODEL` points it at another file, and `MOTION_ENHANCER_AI_FILL` / `MOTION_ENHANCER_AI_MEDIAN` try DIS's occlusion fill and the 3×3 median on its fields. Its quality is only as good as its training: train it on footage like what you play.
 
 ### Dense Inverse Search (`--flow-engine dis`, the default)
 

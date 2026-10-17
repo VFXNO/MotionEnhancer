@@ -42,6 +42,10 @@ Texture2D<float> CandLuma : register(t1);    // frame1 at this level
 Texture2D<float2> CoarseFlow : register(t2); // dense flow of the next coarser level (its pixels)
 Texture2D<float2> RefStats : register(t3);   // whole-frame luma mean, deviation (FrameStatsCS)
 Texture2D<float2> CandStats : register(t4);
+// A second coarse field scored as further starts when NeuralControl.z is set:
+// the AI engine's own DIS coarse levels next to the network's field in
+// CoarseFlow (FlowEngine::recordAiFlow). DIS itself never binds it.
+Texture2D<float2> AltFlow : register(t5);
 RWTexture2D<float2> PatchFlow : register(u0);
 
 static const int kPatch = 8;
@@ -163,6 +167,28 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
                 u = v;
                 sample = s;
                 startError = e;
+            }
+        }
+        // The AI engine: DIS's own coarse answer around the patch, which
+        // replaces the network's where it is clearly better - a fast motion
+        // the network missed, which two refinement steps from its start
+        // could not reach, and the two frames were blended out of register
+        // (a blurred picture).
+        if (NeuralControl.z > 0.5f)
+        {
+            [unroll]
+            for (int c = 0; c < 5; ++c)
+            {
+                const float2 v = 2.0f * AltFlow.SampleLevel(
+                    LinearClamp, (0.5f * (centre + offsets[c]) + 0.5f) / float2(cw, ch), 0);
+                const float s = candGain * CandLuma.SampleLevel(LinearClamp, (pf + v + 0.5f) * inverseSize, 0) + candOffset;
+                const float e = PatchError(s, tn, li);
+                if (e < kCandidateMargin * startError)
+                {
+                    u = v;
+                    sample = s;
+                    startError = e;
+                }
             }
         }
     }

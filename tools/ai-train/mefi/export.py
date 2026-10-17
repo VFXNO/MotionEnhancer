@@ -16,7 +16,7 @@ import os
 
 import torch
 
-from .model import Exported, PyramidFlow
+from .model import ARCH, Exported, levels_for, load_checkpoint
 
 
 def emit(**event):
@@ -30,22 +30,38 @@ def main(argv=None):
     p.add_argument('--width', type=int, default=640)
     p.add_argument('--height', type=int, default=352)
     args = p.parse_args(argv)
-    if args.width % 16 or args.height % 16:
-        emit(event='error', message='width and height must be multiples of 16')
+    # The program copies whole rows of the network input and output, which
+    # needs a width of 64 floats (256 bytes) at a time.
+    if args.width % 64 or args.height % 16:
+        emit(event='error', message='the width must be a multiple of 64 and the height of 16')
         return 1
-    ck = torch.load(args.checkpoint, map_location='cpu')
-    net = PyramidFlow(ck['preset'])
-    net.load_state_dict(ck['model'])
+    try:
+        ck, net = load_checkpoint(args.checkpoint)
+    except ValueError as e:
+        emit(event='error', message=str(e))
+        return 1
     model = Exported(net.eval()).eval()
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     frames = torch.rand(1, 6, args.height, args.width)
+    # One file: the weights inside it, not in a .onnx.data beside it (a copy
+    # of the .onnx alone then could not load).
     torch.onnx.export(model, (frames,), args.out, opset_version=18, input_names=['frames'],
-                      output_names=['flow', 'mask'], dynamo=True, optimize=True)
+                      output_names=['flow', 'mask'], dynamo=True, optimize=True, external_data=False)
+    stale = args.out + '.data'
+    if os.path.exists(stale):
+        os.remove(stale)
     import onnx
     onnx.checker.check_model(onnx.load(args.out))
-    meta = {'format': 'mefi-pyramid-flow-1', 'width': args.width, 'height': args.height,
-            'preset': ck['preset'], 'psnr': ck.get('psnr'), 'epoch': ck.get('epoch'),
-            'checkpoint': os.path.abspath(args.checkpoint)}
+    # The model learned motion at the scale of its dataset frames: far from
+    # it, textures and speeds look unlike anything it saw.
+    trained = ck.get('train_height')
+    if trained and not 0.67 <= args.height / trained <= 1.5:
+        emit(event='warning', message=f'the network height {args.height} is far from the {trained} px frames '
+                                      f'it was trained on; build the dataset at about {args.height} px '
+                                      f'(or export near {trained} px) for the best results')
+    meta = {'format': 'mefi-pyramid-flow-1', 'arch': ARCH, 'width': args.width, 'height': args.height,
+            'levels': levels_for(args.height, args.width), 'preset': ck['preset'], 'psnr': ck.get('psnr'),
+            'epoch': ck.get('epoch'), 'train_height': trained, 'checkpoint': os.path.abspath(args.checkpoint)}
     with open(os.path.splitext(args.out)[0] + '.json', 'w', encoding='utf-8') as f:
         json.dump(meta, f, indent=1)
     emit(event='done', out=os.path.abspath(args.out), **meta)

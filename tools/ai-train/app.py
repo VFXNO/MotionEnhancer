@@ -427,14 +427,15 @@ class DatasetPage(Page):
         self.out = QLineEdit(s.get('dataset', os.path.join(HERE, 'datasets', 'default')))
         sl.addWidget(label('Dataset folder (added to if it exists)', 'dim'))
         sl.addLayout(path_row(self.out, 'Browse', self.pick_out))
-        self.height_ = spin(s.get('height', 360), 144, 1080, 8)
+        primary = (monitors() or [('', 2560, 1440)])[0]
+        self.height_ = spin(s.get('height', network_size(primary[1], primary[2], 0.25)[1]), 144, 1080, 8)
         self.max_per = spin(s.get('max_per_video', 600), 10, 100000, 50)
         self.gap = spin(s.get('gap', 6), 1, 600)
         self.min_motion = spin(s.get('min_motion', 1.0), 0.0, 50.0, 0.5, 1)
         self.max_motion = spin(s.get('max_motion', 40.0), 2.0, 200.0, 2.0, 1)
         self.duplicate = spin(s.get('duplicate', 0.6), 0.0, 10.0, 0.1, 2)
         self.cut = spin(s.get('cut', 45.0), 5.0, 255.0, 1.0, 1)
-        rows = [('Frame height (px)', self.height_, '360 matches 1440p capture'),
+        rows = [('Frame height (px)', self.height_, 'about the export height: a quarter of your monitor'),
                 ('Triplets per video, at most', self.max_per, ''),
                 ('Frames between triplets', self.gap, 'spreads samples over the video'),
                 ('Least motion (px)', self.min_motion, 'below: a still, skipped'),
@@ -534,6 +535,8 @@ class DatasetPage(Page):
         kind = e.get('event')
         if kind == 'video':
             self.current = os.path.basename(e['video'])
+            if e['index'] == 0:
+                self.unreadable = []
             self.bar.setRange(0, max(1, e.get('frames') or 1))
             self.bar.setValue(0)
             self.total_bar.setValue(e['index'])
@@ -559,9 +562,14 @@ class DatasetPage(Page):
         elif kind == 'video_done':
             self.total_bar.setValue(e['index'] + 1)
         elif kind == 'done':
-            self.status.setText(f"Done: {e['kept']} new triplets, {e['total']} in the dataset ({e['seconds']} s).")
+            text = f"Done: {e['kept']} new triplets, {e['total']} in the dataset ({e['seconds']} s)."
+            if getattr(self, 'unreadable', []):
+                text += f"  Could not read: {', '.join(self.unreadable)}."
+            self.status.setText(text)
             self.app.train.add_dataset(self.out.text())
         elif kind == 'error':
+            if e.get('video'):
+                self.unreadable = getattr(self, 'unreadable', []) + [os.path.basename(e['video'])]
             self.status.setText(f"Error: {e.get('message')}")
 
     def finished(self, code):
@@ -574,14 +582,14 @@ class DatasetPage(Page):
         self.stopping = False
 
 
-PRESET_TEXT = {'small': 'Small — about 0.7 ms at 640×352', 'medium': 'Medium — about 0.9 ms (recommended)',
-               'large': 'Large — about 1.0 ms'}
+PRESET_TEXT = {'small': 'Small — about 1.3 ms at 640×352', 'medium': 'Medium — about 1.3 ms (recommended)',
+               'large': 'Large — about 1.5 ms'}
 
 
 class TrainPage(Page):
     def __init__(self, app):
         super().__init__('Train', 'Train the pyramid model on your triplets with ROCm on the GPU. '
-                                  'Quality is measured on whole videos it never trains on.')
+                                  'Quality is measured on the last tenth of every video, which it never trains on.')
         self.app = app
         s = app.settings
         body = QHBoxLayout()
@@ -614,15 +622,17 @@ class TrainPage(Page):
             self.preset.addItem(t, k)
         self.preset.setCurrentIndex(list(PRESET_TEXT).index(s.get('preset', 'medium')))
         self.epochs = spin(s.get('epochs', 60), 1, 2000, 5)
-        self.batch = spin(s.get('batch', 16), 1, 128, 2)
-        self.lr = spin(s.get('lr', 3e-4), 1e-5, 1e-2, 1e-4, 5)
+        # Below 4 the motion blew up and training diverged (batch 1: NaN weights
+        # in epoch 4); a saved smaller value is raised.
+        self.batch = spin(max(4, s.get('batch', 12)), 4, 128, 2)
+        self.lr = spin(s.get('lr', 1e-3), 1e-5, 1e-2, 1e-4, 5)
         self.crop = spin(s.get('crop', 256), 64, 1024, 16)
         self.run = QLineEdit(s.get('run', os.path.join(HERE, 'runs', 'run1')))
         self.resume = QCheckBox('Continue this run from its last checkpoint')
         grid.addWidget(label('Size'), 0, 0)
         grid.addWidget(self.preset, 0, 1, 1, 2)
-        for r, (name, w, hint) in enumerate((('Epochs', self.epochs, ''), ('Batch', self.batch, 'lower if memory runs out'),
-                                             ('Learning rate', self.lr, ''), ('Crop (px)', self.crop, 'patch size, a multiple of 16 (256 is a good start)')), 1):
+        for r, (name, w, hint) in enumerate((('Epochs', self.epochs, ''), ('Batch', self.batch, '8-16; lower only if memory runs out'),
+                                             ('Learning rate', self.lr, ''), ('Crop height (px)', self.crop, '16:9 patch, a multiple of 16 (352 = 640x352)')), 1):
             grid.addWidget(label(name), r, 0)
             grid.addWidget(w, r, 1)
             grid.addWidget(label(hint, 'dim'), r, 2)
@@ -656,7 +666,8 @@ class TrainPage(Page):
         self.m_psnr = label('–', 'metric')
         self.m_gain = label('–', 'metric')
         self.m_eta = label('–', 'metric')
-        for name, w in (('Best quality (dB)', self.m_psnr), ('Over a plain blend', self.m_gain), ('Time left', self.m_eta)):
+        for name, w in (('Best quality on moving clips (dB)', self.m_psnr), ('Over a plain blend', self.m_gain),
+                        ('Time left', self.m_eta)):
             col = QVBoxLayout()
             col.addWidget(w)
             col.addWidget(label(name, 'dim'))
@@ -673,7 +684,11 @@ class TrainPage(Page):
         cl.addWidget(self.psnr_chart)
         right.addWidget(charts)
         prev, pvl = card('Preview')
-        pvl.addWidget(label('Top: frame 0, true middle, frame 2.  Bottom: the model\'s middle, its motion, the error ×3.', 'dim'))
+        caption = label('Row 1: frame 0, the true middle, frame 2.   Row 2: the model\'s middle, a plain blend, '
+                        'its error ×3.   Row 3: forward motion, backward motion, occlusion (white = from frame 0, '
+                        'black = from frame 2, red = hidden in the other frame). A different moving clip each epoch.', 'dim')
+        caption.setWordWrap(True)
+        pvl.addWidget(caption)
         self.preview = QLabel()
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setMinimumHeight(200)
@@ -730,8 +745,10 @@ class TrainPage(Page):
         if kind == 'device':
             self.app.set_device(e['name'])
         elif kind == 'data':
-            self.status.setText(f"{e['train']} training and {e['val']} validation triplets from {e['videos']} video(s); "
-                                f"{e['steps_per_epoch']} steps per epoch.")
+            self.status.setText(f"{e['train']} training and {e['val']} validation triplets ({e.get('val_moving', 0)} moving) "
+                                f"from {e['videos']} video(s); {e['steps_per_epoch']} steps per epoch."
+                                + ("  Few moving clips: add footage with real camera and object motion."
+                                   if e.get('val_moving', 0) < 10 else ""))
         elif kind == 'step':
             self.bar.setRange(0, e['steps'])
             self.bar.setValue(e['step'])
@@ -742,17 +759,21 @@ class TrainPage(Page):
             self.psnr_chart.add('model', e['epoch'] + 1, e['psnr'])
             self.psnr_chart.add('blend', e['epoch'] + 1, e['blend_psnr'])
             self.m_psnr.setText(f"{e['best']:.2f}")
-            self.m_gain.setText(f"{e['best'] - e['blend_psnr']:+.2f} dB")
+            self.m_gain.setText(f"{e['psnr'] - e['blend_psnr']:+.2f} dB")
             pix = scaled(e['preview'], max(300, self.preview.width() - 10))
             if not pix.isNull():
                 self.preview.setPixmap(pix)
-            self.status.setText(f"Epoch {e['epoch'] + 1} / {e['epochs']}: {e['psnr']:.2f} dB"
+            self.status.setText(f"Epoch {e['epoch'] + 1} / {e['epochs']}: {e['psnr']:.2f} dB on "
+                                f"{e.get('moving', 0)} moving clips (blend {e['blend_psnr']:.2f}); "
+                                f"all clips {e.get('psnr_all', float('nan')):.2f} dB"
                                 + ('  (best so far, saved)' if e['improved'] else ''))
         elif kind == 'done':
             self.status.setText(f"Finished: best {e['best']:.2f} dB. Export it on the Export page.")
             self.app.export.set_checkpoint(os.path.join(self.run.text(), 'best.pt'))
         elif kind == 'error':
             self.status.setText(f"Error: {e.get('message')}")
+        elif kind == 'warning':
+            self.status.setText(f"Warning: {e.get('message')}")
         elif kind == 'log' and ('Error' in e['text'] or 'error' in e['text']):
             self.status.setText(e['text'][-300:])
 
@@ -764,10 +785,42 @@ class TrainPage(Page):
             self.status.setText(f'Failed: {self.job.failure()}')
 
 
-RESOLUTIONS = [('640×352 — a quarter of 1440p (recommended)', 640, 352),
-               ('480×272 — a quarter of 1080p', 480, 272),
-               ('960×544 — 3/8 of 1440p, slower', 960, 544),
-               ('1280×720 — half of 1440p, slowest', 1280, 720)]
+def monitors():
+    """Each screen's native resolution (physical pixels), primary first."""
+    from PySide6.QtGui import QGuiApplication
+    primary = QGuiApplication.primaryScreen()
+    out = []
+    for screen in [primary] + [x for x in QGuiApplication.screens() if x is not primary]:
+        if screen is None:
+            continue
+        size, ratio = screen.size(), screen.devicePixelRatio()
+        out.append((screen.name(), int(round(size.width() * ratio)), int(round(size.height() * ratio))))
+    return out
+
+
+def network_size(width, height, fraction):
+    """The network resolution for a monitor at `fraction` of it: the width a
+    multiple of 64 (the program copies 256-byte rows), the height of 16 (the
+    pyramid's exact halving), each the nearest to the exact fraction."""
+    w = max(64, int(round(width * fraction / 64.0)) * 64)
+    h = max(64, int(round(height * fraction / 16.0)) * 16)
+    return w, h
+
+
+def resolution_choices():
+    """(text, width, height) for each monitor at a quarter, a third and a
+    half - a quarter recommended (about 1.5 ms at 1440p) - with the levels
+    the pyramid will have."""
+    import sys as _sys
+    _sys.path.insert(0, HERE)
+    from mefi.model import levels_for
+    choices = []
+    for k, (name, mw, mh) in enumerate(monitors() or [('', 2560, 1440)]):
+        for fraction, what in ((0.25, 'a quarter'), (1 / 3, 'a third'), (0.5, 'half')):
+            w, h = network_size(mw, mh, fraction)
+            tag = ' (recommended)' if fraction == 0.25 and k == 0 else (', slower' if fraction > 0.25 else '')
+            choices.append((f'{w}×{h} — {what} of monitor {k + 1} ({mw}×{mh}), {levels_for(h, w)} levels{tag}', w, h))
+    return choices
 
 
 class ExportPage(Page):
@@ -781,9 +834,10 @@ class ExportPage(Page):
         l.addWidget(label('Checkpoint', 'dim'))
         l.addLayout(path_row(self.checkpoint, 'Browse', self.pick_checkpoint))
         self.resolution = QComboBox()
-        for text, w, h in RESOLUTIONS:
+        for text, w, h in resolution_choices():
             self.resolution.addItem(text, (w, h))
-        l.addWidget(label('Network resolution (each captured frame is scaled to it)', 'dim'))
+        l.addWidget(label('Network resolution, from your monitors (each captured frame is scaled to it; '
+                          'build the dataset at about its height)', 'dim'))
         l.addWidget(self.resolution)
         builds = program_builds()
         default = os.path.join(builds[0], 'models', 'ai_flow.onnx') if builds else os.path.join(HERE, 'ai_flow.onnx')
@@ -840,20 +894,37 @@ class ExportPage(Page):
 
     def on_job(self, e):
         if e.get('event') == 'done':
-            lines = [f"Written: {e['out']}", f"Resolution {e['width']}×{e['height']}, preset {e['preset']}, "
-                     f"validation {e['psnr']:.2f} dB" if e.get('psnr') else '']
+            # The validation score is optional (a checkpoint without one); the
+            # resolution line is not.
+            score = f", validation {e['psnr']:.2f} dB" if e.get('psnr') else ''
+            lines = [f"Written: {e['out']}", f"Resolution {e['width']}×{e['height']}, preset {e['preset']}{score}"]
             if self.copy_all.isChecked():
                 src = e['out']
                 for build in program_builds():
                     dst = os.path.join(build, 'models', 'ai_flow.onnx')
                     if os.path.abspath(dst) == os.path.abspath(src):
                         continue
-                    os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    shutil.copy2(src, dst)
-                    shutil.copy2(os.path.splitext(src)[0] + '.json', os.path.splitext(dst)[0] + '.json')
-                    lines.append(f'Copied to {dst}')
+                    # One build failing (Motion Enhancer running from it holds
+                    # the model) must not stop the others or the report.
+                    try:
+                        os.makedirs(os.path.dirname(dst), exist_ok=True)
+                        shutil.copy2(src, dst)
+                        shutil.copy2(os.path.splitext(src)[0] + '.json', os.path.splitext(dst)[0] + '.json')
+                        stale = dst + '.data'   # weights of an older export, now inside the .onnx
+                        if os.path.exists(stale):
+                            os.remove(stale)
+                        lines.append(f'Copied to {dst}')
+                    except OSError as error:
+                        lines.append(f'Not copied to {dst} ({error.strerror or error}; close Motion Enhancer '
+                                      f'there and export again)')
+            self.result.setPlainText('\n'.join(l for l in lines if l))
+            if getattr(self, 'warning', None):
+                lines.append(f'Warning: {self.warning}')
+                self.warning = None
             self.result.setPlainText('\n'.join(l for l in lines if l))
             self.status.setText('Exported. Select "AI pyramid" as the flow engine in Motion Enhancer.')
+        elif e.get('event') == 'warning':
+            self.warning = e.get('message')
         elif e.get('event') == 'error':
             self.status.setText(f"Error: {e.get('message')}")
         elif e.get('event') == 'log':

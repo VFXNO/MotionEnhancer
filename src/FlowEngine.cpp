@@ -228,7 +228,7 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                  D3D12_RESOURCE_STATE_COMMON, dir[l], L"SearchFlow"))) return false;
         }
-        if (disActive()) {
+        if (disActive() || aiFlowActive()) {
             // Patch origins every kDisStride pixels up to the last whole
             // patch, which DisPatchCS pulls inside the level.
             const uint32_t pw = lw > 8 ? (lw - 8 + kDisStride - 1) / kDisStride + 1 : 1;
@@ -240,6 +240,11 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                     FAILED(m_device->createTexture2D(lw, lh, DXGI_FORMAT_R32G32_FLOAT,
                                                      D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                      D3D12_RESOURCE_STATE_COMMON, m_disDense[d][l], L"DisDense")))
+                    return false;
+                if (aiFlowActive() && l == std::min(kAiSeedLevel, m_levels - 1) &&
+                    FAILED(m_device->createTexture2D(lw, lh, DXGI_FORMAT_R32G32_FLOAT,
+                                                     D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                     D3D12_RESOURCE_STATE_COMMON, m_aiSeed[d], L"AiSeed")))
                     return false;
             }
         }
@@ -289,6 +294,13 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
     if (aiFlowActive()) {
         const uint32_t aw = static_cast<uint32_t>(m_aiFlow->width());
         const uint32_t ah = static_cast<uint32_t>(m_aiFlow->height());
+        // The capture is scaled to the network per axis; a very different
+        // shape stretches what the model sees (export one for this window's
+        // shape in the trainer).
+        const double stretch = (static_cast<double>(width) / height) / (static_cast<double>(aw) / ah);
+        if (stretch > 1.15 || stretch < 0.87)
+            std::cerr << "FlowEngine: the AI model (" << aw << "x" << ah << ") has a different shape from the "
+                      << width << "x" << height << " capture; motion is stretched by " << stretch << ".\n";
         if (FAILED(m_device->createTexture2D(aw, 6 * ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, m_aiPlanar, L"AiFlowInput")) ||
             FAILED(m_device->createTexture2D(aw, 4 * ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_NONE,
@@ -537,10 +549,36 @@ bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) 
 
 // The AI pyramid flow engine: both frames scaled to the network's
 // resolution (AiFlowInputCS), the network on the flow queue between the two
-// halves of this pair's list (splitList), and its two fields into the ring
-// at DIS's 2x2 grid (AiFlowToRingCS).
+// halves of this pair's list (splitList), and its two fields refined by DIS
+// against the frames themselves before they reach the ring.
+//
+// The network's field seeds DIS's dense field kAiSeedLevel levels up
+// (AiFlowToRingCS); DIS's levels below it, down to half resolution, refine
+// it (DisPatch / DisDensify, kAiRefineIterations steps), and the half
+// resolution field is the ring itself (one pixel per 2x2 block, DisToRing).
+// The network supplies the coarse motion; the frames, at the resolution the
+// picture is warped at, supply the sub-pixel detail. Scaling the network's
+// field straight up to the ring (bilinear) carried its errors with it: on a
+// 7 x 2 px camera pan the trained model found 2 x 1 px, the midpoint scored
+// 23 dB against DIS's 47, and the error changed from frame to frame by 0.94
+// on average (the warp's flicker). Refined: 46 dB and 0.09. Joint bilateral
+// upsampling guided by the full-resolution frame measured no different from
+// bilinear (17.81 against 17.80 dB on edges) and was dropped. Refining down
+// to full resolution cost 2 ms more for about the same; more iterations
+// scored worse on the real captures (the field drifts from the network's).
 bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& current, Entry& out) {
     ID3D12GraphicsCommandList* list = m_list.Get();
+    // At least one DIS level must lie between the seed and the finest level,
+    // or the network's field goes straight to the ring.
+    const int seed = std::min(kAiSeedLevel, m_levels - 1);
+    const bool refine = seed > kAiFinestLevel && m_disDense[0][0];
+    Pyramid& prevPyramid = m_pyramids[static_cast<size_t>(std::clamp(previous.slot, 0, m_slotCount - 1))];
+    Pyramid& currPyramid = m_pyramids[static_cast<size_t>(std::clamp(current.slot, 0, m_slotCount - 1))];
+    if (refine) {
+        if (&prevPyramid == &currPyramid) return false;
+        if (prevPyramid.id != previous.id && !recordPyramid(previous, prevPyramid)) return false;
+        if (currPyramid.id != current.id && !recordPyramid(current, currPyramid)) return false;
+    }
     const uint32_t aw = static_cast<uint32_t>(m_aiFlow->width());
     const uint32_t ah = static_cast<uint32_t>(m_aiFlow->height());
     ShaderConstants c = {};
@@ -575,15 +613,69 @@ bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& curren
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
     list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
-    c.blockSize = c.parentBlockSize = static_cast<int32_t>(kDisRingBlock);
-    const uint32_t rw = (m_width + kDisRingBlock - 1) / kDisRingBlock;
-    const uint32_t rh = (m_height + kDisRingBlock - 1) / kDisRingBlock;
+    // Into the seed level's dense field (that level's pixels), or straight
+    // into the ring (full-resolution pixels).
+    const uint32_t block = refine ? (1u << seed) : kDisRingBlock;
+    c.blockSize = c.parentBlockSize = static_cast<int32_t>(block);
+    c.flowScale = refine ? 1.0f / static_cast<float>(block) : 1.0f;
+    const uint32_t bw = (m_width + block - 1) / block;
+    const uint32_t bh = (m_height + block - 1) / block;
     in = {m_aiFlowTex.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
     for (int direction = 0; direction < 2; ++direction) {
         c.levelIndex = direction;
-        ID3D12Resource* ring = direction == 0 ? out.forward.Get() : out.backward.Get();
-        if (!m_dispatch.dispatch(list, *m_kernels, Kernel::AiFlowToRing, in, ring, c, (rw + 15) / 16, (rh + 15) / 16))
+        ID3D12Resource* target = refine ? m_aiSeed[static_cast<size_t>(direction)].Get()
+                                        : (direction == 0 ? out.forward.Get() : out.backward.Get());
+        if (!m_dispatch.dispatch(list, *m_kernels, Kernel::AiFlowToRing, in, target, c, (bw + 15) / 16, (bh + 15) / 16))
             return false;
+    }
+    for (int direction = 0; refine && direction < 2; ++direction) {
+        ShaderConstants d = {};
+        d.width = m_width;
+        d.height = m_height;
+        d.totalLevels = m_levels;
+        const Pyramid& ref = direction == 0 ? prevPyramid : currPyramid;
+        const Pyramid& cand = direction == 0 ? currPyramid : prevPyramid;
+        auto& patch = m_disPatch[static_cast<size_t>(direction)];
+        auto& dense = m_disDense[static_cast<size_t>(direction)];
+        // DIS's own coarse levels down to the seed level, as DIS runs them;
+        // below it, a few steps from the better of the network's field and
+        // DIS's own, patch by patch (DisPatchCS's AltFlow). From the
+        // network's field alone, a fast motion it missed stayed missed: two
+        // steps could not reach it, the frames were blended out of register,
+        // and the fast captures kept 52-54% of the real frame's fine detail
+        // (DIS 80-81%). With DIS's start to fall back on: 83-92%, for 0.11 ms.
+        for (int l = m_levels - 1; l >= kAiFinestLevel; --l) {
+            d.levelWidth = std::max(1u, m_width >> l);
+            d.levelHeight = std::max(1u, m_height >> l);
+            d.levelIndex = l;
+            d.blockSize = kDisStride;
+            d.searchRadius = l >= seed ? kDisIterations : kAiRefineIterations;
+            const bool join = l == seed - 1;
+            d.neuralControl[2] = join ? 1.0f : 0.0f;
+            const D3D12_RESOURCE_DESC patchDesc = patch[l]->GetDesc();
+            ID3D12Resource* coarse = l + 1 >= m_levels ? nullptr
+                                   : join ? m_aiSeed[static_cast<size_t>(direction)].Get() : dense[l + 1].Get();
+            std::array<ID3D12Resource*, 6> din = {ref.level[l].Get(), cand.level[l].Get(), coarse,
+                                                  ref.stats.Get(), cand.stats.Get(),
+                                                  join ? dense[l + 1].Get() : nullptr};
+            if (!m_dispatch.dispatch(list, *m_kernels, Kernel::DisPatch, din, patch[l].Get(), d,
+                                     static_cast<UINT>(patchDesc.Width), patchDesc.Height)) return false;
+            din = {ref.level[l].Get(), cand.level[l].Get(), patch[l].Get(), ref.stats.Get(), cand.stats.Get(), nullptr};
+            if (!m_dispatch.dispatch(list, *m_kernels, Kernel::DisDensify, din, dense[l].Get(), d,
+                                     (d.levelWidth + 15) / 16, (d.levelHeight + 15) / 16)) return false;
+        }
+        // Half resolution: one pixel per ring block (DisToRingCS).
+        d.blockSize = static_cast<int32_t>(kDisRingBlock);
+        d.levelIndex = kAiFinestLevel;
+        d.levelWidth = std::max(1u, m_width >> kAiFinestLevel);
+        d.levelHeight = std::max(1u, m_height >> kAiFinestLevel);
+        const uint32_t gw = (m_width + kDisRingBlock - 1) / kDisRingBlock;
+        const uint32_t gh = (m_height + kDisRingBlock - 1) / kDisRingBlock;
+        std::array<ID3D12Resource*, 6> din = {dense[static_cast<size_t>(kAiFinestLevel)].Get(), nullptr, nullptr,
+                                              nullptr, nullptr, nullptr};
+        if (!m_dispatch.dispatch(list, *m_kernels, Kernel::DisToRing, din,
+                                 direction == 0 ? out.forward.Get() : out.backward.Get(), d,
+                                 (gw + 15) / 16, (gh + 15) / 16)) return false;
     }
     out.blockSize = kDisRingBlock;
     out.singleField = false;   // forward and backward are the network's own

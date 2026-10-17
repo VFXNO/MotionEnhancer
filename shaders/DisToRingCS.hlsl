@@ -12,6 +12,14 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 {
     const uint2 grid = FlowGridSize(Width, Height, BlockSize);
     if (id.x >= grid.x || id.y >= grid.y) return;
+    if (LevelIndex > 0)
+    {
+        // A coarser level whose pixel is one ring block (BlockSize ==
+        // 2^LevelIndex): the AI engine refined only down to it.
+        const int2 maxL = int2(LevelWidth, LevelHeight) - 1;
+        RingFlow[id.xy] = DenseFlow.Load(int3(min(int2(id.xy), maxL), 0)) * (float)BlockSize;
+        return;
+    }
     const int2 maxP = int2(Width, Height) - 1;
     const int2 origin = int2(id.xy) * BlockSize;
     float2 sum = float2(0.0f, 0.0f);

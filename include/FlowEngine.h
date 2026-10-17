@@ -142,6 +142,13 @@ public:
     static constexpr int kDisStride = 4;
     static constexpr int kDisIterations = 12;
     static constexpr uint32_t kDisRingBlock = 2;
+    // AI engine (recordAiFlow): the network's field seeds DIS's dense field
+    // at kAiSeedLevel (160 x 90 at 1440p), and DIS refines it down to
+    // kAiFinestLevel (half resolution, the ring's grid) with
+    // kAiRefineIterations steps per patch.
+    static constexpr int kAiSeedLevel = 4;
+    static constexpr int kAiFinestLevel = 1;
+    static constexpr int kAiRefineIterations = 2;
 
     struct Entry {
         // R32G32B32A32_FLOAT per block: xy = vector in full-resolution
@@ -322,6 +329,9 @@ private:
     ComPtr<ID3D12Resource> m_aiFlowOut;   // network outputs (buffers)
     ComPtr<ID3D12Resource> m_aiMaskOut;
     ComPtr<ID3D12Resource> m_aiFlowTex;   // flow output as W x 4H R32, for AiFlowToRingCS
+    // The network's field at the seed level, per direction; DIS's own coarse
+    // field at that level is in m_disDense (recordAiFlow).
+    std::array<ComPtr<ID3D12Resource>, 2> m_aiSeed;
     void* m_aiInputHandle = nullptr;
     void* m_aiFlowHandle = nullptr;
     void* m_aiMaskHandle = nullptr;
