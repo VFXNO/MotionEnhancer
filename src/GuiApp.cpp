@@ -79,6 +79,7 @@ constexpr int IDC_TRAIN_STATUS = 306;
 constexpr UINT WM_PROCESS_COMPLETE = WM_APP + 1;
 constexpr UINT WM_TRAIN_COMPLETE = WM_APP + 2;
 constexpr UINT WM_TRAIN_PROGRESS = WM_APP + 3;
+constexpr UINT WM_LIVE_STATUS = WM_APP + 4;
 
 enum class JobType : LPARAM {
     Live = 1,
@@ -784,6 +785,25 @@ std::string trainingResult(DWORD exitCode, const std::string& output) {
     return "Training failed. Try a different video or image, or run the CLI for details.";
 }
 
+// The capture's once-a-second status line ("... | flow AI 2.1 ms, diff ...")
+// as the Live Capture status: which flow engine runs and its GPU time. The
+// AI engine's fallback message is kept in front of it for that capture.
+std::string* liveStatusFromLine(const std::string& line, std::string& fallback) {
+    if (line.find("AI pyramid flow unavailable") != std::string::npos) {
+        fallback = "AI model not loaded (export one on the AI Model page) - ";
+        return new std::string(fallback + "using DIS.");
+    }
+    const size_t at = line.find("| flow ");
+    if (at == std::string::npos) return nullptr;
+    std::istringstream fields(line.substr(at + 7));
+    std::string engine, ms;
+    fields >> engine >> ms;
+    const char* name = engine == "AI" ? "AI pyramid (your model)" : engine == "DIS" ? "DIS optical flow"
+                     : engine == "FFX" ? "FFX" : engine == "neural" ? "neural flow" : "SAD";
+    return new std::string(fallback + "Capture running - flow engine: " + name + ", " + ms +
+                           " ms GPU per frame pair. Click Stop Capture to exit.");
+}
+
 bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
                bool configureNativeModel = false, const std::string& nativeModelPath = {}) {
     char executable[MAX_PATH] = {};
@@ -811,7 +831,11 @@ bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
     if (configureNativeModel && !SetEnvironmentVariableA(
             "MOTION_ENHANCER_NEURAL_MODEL", nativeModelPath.empty() ? nullptr : nativeModelPath.c_str())) return false;
     HANDLE logRead = nullptr, logWrite = nullptr, inputNull = nullptr;
-    if (jobType == JobType::Train) {
+    // Training reports its progress, and live capture which flow engine
+    // actually runs (an AI model that fails to load falls back to DIS, which
+    // only the capture's own output said) - both read from a pipe.
+    const bool readOutput = jobType == JobType::Train || jobType == JobType::Live;
+    if (readOutput) {
         SECURITY_ATTRIBUTES security = {sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
         if (!CreatePipe(&logRead, &logWrite, &security, 0) ||
             !SetHandleInformation(logRead, HANDLE_FLAG_INHERIT, 0)) {
@@ -836,7 +860,7 @@ bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
             mutableCommand.data(),
             nullptr,
             nullptr,
-            jobType == JobType::Train,
+            readOutput,
             CREATE_NO_WINDOW,
             nullptr,
             nullptr,
@@ -859,6 +883,7 @@ bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
             char buffer[1024];
             DWORD length = 0;
             std::string pending;
+            std::string fallback;   // this capture's AI fallback note
             while (ReadFile(logRead, buffer, sizeof(buffer), &length, nullptr) && length) {
                 output.append(buffer, buffer + length);
                 if (output.size() > 8192) output.erase(0, output.size() - 8192);
@@ -866,7 +891,12 @@ bool launchJob(const std::vector<std::string>& arguments, JobType jobType,
                 size_t end = 0;
                 while ((end = pending.find('\n')) != std::string::npos) {
                     const std::string line = pending.substr(0, end);
-                    if (line.rfind("Epoch ", 0) == 0 ||
+                    if (jobType == JobType::Live) {
+                        if (auto* status = liveStatusFromLine(line, fallback)) {
+                            if (!PostMessageA(notifyWindow, WM_LIVE_STATUS, 0, reinterpret_cast<LPARAM>(status)))
+                                delete status;
+                        }
+                    } else if (line.rfind("Epoch ", 0) == 0 ||
                         line.rfind("Real-frame step ", 0) == 0 ||
                         line.rfind("Real-frame epoch ", 0) == 0) {
                         const size_t clip = line.find(", val accuracy");
@@ -2194,6 +2224,15 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 EnableWindow(g_state.offlineButton, TRUE);
                 EnableWindow(g_state.trainButton, TRUE);
                 SetWindowTextA(g_state.offlineStatus, exitCode == 0 ? "Interpolation complete." : "Interpolation failed.");
+            }
+            return 0;
+        }
+
+        case WM_LIVE_STATUS: {
+            std::string* status = reinterpret_cast<std::string*>(lParam);
+            if (status) {
+                if (g_state.captureStopEvent) SetWindowTextA(g_state.liveStatus, status->c_str());
+                delete status;
             }
             return 0;
         }
