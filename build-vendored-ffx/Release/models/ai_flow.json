@@ -5,8 +5,8 @@
  "height": 352,
  "levels": 7,
  "preset": "medium",
- "psnr": 31.121624178356594,
- "epoch": 54,
+ "psnr": null,
+ "epoch": 119,
  "train_height": 360,
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1\\best.pt"
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1\\last.pt"
 }

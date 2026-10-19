@@ -1,16 +1,19 @@
 {
  "page": 2,
  "videos": [
-  "C:/Users/bsher/Downloads/Video/Wuthering Waves 11 Minutes of Exclusive Gameplay.mp4",
+  "C:/Users/bsher/Downloads/Video/videoplayback_4.mp4",
+  "C:/Users/bsher/Downloads/Video/videoplayback_3.mp4",
+  "C:/Users/bsher/Downloads/Video/videoplayback_2.mp4",
+  "C:/Users/bsher/Downloads/Video/videoplayback.mp4",
   "C:/Users/bsher/Downloads/Video/videoplayback.webm",
   "C:/Users/bsher/Downloads/Video/Wuthering Waves 11 Minutes of Exclusive Gameplay.mp4"
  ],
  "dataset": "C:/Users/bsher/Downloads/Video",
  "height": 360,
- "max_per_video": 600,
+ "max_per_video": 10000,
  "gap": 6,
- "min_motion": 1.0,
- "max_motion": 40.0,
+ "min_motion": 0.0,
+ "max_motion": 60.0,
  "duplicate": 0.6,
  "cut": 45.0,
  "strides": [
@@ -21,11 +24,11 @@
   "C:/Users/bsher/Downloads/Video"
  ],
  "preset": "medium",
- "epochs": 60,
- "batch": 4,
- "lr": 0.001,
+ "epochs": 120,
+ "batch": 16,
+ "lr": 0.0001,
  "crop": 360,
  "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1",
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1\\best.pt",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/run1/last.pt",
  "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-ffx-local\\Release\\models\\ai_flow.onnx"
 }
