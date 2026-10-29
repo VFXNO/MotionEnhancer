@@ -1,4 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-AI flow: pyramid model on DirectML at 832x480
-AI blend-mask self-test: network copy, per-pair lifetime, enable/disable and ring reuse PASS
-AI blend-mask self-test: PASS (weights, neutral/disabled mask, endpoints, motion transport, UI, visibility)

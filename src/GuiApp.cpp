@@ -1322,6 +1322,20 @@ void openTrainer() {
     const std::wstring folder = trainerFolder();
     const std::wstring python = folder + L"\\.venv\\Scripts\\pythonw.exe";
     if (folder.empty() || GetFileAttributesW(python.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        const std::wstring setup = folder + L"\\Setup-AITrainer.ps1";
+        if (!folder.empty() && GetFileAttributesW(setup.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            std::wstring command = L"powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"" + setup + L"\" -Pause -Launch";
+            STARTUPINFOW startup = {};
+            startup.cb = sizeof(startup);
+            PROCESS_INFORMATION process = {};
+            if (CreateProcessW(nullptr, command.data(), nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, nullptr,
+                               folder.c_str(), &startup, &process)) {
+                CloseHandle(process.hThread);
+                CloseHandle(process.hProcess);
+                SetWindowTextA(g_state.aiStatus, "Trainer setup opened (Internet required, several GB). It opens the trainer when finished.");
+                return;
+            }
+        }
         SetWindowTextA(g_state.aiStatus, folder.empty()
             ? "The trainer (tools\\ai-train) was not found above this program's folder."
             : "The trainer's Python environment is missing: see tools\\ai-train\\README.md to set it up.");

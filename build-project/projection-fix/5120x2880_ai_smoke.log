@@ -1,6 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-AI flow: pyramid model on DirectML at 832x480
-GPU pipeline: 5120x2880, 10 pyramid levels, radii 4/6
-GPU offline interpolation (t = 0.5): flow 8.47 ms GPU, 33.65 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\projection-fix\5120x2880_ai_smoke.png
-  Flow estimator: AI pyramid flow (ONNX) (2x2 blocks)
-  PSNR vs ground truth: 31.30 dB (naive blend: 15.67 dB)

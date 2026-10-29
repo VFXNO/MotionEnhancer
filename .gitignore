@@ -3,3 +3,27 @@
 tools/ai-train/.venv/
 tools/ai-train/datasets/
 tools/ai-train/runs/
+
+# Generated builds, packages and local diagnostics (keep SDK sources).
+/build/
+/build-*/
+/bin/ffx_sdk/
+/dist/
+/.packaging/
+**/__pycache__/
+*.pyc
+/gpu_*.png
+/gpu_*.txt
+/ffx_*.png
+/ffx_*.png.txt
+/output_*.png
+/out.png
+/shared_probe.obj
+/flow_frac_*.png.txt
+/x_f.png.txt
+/test_flow.png
+/test_interpolated.png
+/test_occlusion.png
+tools/ai-train/python/
+tools/ai-train/ffmpeg/
+tools/ai-train/setup-*.log

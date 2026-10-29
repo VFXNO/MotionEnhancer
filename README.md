@@ -90,14 +90,16 @@
 <a id="quick-start"></a>
 <img src="docs/assets/section-quick-start.png" alt="Quick start" width="100%">
 
-**1. Build.** You need Visual Studio 2022 with C++ and CMake 3.16 or newer.
+**1. Install** `dist\MotionEnhancer-1.0.0-Setup-x64.exe`, or extract the portable
+ZIP. No SDK installation is needed to run it. Alternatively, build from source
+with Visual Studio 2022/2026 (C++) and a compatible CMake version:
 
 ```powershell
-cmake -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
+cmake -S . -B build-project -A x64
+cmake --build build-project --config Release --target motion_enhancer --parallel
 ```
 
-**2. Run** `build\Release\motion_enhancer.exe`. Pick the target window, leave **Source FPS** on `Auto` and **Output multiplier** on `Max`, then press **Start Capture**.
+**2. Run** **Motion Enhancer** from the Start menu, or `build-project\Release\motion_enhancer.exe` for a source build. Pick the target window, leave **Source FPS** on `Auto` and **Output multiplier** on `Max`, then press **Start Capture**.
 
 **3. In the overlay:**
 
@@ -179,20 +181,53 @@ Motion enhancer/
 
 ## Build Instructions
 
+### Windows installer and complete runtime package
+
+Run `dist\MotionEnhancer-1.0.0-Setup-x64.exe` to install for the current user,
+or extract the entire `dist\MotionEnhancer-1.0.0-win64.zip` for portable use.
+Both include the executable, all compiled shaders, FidelityFX support, ONNX
+Runtime/DirectML, Microsoft C++/OpenMP runtimes, and the existing AI/depth/neural
+models. Target computers do not need the SDKs or Visual Studio installed.
+
+AI trainer source and **Set up AI Trainer** are also included. The installer
+offers dependency setup as an optional component; it downloads Python/FFmpeg
+and several GB of GPU-specific PyTorch packages. Existing models work offline
+without training. See [installation details](packaging/INSTALLATION.md).
+The development SDKs, datasets, runs and backups remain in the source tree.
+
+To rebuild the installer (NSIS 3 required on the packaging machine):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\Build-Package.ps1 -NsisExe "C:\path\to\NSIS\makensis.exe"
+```
+
+`build-project` is the single retained development build. Runtime packages are
+made from explicit CMake install rules, never a recursive copy of the checkout
+or build folder. `dist\SHA256SUMS.txt` verifies the distributables; the portable
+payload also contains a per-file SHA256 manifest. Setup is currently unsigned.
+
+To preview or repeat cleanup of the explicitly listed obsolete builds and
+generated diagnostics (preserves `build-project`, SDKs, backups and training data):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\Clean-Generated.ps1 -WhatIf
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\Clean-Generated.ps1
+```
+
 ### Prerequisites
-- CMake 3.16 or newer
-- Visual Studio 2022 (MSVC) or GCC 9+ / Clang 10+ with OpenMP support
+- CMake supporting the installed Visual Studio version (4.2+ for VS 2026)
+- Visual Studio 2022/2026 with Desktop development with C++ and a Windows SDK
 
 ### Building with CMake
 ```powershell
-# Configure build with Visual Studio 2022 x64
-cmake -B build -G "Visual Studio 17 2022" -A x64
+# Configure with the installed Visual Studio x64 generator
+cmake -S . -B build-project -A x64
 
 # Build Release binary
-cmake --build build --config Release
+cmake --build build-project --config Release --target motion_enhancer --parallel
 ```
 
-The executable will be generated at `build/Release/motion_enhancer.exe`.
+The executable will be generated at `build-project/Release/motion_enhancer.exe`.
 
 ### Optional AMD FidelityFX Optical Flow
 
@@ -201,8 +236,8 @@ shader compiler under `third_party/FidelityFX-SDK-v1.1.4`. The default build
     enables optional native D3D12 Optical Flow without a separate AMD SDK download:
 
 ```powershell
-cmake -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
+cmake -S . -B build-project -A x64
+cmake --build build-project --config Release --target motion_enhancer --parallel
 ```
 
 The optional FFX integration invokes AMD's supplied `tools/binary_store/FidelityFX_SC.exe`
@@ -220,7 +255,7 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 
 ### Frame Interpolation
 ```powershell
-.\build\Release\motion_enhancer.exe <frame0.png> <frame1.png> <output.png> [options]
+.\build-project\Release\motion_enhancer.exe <frame0.png> <frame1.png> <output.png> [options]
 ```
 
 ### Command-Line Options
@@ -271,7 +306,7 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 Launch the executable without arguments (or pass `--gui`) to open the native Windows interface. Its theme is monochrome: near-black surfaces, white accents and rounded cards drawn anti-aliased with GDI+. A sidebar holds the emblem, the two pages (**Live Capture**, **Offline Interpolation**; Ctrl+Tab switches) and a status card (Idle / Capturing / Working). It is animated at about 60 frames per second. The emblem's spark circles the ring, its nodes orbit and its glow breathes. The sidebar's lines drift and its points of light twinkle, and the status dot pulses while a job runs. The navigation highlight glides between pages, a new page's title slides in, buttons fade on hover, and the primary button shows a moving sheen. The ambient motion runs only while the window is in front; the transitions always finish. On Windows 11 the window has rounded corners, a dark caption and Segoe UI Variable text. On start a splash plays for 2.6 s while the window is set up behind it. The emblem builds itself: the rings are drawn round behind the spark, the nodes shoot out, the trails sweep in and the core flashes. Then the name settles in letter by letter, and the card fades out as the window fades in. A click or a key skips to the end; `MOTION_ENHANCER_NO_SPLASH=1` turns it off. For offline checks, `MOTION_ENHANCER_SPLASH_FRAMES=<prefix>` writes its frames as PNGs, and `MOTION_ENHANCER_SPLASH_TEST=1` plays it off screen and reports the window's state. For offline UI checks, `MOTION_ENHANCER_GUI_SNAPSHOT=<png>` renders the window off screen into a PNG and exits, without reading the screen; `MOTION_ENHANCER_GUI_PAGE=1` selects the second page and `MOTION_ENHANCER_GUI_TIME=<seconds>` the animation's time.
 
 ```powershell
-.\build\Release\motion_enhancer.exe
+.\build-project\Release\motion_enhancer.exe
 ```
 
 - **Live Capture** lists capturable desktop windows and starts the GPU overlay for the selected window. **Start Capture** becomes **Stop Capture** while running; stopping signals the capture process to release its resources and exit normally. Its **Train Neural Flow** panel accepts one or more video files or images (up to 16 files). It samples up to 12 consecutive frames per video for synthetic warm-up, then streams every decoded frame for real-frame training without creating intermediate PNGs. Images can be PNG, JPEG, BMP, TIFF, GIF, TGA, PSD, or any format supported by an installed Windows Imaging Component codec (including WebP/HEIF where available). Choose a `.bin` output path and click Train; the separate process keeps the GUI responsive. If validation accepts the model, the GUI selects the **Neural motion estimator** engine and checks **Use model on next capture**. With no accepted model, the SAD engine remains available. Stopping capture does not train or save weights: the `.bin` is saved when a separate Train run finishes and passes validation. Video formats depend on the codecs installed in Windows (Media Foundation).
@@ -515,16 +550,16 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
 
 1. **List all open desktop windows:**
    ```powershell
-   .\build\Release\motion_enhancer.exe --list-windows
+   .\build-project\Release\motion_enhancer.exe --list-windows
    ```
 
 2. **Launch real-time overlay on your application:**
    ```powershell
    # Capture browser / YouTube window
-   .\build\Release\motion_enhancer.exe --capture-window "Brave"
+   .\build-project\Release\motion_enhancer.exe --capture-window "Brave"
 
    # Capture media player or game window
-   .\build\Release\motion_enhancer.exe --capture-window "VLC"
+   .\build-project\Release\motion_enhancer.exe --capture-window "VLC"
    ```
 
 ---
@@ -533,12 +568,12 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
 
 ### 1. Real-Time GPU Window Capture & Interpolation
 ```powershell
-.\build\Release\motion_enhancer.exe --capture-window "YouTube"
+.\build-project\Release\motion_enhancer.exe --capture-window "YouTube"
 ```
 
 ### 2. Offline Interpolation with Visualizations
 ```powershell
-.\build\Release\motion_enhancer.exe frame0.png frame1.png interpolated_0.5.png `
+.\build-project\Release\motion_enhancer.exe frame0.png frame1.png interpolated_0.5.png `
     --time 0.5 `
     --levels 8 `
     --save-flow flow.png
@@ -546,6 +581,6 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
 
 ### 3. Built-in Ground Truth Verification Benchmark
 ```powershell
-.\build\Release\motion_enhancer.exe --test
+.\build-project\Release\motion_enhancer.exe --test
 ```
 Estimates motion across 8 pyramid levels, validates subpixel precision against ground truth ($\Delta x = +16\text{ px}, \Delta y = +8\text{ px}$), and outputs PSNR and execution time.

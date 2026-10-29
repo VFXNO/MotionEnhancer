@@ -212,6 +212,12 @@ CMAKE_VS_PLATFORM_NAME:STRING=x64
 
 CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE:STRING=x64
 
+//Enable to build 7-Zip source packages
+CPACK_SOURCE_7Z:BOOL=ON
+
+//Enable to build ZIP source packages
+CPACK_SOURCE_ZIP:BOOL=ON
+
 //DirectX Shader Compiler
 DXC_EXECUTABLE:FILEPATH=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/FidelityFX-SDK-v1.1.4/tools/ffx_shader_compiler/libs/dxc/bin/x64/dxc.exe
 
@@ -238,8 +244,14 @@ FidelityFX-SDK_DX12_x64_IS_TOP_LEVEL:STATIC=OFF
 //Value Computed by CMake
 FidelityFX-SDK_DX12_x64_SOURCE_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/FidelityFX-SDK-v1.1.4
 
+//AI flow ONNX model to stage and install
+MOTION_ENHANCER_AI_FLOW_MODEL:FILEPATH=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow.onnx
+
 //Build the native AMD FidelityFX Optical Flow backend
 MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW:BOOL=ON
+
+//Path to a file.
+MSVC_REDIST_DIR:PATH=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231
 
 //Value Computed by CMake
 MotionEnhancer_BINARY_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project
@@ -394,10 +406,16 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Deprecated.  Use -W[no-]deprecated instead.
 CMAKE_WARN_DEPRECATED:INTERNAL=ON
+//ADVANCED property for variable: CPACK_SOURCE_7Z
+CPACK_SOURCE_7Z-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CPACK_SOURCE_ZIP
+CPACK_SOURCE_ZIP-ADVANCED:INTERNAL=1
 //Details about finding OpenMP
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][ ][v2.0()]
 //Details about finding OpenMP_CXX
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-openmp][v2.0()]
+//ADVANCED property for variable: MSVC_REDIST_DIR
+MSVC_REDIST_DIR-ADVANCED:INTERNAL=1
 //Result of TRY_COMPILE
 OpenMP_COMPILE_RESULT_CXX_openmp:INTERNAL=TRUE
 //ADVANCED property for variable: OpenMP_CXX_FLAGS

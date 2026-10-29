@@ -153,6 +153,7 @@ if(WIN32)
         target_compile_options(motion_enhancer PRIVATE /O2 /Oi /Ot /fp:fast /W3 /permissive- /await)
         target_compile_definitions(motion_enhancer PRIVATE 
             _CRT_SECURE_NO_WARNINGS 
+            _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
             NOMINMAX 
             WIN32_LEAN_AND_MEAN
         )
@@ -244,4 +245,8 @@ if(WIN32)
     )
 else()
     target_compile_options(motion_enhancer PRIVATE -O3 -ffast-math -Wall -Wextra)
+endif()
+
+if(WIN32)
+    include(cmake/Install.cmake)
 endif()

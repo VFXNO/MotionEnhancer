@@ -1,7 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-AI blending mask: inactive (requires the AI pyramid model)
-GPU pipeline: 1920x1080, 8 pyramid levels, radii 4/6
-GPU offline interpolation (t = 0.5): flow 1.41 ms GPU, 13.73 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\blend-mask-tests\fallback-ai-mask.png
-  Flow estimator: DIS optical flow (2x2 blocks)
-AI flow: no model at models\ai_flow.onnx (train and export one with tools\ai-train).
-FlowEngine: AI pyramid flow unavailable; using DIS.

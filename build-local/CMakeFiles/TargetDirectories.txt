@@ -1,4 +1,0 @@
-C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-local/CMakeFiles/motion_enhancer.dir
-C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-local/CMakeFiles/motion_enhancer_shaders.dir
-C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-local/CMakeFiles/ALL_BUILD.dir
-C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-local/CMakeFiles/ZERO_CHECK.dir

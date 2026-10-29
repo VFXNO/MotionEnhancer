@@ -1,5 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-AI flow: pyramid model on DirectML at 832x480
-GPU pipeline: 1920x1080, 8 pyramid levels, radii 4/6
-GPU offline interpolation (t = 0.5): flow 4.16 ms GPU, 13.78 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\blend-mask-tests\debug-view-mask_False_0.5.png
-  Flow estimator: AI pyramid flow (ONNX) (2x2 blocks)

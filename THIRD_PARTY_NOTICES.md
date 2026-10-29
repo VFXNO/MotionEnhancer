@@ -28,3 +28,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Source: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
+
+## ONNX Runtime and DirectML
+
+The Windows distribution includes ONNX Runtime 1.24.4 (DirectML execution
+provider) and DirectML 1.15.4. Their original Microsoft licenses and dependency
+notices are installed under `licenses/ORT_*` and `licenses/DirectML_*`.
+Development copies remain under `third_party/ai-depth`.
+
+## MiDaS depth model
+
+`models/midas_v21_small_256_fp16.onnx` is the FP16 deployment conversion of
+MiDaS v2.1 small. Copyright (c) 2019 Intel ISL (Intel Intelligent Systems Lab),
+MIT license: `licenses/MiDaS-LICENSE.txt`.
+Source: https://github.com/isl-org/MiDaS
+
+## stb image libraries
+
+stb_image and stb_image_write are compiled into the program under their MIT
+license. Copyright (c) 2017 Sean Barrett; see `licenses/stb-LICENSE.txt`.
+Source: https://github.com/nothings/stb
+
+## Microsoft C++ and OpenMP redistributables
+
+The Windows package includes the release x64 MSVC runtime and OpenMP DLLs
+from the Visual Studio redistributable directory. These are Microsoft
+Distributable Code, not the Visual Studio development SDK. Microsoft license
+terms apply: https://visualstudio.microsoft.com/license-terms/
+Windows, Direct3D, Media Foundation, and graphics drivers remain OS/driver
+prerequisites and are not copied from System32 or redistributed by this project.
+
+## Installer and optional trainer downloads
+
+The installer is generated with NSIS, which permits redistribution of generated
+installers: https://nsis.sourceforge.io/License
+The optional trainer setup downloads (rather than bundles) Python, PyTorch,
+torchvision, ROCm/CUDA dependencies, PySide6, NumPy, OpenCV, ONNX/ONNX Script,
+and FFmpeg/FFprobe. Their upstream licenses and GPU/driver requirements apply.
+FFmpeg builds are obtained from https://www.gyan.dev/ffmpeg/builds/ and retain
+their upstream license files. Qt/PySide6 and FFmpeg are not statically linked
+into the Motion Enhancer executable.

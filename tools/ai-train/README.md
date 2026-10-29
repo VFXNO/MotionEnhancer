@@ -10,6 +10,23 @@ The window has three pages: **Dataset → Train → Export**. Each long job runs
 
 ## Setup (once)
 
+Installed releases include `Setup-AITrainer.cmd` and a Start menu **Set up AI
+Trainer** shortcut. These create a private environment and install Python 3.14,
+FFmpeg/FFprobe and the selected training backend. Internet access and several
+GB of space are required. From this folder you can also run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File Setup-AITrainer.ps1
+# Validate an existing environment without installing/downloading anything:
+powershell -NoProfile -ExecutionPolicy Bypass -File Setup-AITrainer.ps1 -CheckOnly
+```
+
+Automatic AMD selection covers RX 9070 (gfx1201); use `-Backend amd
+-AmdTarget <your-gfx-target>` for another AMD architecture supported by AMD's
+wheel index, `-Backend cuda` for CUDA 13.0 wheels, or `-Backend cpu` for CPU.
+Compatible GPU drivers must already be installed. Installed and portable
+application folders are detected as export destinations, not just build trees.
+
 Python 3.11–3.14 and the AMD Adrenalin driver. For an RX 9070 XT (gfx1201):
 
 ```powershell

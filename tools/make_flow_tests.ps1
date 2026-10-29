@@ -2,7 +2,7 @@
 # engines with --gpu-offline, then runs both engines on each and prints the
 # PSNR against ground truth.
 #
-#   .\tools\make_flow_tests.ps1 [-Exe build\Release\motion_enhancer.exe] [-Out flow_tests]
+#   .\tools\make_flow_tests.ps1 [-Exe build-project\Release\motion_enhancer.exe] [-Out flow_tests]
 #
 # Cases (all derived from test_frame0.png, produced by `--test`):
 #   hx   global horizontal shift (-12 px)      -> must be found exactly, ~50 dB
@@ -17,7 +17,7 @@
 #   circle  the --test pair itself (textured circle, +16,+8; its 21 px texture
 #        period makes -5 an aliased match for +16)
 param(
-    [string]$Exe = "build\Release\motion_enhancer.exe",
+    [string]$Exe = "build-project\Release\motion_enhancer.exe",
     [string]$Out = "flow_tests"
 )
 $ErrorActionPreference = "Stop"

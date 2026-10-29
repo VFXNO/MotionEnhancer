@@ -1,7 +1,0 @@
-D3D12 debug layer enabled.
-D3D12 GPU-based validation enabled.
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-D3D12 self-test: shared textures + flow submission...
-D3D12 self-test: PASS (DIS, 2.37 ms flow)
-D3D12 validation (self-test): Device Debug Layer Startup Options: GPU-Based Validation is enabled (disabled by default). This results in new validation not possible during API calls on the CPU, by creating patched shaders that have validation added directly to the shader. However, it can slow things down a lot, especially for applications with numerous PSOs. Time to see the first render frame may take several minutes.
-D3D12 validation (self-test): GPU-BASED VALIDATION: Dispatch, Incompatible texture barrier layout: Resource: 0x00000209DFDEA0F0:'Unnamed ID3D12Resource Object', Subresource Index: [0], Descriptor heap index to DescriptorTableStart: [20], Descriptor heap index FromTableStart: [0], Binding Type In Descriptor: UAV, Layout: D3D12_BARRIER_LAYOUT_COMMON(0x0), Index of Descriptor Range: 0, Shader Stage: COMPUTE, Root Parameter Index: [1], Dispatch Index: [2], Shader Code: <couldn't find file location in debug info>, Asm Instruction Range: [0x12e-0xffffffff], Asm Operand Index: [0], Command List: 0x00000209DF9EB350:'Unnamed ID3D12GraphicsCommandList Object', Command List Type: D3D12_COMMAND_LIST_TYPE_DIRECT, SRV/UAV/CBV Descriptor Heap: 0x00000209DF977F90:'Unnamed ID3D12DescriptorHeap Object', Sampler Descriptor Heap: <not set>, Pipeline State: 0x00000209DF879450:'Unnamed ID3D12PipelineState Object', 

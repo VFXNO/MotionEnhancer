@@ -27,6 +27,9 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBo
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
 SETTINGS = os.path.join(HERE, 'settings.json')
+_ffmpeg_bin = os.path.join(HERE, 'ffmpeg', 'bin')
+if os.path.isdir(_ffmpeg_bin):
+    os.environ['PATH'] = _ffmpeg_bin + os.pathsep + os.environ.get('PATH', '')
 
 # The program's palette (src/GuiApp.cpp).
 BG, SIDEBAR, PANEL, PANEL_HI, FIELD = '#08080a', '#0c0c0e', '#111114', '#1c1c20', '#0d0d0f'
@@ -89,6 +92,10 @@ def program_builds():
     """Folders holding motion_enhancer.exe (its models/ is where the program
     looks for ai_flow.onnx)."""
     found = []
+    # Installed/portable layout: tools/ai-train lives below the executable,
+    # rather than below a checkout containing build*/Release directories.
+    if os.path.isfile(os.path.join(REPO, 'motion_enhancer.exe')):
+        found.append(REPO)
     for exe in glob.glob(os.path.join(REPO, '*', 'Release', 'motion_enhancer.exe')):
         found.append(os.path.dirname(exe))
     return sorted(found, key=lambda d: os.path.getmtime(os.path.join(d, 'motion_enhancer.exe')), reverse=True)

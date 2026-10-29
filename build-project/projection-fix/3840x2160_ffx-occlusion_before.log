@@ -1,5 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-GPU pipeline: 3840x2160, 10 pyramid levels, radii 4/6
-GPU offline interpolation (t = 0.5): flow 6.61 ms GPU, 24.59 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\projection-fix\3840x2160_ffx-occlusion_before.png
-  Flow estimator: AMD FidelityFX Optical Flow (2x2 blocks)
-  PSNR vs ground truth: 21.66 dB (naive blend: 15.67 dB)

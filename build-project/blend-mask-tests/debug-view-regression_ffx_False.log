@@ -1,4 +1,0 @@
-Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
-GPU pipeline: 1920x1080, 8 pyramid levels, radii 4/6
-GPU offline interpolation (t = 0.5): flow 0.73 ms GPU, 11.32 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\blend-mask-tests\debug-view-regression_ffx_False.png
-  Flow estimator: AMD FidelityFX Optical Flow (2x2 blocks)
