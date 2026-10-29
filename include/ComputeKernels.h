@@ -39,7 +39,7 @@ enum class Kernel : int {
 };
 
 // Root signature + one compute PSO per shader. All shaders share the same
-// binding layout: t0..t5 SRVs, u0 UAV, b0 constants, s0 linear / s1 point.
+// binding layout: t0..t6 SRVs, u0 UAV, b0 constants, s0 linear / s1 point.
 class ComputeKernels {
 public:
     bool load(ID3D12Device* device);
@@ -73,10 +73,11 @@ public:
     // COMMON-state promotion with no barrier. Both queues read those
     // textures concurrently; transition barriers on them from two queues
     // are a race the debug layer flags.
+    // extraInput occupies t6 (the optional AI blending mask in synthesis).
     bool dispatch(ID3D12GraphicsCommandList* list, const ComputeKernels& kernels, Kernel kernel,
                   const std::array<ID3D12Resource*, 6>& inputs, ID3D12Resource* output,
                   const ShaderConstants& constants, UINT groupsX, UINT groupsY,
-                  uint32_t implicitInputs = 0);
+                  uint32_t implicitInputs = 0, ID3D12Resource* extraInput = nullptr);
 
     static void transition(ID3D12GraphicsCommandList* list, ID3D12Resource* resource,
                            D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);

@@ -105,7 +105,7 @@ cmake --build build --config Release
 |---|---|
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F1</kbd> | Show or hide the overlay |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F2</kbd> | Save the moment you just saw (the frames shown and the game frames they came from) |
-| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd> | Cycle the debug views: motion, static UI, occlusion, vector arrows, AI depth |
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd> | Cycle the debug views: motion, static UI, occlusion, vector arrows, AI depth, AI blend mask |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Esc</kbd> | Stop capture |
 
 From a terminal, `motion_enhancer.exe --list-windows` lists the capturable windows and `--capture-window "<title>"` starts directly. All options are listed under [Usage](#usage).
@@ -493,17 +493,22 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
 
 **High-resolution projection check:** `motion_enhancer.exe --projection-self-test` runs the real projection and interpolation shaders on known motion fields at 1440p, UHD/DCI 4K, 5K, odd sizes and 8K, without capture or AI models. It checks packed source indices, priorities, empty cells and the motion decoded by interpolation. This deliberately allocates high-resolution textures, so it needs more GPU memory than `--d3d12-self-test`. Projection now sizes its source-index field from the actual flow grid: the former fixed 21-bit field wrapped indices above UHD 4K. Smaller captures retain the previous encoding; larger captures trade a little priority precision for enough index bits, without additional GPU passes.
 
+**AI learned blending mask (experimental, off by default):** select **AI pyramid (trained model)** and check **AI: blending mask** on the Live page, or add `--flow-engine ai --ai-blend-mask` to a capture / GPU offline command. The network's mask prefers frame0 at 1 and frame1 at 0; 0.5 is neutral. At the midpoint it weights the two warped samples, while retaining geometric visibility checks and static-UI protection. For other timestamps, the midpoint mask is transported along each sample's estimated motion, combined with the normal time weights, and faded toward neutral near the original frames. This is a linear-motion extension of a midpoint-trained mask, not learned arbitrary-time occlusion handling; it can improve or worsen edges depending on the model and footage. It has no effect on other engines or when AI falls back to DIS. Each flow-ring entry keeps its own network-resolution mask so a later inference cannot overwrite an earlier pair's preference.
+
+`motion_enhancer.exe --ai-blend-mask-self-test` checks neutral/extreme masks, temporal weights and endpoints, mask transport, visibility, UI protection and the mask debug view on synthetic inputs. With an installed AI model it also verifies the network-output copy, per-pair lifetime, toggling and ring reuse.
+
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)
 - `[Ctrl+Alt+F2]`: Save the moment you just saw into `captures\<date-time>\` next to the executable: the last 20 frames exactly as presented (`shown_007_g2-3_t0.54.png`: generated between `game_002` and `game_003` at t = 0.54; `shown_008_g3_real.png`: a real frame) and the last 8 game frames they were made from (`game_000.png …`, to replay offline). The presenter keeps them in a replay buffer in video memory all the time (one copy per refresh, about 0.05 ms, ~410 MB at 1440p), so pressing the key captures the frames *before* it and nothing on the way to the screen waits for the save; the PNGs are written one by one in the background (a few seconds; `[Capture] saved …` when done).
-- `[Ctrl+Alt+F3]`: Cycle the live debug views (the console prints which one is on). Each view greys the picture and marks the top-left corner with the kind of frame on screen — green a real frame, magenta a generated one, yellow a frame shown with no interpolation (held, a scene cut, startup), which is where stutter comes from — followed by one white dot per view number.
+- `[Ctrl+Alt+F3]`: Cycle the live debug views (the console prints which one is on). Views 1–4 grey the picture; views 5–6 show diagnostic maps. All mark the top-left corner with the kind of frame on screen — green a real frame, magenta a generated one, yellow a frame shown with no interpolation (held, a scene cut, startup) — followed by one white dot per view number.
   1. **Motion**: the motion each pixel was interpolated along; hue = direction, strength = speed (full at 48 px per frame).
   2. **Static UI**: yellow where HUD evidence is building, green where a pixel is confirmed (light green where it is too isolated to be held).
   3. **Occlusion**: red where the earlier frame's sample does not reach the pixel and is weighted down, blue the same for the later frame.
   4. **Vector arrows**: the estimated motion (earlier → later frame) as one arrow per 16 px, drawn at a quarter of its length and capped at 14 px so arrows never overlap (a capped one keeps its direction), coloured by direction as in view 1; a white dot is a cell moving less than 2 px.
   5. **AI depth**: the AI depth of what is on screen (needs "AI depth" on, and DIS or FFX occlusion handling for it to be used), from dark blue (far) through cyan, green and yellow to red (near); a generated frame shows its two frames' depth blended at its time. Grey where there is no depth: AI depth off, or that frame's depth not finished yet.
+  6. **AI blend mask**: the pair's raw learned midpoint mask, enlarged to the capture size: white prefers the earlier frame, black the later frame, and mid-grey is neutral. Requires **AI pyramid (trained model)** plus **AI: blending mask** enabled before starting capture. A **purple checkerboard** means the mask is inactive or unavailable (disabled, another engine, AI falling back to DIS, or a pass-through frame with no pair). This is the model's preference, not final blend weights: temporal transport, time weighting, visibility and static-UI protection still affect synthesis. The raw map stays the same across timestamps of the same pair.
 
-  `MOTION_ENHANCER_DEBUG_VIEW=<1..5>` renders the same views in `--gpu-offline` and `--gpu-offline-sequence`.
+  `MOTION_ENHANCER_DEBUG_VIEW=<1..6>` renders the same views in `--gpu-offline` and `--gpu-offline-sequence`.
 - `[Ctrl+Alt+Esc]`: Exit overlay and stop capture
 
 ### Quick Start for Real-Time Capture

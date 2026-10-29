@@ -1,0 +1,85 @@
+D3D12 debug layer enabled.
+D3D12 GPU-based validation enabled.
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+AI flow: pyramid model on DirectML at 832x480
+AI blend-mask self-test: network copy, per-pair lifetime, enable/disable and ring reuse PASS
+AI blend-mask self-test: PASS (weights, neutral/disabled mask, endpoints, motion transport, UI, visibility)
+D3D12 validation (AI blend-mask self-test): Device Debug Layer Startup Options: GPU-Based Validation is enabled (disabled by default). This results in new validation not possible during API calls on the CPU, by creating patched shaders that have validation added directly to the shader. However, it can slow things down a lot, especially for applications with numerous PSOs. Time to see the first render frame may take several minutes.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.
+D3D12 validation (AI blend-mask self-test): ID3D12GraphicsCommandList::CreateMetaCommand: MetaCommand parameters are not supported by the current system configuration.

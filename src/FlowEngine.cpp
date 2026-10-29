@@ -112,6 +112,11 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
             m_aiFlow.reset();
         }
     }
+    if (settings.aiBlendMask) {
+        std::cout << "AI blending mask: "
+                  << (aiFlowActive() ? "enabled (experimental, midpoint-trained)"
+                                     : "inactive (requires the AI pyramid model)") << "\n";
+    }
 
     for (auto& set : m_commands) {
         if (FAILED(d3d->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -272,6 +277,11 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
             FAILED(m_device->createTexture2D(width, height, DXGI_FORMAT_R8_UNORM,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
+        if (aiFlowActive() && m_settings.aiBlendMask &&
+            FAILED(m_device->createTexture2D(static_cast<uint32_t>(m_aiFlow->width()),
+                                             static_cast<uint32_t>(m_aiFlow->height()), DXGI_FORMAT_R32_FLOAT,
+                                             D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON,
+                                             entry.aiBlendMask, L"RingAiBlendMask"))) return false;
     }
     if ((denseRing || m_neuralModelLoaded) && m_settings.flowMedian) {
         for (auto& scratch : m_medianScratch) {
@@ -613,6 +623,20 @@ bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& curren
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
     list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+    if (m_settings.aiBlendMask) {
+        // Also support enabling the setting after resize; normal GUI capture
+        // allocates all these textures up front. Publish only after submission.
+        if (!out.aiBlendMask &&
+            FAILED(m_device->createTexture2D(aw, ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_NONE,
+                                             D3D12_RESOURCE_STATE_COMMON, out.aiBlendMask, L"RingAiBlendMask"))) return false;
+        buffer.pResource = m_aiMaskOut.Get();
+        buffer.PlacedFootprint.Footprint = {DXGI_FORMAT_R32_FLOAT, aw, ah, 1, aw * 4};
+        texture.pResource = out.aiBlendMask.Get();
+        DispatchContext::transition(list, out.aiBlendMask.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
+        DispatchContext::transition(list, out.aiBlendMask.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+        out.hasAiBlendMask = true;
+    }
     // Into the seed level's dense field (that level's pixels), or straight
     // into the ring (full-resolution pixels).
     const uint32_t block = refine ? (1u << seed) : kDisRingBlock;
@@ -1102,6 +1126,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         return result;
     }
     Entry scratch = m_ring[static_cast<size_t>(entryIndex)];  // textures only
+    scratch.hasAiBlendMask = false;   // Never reuse an older pair's enable flag.
     m_currentEntry = entryIndex;
     if (!beginList()) return result;
 
@@ -1177,6 +1202,8 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         e.blockSize = scratch.blockSize;
         e.singleField = scratch.singleField;
         e.hasUiMask = scratch.hasUiMask;
+        e.aiBlendMask = scratch.aiBlendMask;
+        e.hasAiBlendMask = scratch.hasAiBlendMask;
         e.flowFence = fenceValue;
         e.valid = true;
     }

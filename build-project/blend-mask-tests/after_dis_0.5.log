@@ -1,0 +1,4 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+GPU pipeline: 1920x1080, 8 pyramid levels, radii 4/6
+GPU offline interpolation (t = 0.5): flow 2.68 ms GPU, 16.32 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\blend-mask-tests\after_dis_0.5.png
+  Flow estimator: DIS optical flow (2x2 blocks)

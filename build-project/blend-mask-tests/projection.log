@@ -1,0 +1,11 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+Projection self-test: 2560x1440, block 2: packed keys + decoded motion PASS
+Projection self-test: 3840x2160, block 2: packed keys + decoded motion PASS
+Projection self-test: 4096x2048, block 2: packed keys + decoded motion PASS
+Projection self-test: 4096x2160, block 2: packed keys + decoded motion PASS
+Projection self-test: 5120x2880, block 2: packed keys + decoded motion PASS
+Projection self-test: 4097x2049, block 2: packed keys + decoded motion PASS
+Projection self-test: 7680x4320, block 2: packed keys + decoded motion PASS
+Projection self-test: 5120x2880, block 8: packed keys + decoded motion PASS
+Projection self-test: 5120x2880, block 2, saturated priority: packed keys + decoded motion PASS
+Projection self-test: PASS

@@ -21,7 +21,7 @@ cbuffer PipelineConstants : register(b0)
     // indexed through NeuralWeight() below with the same constants the C++
     // uses. 240 floats = 60 rows, of which 238 are the model.
     float4 NeuralWeights[60];
-    float4 NeuralControl;   // x = model enabled, y = debug view (DebugView()), zw spare
+    float4 NeuralControl;   // x = model enabled, y = debug view, z = alternate DIS seed, w = AI blend mask
 };
 
 // Indices into NeuralWeights, mirroring namespace NeuralFlowLayout in
@@ -58,8 +58,9 @@ SamplerState PointClamp : register(s1);
 // Live diagnostics for the presented frames, cycled with Ctrl+Alt+F3 in the
 // overlay (Presenter sets NeuralControl.y; MOTION_ENHANCER_DEBUG_VIEW does
 // the same offline): 0 = off, 1 = motion, 2 = static-UI evidence,
-// 3 = occlusion trust, 4 = vector arrows. Every view greys the picture so the colours read, and
-// marks the top-left corner with what kind of frame this is - green a real
+// 3 = occlusion trust, 4 = vector arrows, 5 = AI depth, 6 = raw AI blend mask.
+// Views 1..4 grey the picture so the colours read; views 5..6 show maps.
+// Every view marks the top-left corner with what kind of frame this is - green a real
 // frame, magenta a generated one, yellow a frame shown with no
 // interpolation (held, a scene cut, startup) - followed by one white dot per
 // view number.
@@ -71,6 +72,14 @@ int DebugView()
 float3 DebugGrey(float3 color)
 {
     return (0.2f + 0.6f * dot(color, float3(0.299f, 0.587f, 0.114f))).xxx;
+}
+
+// A missing/disabled pair mask must not look like a valid neutral grey mask.
+// Shared by interpolation and pass-through frames (which have no pair).
+float3 DebugAiBlendMaskInactive(uint2 p)
+{
+    return (((p.x / 16u) ^ (p.y / 16u)) & 1u) != 0u
+        ? float3(0.24f, 0.04f, 0.32f) : float3(0.12f, 0.02f, 0.18f);
 }
 
 // A fully saturated colour for hue in [0, 1).

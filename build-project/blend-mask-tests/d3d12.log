@@ -1,0 +1,3 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+D3D12 self-test: shared textures + flow submission...
+D3D12 self-test: PASS (DIS, 0.36 ms flow)

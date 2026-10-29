@@ -239,7 +239,8 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
                        const ShaderConstants& c, ID3D12Resource* frame0, ID3D12Resource* frame1,
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
                        ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
-                       ID3D12Resource* depth0, ID3D12Resource* depth1, ID3D12Resource* const* dilated) {
+                       ID3D12Resource* depth0, ID3D12Resource* depth1, ID3D12Resource* const* dilated,
+                       ID3D12Resource* aiBlendMask) {
     const bool project = c.flowScale == 0.0f && projection;
     if (project) {
         const uint32_t block = static_cast<uint32_t>(std::max(1, c.blockSize));
@@ -275,8 +276,10 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
                                implicitInputs & 0x3)) return false;
     }
     std::array<ID3D12Resource*, 6> in = {frame0, frame1, forward, backward, uiMask, project ? projection : nullptr};
-    if (!dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, c,
-                           (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs)) return false;
+    ShaderConstants synthesis = c;
+    synthesis.neuralControl[3] = aiBlendMask && c.flowScale == 0.0f ? 1.0f : 0.0f;
+    if (!dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, synthesis,
+                           (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs, aiBlendMask)) return false;
     if (static_cast<int>(c.neuralControl[1]) == 5) return recordDepthView(list, dispatch, kernels, c, depth0, depth1, output);
     return true;
 }
@@ -531,7 +534,8 @@ void cycleDebugView() {
         "static UI (yellow = evidence building, green = confirmed)",
         "occlusion (red = frame0 sample distrusted, blue = frame1)",
         "vector arrows (one per 16 px, quarter length, capped at 14 px, coloured by direction)",
-        "AI depth (blue far .. red near; grey where there is none: AI depth off or not ready)"};
+        "AI depth (blue far .. red near; grey where there is none: AI depth off or not ready)",
+        "AI blend mask (raw midpoint: white = earlier frame, black = later, grey = neutral; purple checkerboard = inactive/no pair)"};
     const int view = (g_debugView.load() + 1) % kDebugViewCount;
     g_debugView.store(view);
     std::cout << "[Overlay] debug view " << view << ": " << names[view] << std::endl;
@@ -578,7 +582,7 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         ID3D12Resource* const dilatedFields[2] = {m_dilated[0].Get(), m_dilated[1].Get()};
         ok = recordInterpolate(m_list.Get(), m_dispatch, *m_kernels, c, job.frame0, job.frame1, job.forwardFlow,
                                job.backwardFlow, job.uiMask, m_projection.Get(), m_output.Get(), 0x13,
-                               job.depth0, job.depth1, dilatedFields);
+                               job.depth0, job.depth1, dilatedFields, job.aiBlendMask);
     }
     if (!ok) {
         m_list->Close();

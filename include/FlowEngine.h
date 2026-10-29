@@ -66,6 +66,9 @@ struct FlowSettings {
     // queue (AiFlowEstimator), its two fields filling DIS's 2x2 ring. Falls
     // back to DIS when there is no model.
     bool aiFlow = false;
+    // AI pyramid only: use the network's learned midpoint blend mask during
+    // synthesis. Experimental, off by default; transported in time by motion.
+    bool aiBlendMask = false;
     // With FFX: refine its whole-pixel 8x8 field into a per-pixel one at half
     // resolution by variational refinement (FfxRefine.hlsli), stored on a
     // 2x2 grid. Off = FFX's field as it comes.
@@ -175,6 +178,12 @@ public:
         // What InterpolateCS binds at t4: null reads as "no UI anywhere",
         // which is exactly the plain warp.
         ID3D12Resource* uiMaskInput() const { return hasUiMask ? uiMask.Get() : nullptr; }
+        // The AI pair's midpoint blend preference, at network resolution.
+        // Each ring entry owns its copy: a later inference must not overwrite
+        // a mask that the presenter is still reading for an earlier pair.
+        ComPtr<ID3D12Resource> aiBlendMask;
+        bool hasAiBlendMask = false;
+        ID3D12Resource* aiBlendMaskInput() const { return hasAiBlendMask ? aiBlendMask.Get() : nullptr; }
         uint64_t flowFence = 0;            // flow-queue value completing this entry
         uint64_t presentFence = 0;         // last present-queue value that read it
         bool valid = false;

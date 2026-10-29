@@ -1,0 +1,62 @@
+[
+  {
+    "test": "after_ai_0.25",
+    "returncode": 0,
+    "baseline_identical": true
+  },
+  {
+    "test": "after_ai_0.5",
+    "returncode": 0,
+    "baseline_identical": true
+  },
+  {
+    "test": "after_ai_0.75",
+    "returncode": 0,
+    "baseline_identical": true
+  },
+  {
+    "test": "after_dis_0.5",
+    "returncode": 0,
+    "baseline_identical": true
+  },
+  {
+    "test": "after_ffx_0.5",
+    "returncode": 0,
+    "baseline_identical": true
+  },
+  {
+    "test": "enabled_ai_0",
+    "returncode": 0,
+    "changed_channels": 0
+  },
+  {
+    "test": "enabled_ai_0.25",
+    "returncode": 0,
+    "changed_channels": 11867
+  },
+  {
+    "test": "enabled_ai_0.5",
+    "returncode": 0,
+    "changed_channels": 16427
+  },
+  {
+    "test": "enabled_ai_0.75",
+    "returncode": 0,
+    "changed_channels": 11670
+  },
+  {
+    "test": "enabled_ai_1",
+    "returncode": 0,
+    "changed_channels": 0
+  },
+  {
+    "test": "enabled_dis_0.5",
+    "returncode": 0,
+    "changed_channels": 0
+  },
+  {
+    "test": "enabled_ffx_0.5",
+    "returncode": 0,
+    "changed_channels": 0
+  }
+]

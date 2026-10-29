@@ -1,0 +1,6 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+AI flow: pyramid model on DirectML at 832x480
+AI blending mask: enabled (experimental, midpoint-trained)
+GPU pipeline: 1920x1080, 8 pyramid levels, radii 4/6
+GPU offline interpolation (t = 0): flow 3.30 ms GPU, 16.68 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\blend-mask-tests\enabled_ai_0.png
+  Flow estimator: AI pyramid flow (ONNX) (2x2 blocks)

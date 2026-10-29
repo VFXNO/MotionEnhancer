@@ -12,9 +12,10 @@
 
 // Live debug view of the presented frames (see DebugView() in
 // Common.hlsli): 0 = off, 1 = motion, 2 = static-UI evidence, 3 = occlusion
-// trust, 4 = vector arrows, 5 = AI depth (DepthViewCS). Ctrl+Alt+F3 in the
-// overlay cycles it; read on every frame.
-constexpr int kDebugViewCount = 6;
+// trust, 4 = vector arrows, 5 = AI depth (DepthViewCS), 6 = raw AI blend mask
+// (white = frame0, black = frame1, purple checkerboard = inactive/no pair).
+// Ctrl+Alt+F3 in the overlay cycles it; read on every frame.
+constexpr int kDebugViewCount = 7;
 void cycleDebugView();
 int debugView();
 // Ctrl+Alt+F2 in the overlay: saves, into captures\<date-time>\ next to the
@@ -38,12 +39,13 @@ void requestCaptureDump();
 // projection only when both are given. dilated: two field-sized scratch
 // textures (createDilatedFields); with them, each field whose frame has
 // depth is first dilated at outlines (DepthDilateCS) and used dilated.
+// aiBlendMask: optional pair-owned AI midpoint preference for frame0 (t6).
 bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatch, const ComputeKernels& kernels,
                        const ShaderConstants& constants, ID3D12Resource* frame0, ID3D12Resource* frame1,
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
                        ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
                        ID3D12Resource* depth0 = nullptr, ID3D12Resource* depth1 = nullptr,
-                       ID3D12Resource* const* dilated = nullptr);
+                       ID3D12Resource* const* dilated = nullptr, ID3D12Resource* aiBlendMask = nullptr);
 // The projection for frames of width x height, at any flow grid of 2 px or
 // coarser.
 bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource>& projection);
@@ -67,6 +69,7 @@ struct RenderJob {
     uint32_t flowBlockSize = 32;
     bool singleFlowField = false;      // FlowEngine::Entry::singleField
     ID3D12Resource* uiMask = nullptr;  // FlowEngine::Entry::uiMaskInput(); null = no UI
+    ID3D12Resource* aiBlendMask = nullptr;  // pair-owned network blend mask; null = disabled
     ID3D12Fence* flowFence = nullptr;   // GPU-side wait before the interpolate pass
     uint64_t flowFenceValue = 0;
     ID3D12Resource* depth0 = nullptr;  // AI depth of frame0 / frame1, when complete

@@ -29,7 +29,39 @@ Texture2D<float4> ForwardFlow : register(t2);
 Texture2D<float4> BackwardFlow : register(t3);
 Texture2D<float> UiMask : register(t4);
 Texture2D<uint> Projection : register(t5);   // two-field pairs: ProjectSplatCS's winners at time t
+Texture2D<float> AiBlendMask : register(t6); // AI midpoint weight for frame0, 1 = frame0, 0 = frame1
 RWTexture2D<float4> Output : register(u0);
+
+// The network predicts a midpoint blending preference, not a confidence in
+// its flow. Keep the geometric/UI validity checks and use it only to weight
+// samples that survived them. A neutral 0.5 mask preserves the time blend.
+float3 ApplyAiBlendMask(float3 fallback, float3 a, float3 b, float2 pixel,
+                        float2 from0, float2 from1, float t, float valid0, float valid1)
+{
+    if (NeuralControl.w < 0.5f) return fallback;
+    float2 midpoint0 = pixel, midpoint1 = pixel;
+    if (t != 0.5f)
+    {
+        // Transport each sample's preference from its position at t to its
+        // predicted midpoint. At t=0.5 sample the learned mask exactly at p.
+        // This is a linear-motion extension of a midpoint-trained mask, not
+        // a model trained for arbitrary timestamps; the option is experimental.
+        midpoint0 += (0.5f - t) * SampleFlow(ForwardFlow, from0);
+        midpoint1 += (t - 0.5f) * SampleFlow(BackwardFlow, from1);
+    }
+    const float2 inverseSize = rcp(float2(Width, Height));
+    // Fade the midpoint preference toward neutral at the endpoints. Otherwise
+    // an exactly 0/1 network output can hold the wrong source until t=0/1
+    // and then pop abruptly to the required original frame.
+    const float strength = 4.0f * t * (1.0f - t);
+    const float m0 = lerp(0.5f, saturate(AiBlendMask.SampleLevel(LinearClamp, (midpoint0 + 0.5f) * inverseSize, 0)), strength);
+    const float m1 = lerp(0.5f, saturate(AiBlendMask.SampleLevel(LinearClamp, (midpoint1 + 0.5f) * inverseSize, 0)), strength);
+    const float w0 = (1.0f - t) * valid0 * m0;
+    const float w1 = t * valid1 * (1.0f - m1);
+    // An extreme mask must not discard the sole visible sample, or turn an
+    // endpoint into black / 0/0. Keep the existing visibility result then.
+    return w0 + w1 > 1e-4f ? (w0 * a + w1 * b) / (w0 + w1) : fallback;
+}
 
 // Confirmed UI pixels (of 9, including this one) a pixel needs around it to
 // be held in place: itself and one neighbour, so a lone confirmed pixel is
@@ -183,6 +215,20 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     const float t = saturate(TimeT);
     const float2 pixel = float2(id.xy);
     const float2 inverseSize = rcp(float2(Width, Height));
+    if (DebugView() == 6)
+    {
+        // The pair-owned learned midpoint map, before temporal transport,
+        // time weighting or visibility/UI checks. Showing the raw preference
+        // keeps a neutral mask grey at every t, instead of confusing it with
+        // the ordinary preference for an endpoint near that endpoint.
+        float3 mask = DebugAiBlendMaskInactive(id.xy);
+        if (NeuralControl.w > 0.5f)
+            mask = saturate(AiBlendMask.SampleLevel(LinearClamp, (pixel + 0.5f) * inverseSize, 0)).xxx;
+        const bool real = t < 0.01f || t > 0.99f;
+        Output[id.xy] = float4(DebugMarker(id.xy, mask,
+            real ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 1.0f)), 1.0f);
+        return;
+    }
     float2 from0 = pixel, from1 = pixel;
     float3 c0, c1;
     float trust0 = 1.0f, trust1 = 1.0f;
@@ -311,12 +357,14 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         // Neither sample usable: nothing better to fetch, keep the plain blend.
         if (w0 + w1 > 1e-4f) color = (w0 * c0 + w1 * c1) / (w0 + w1);
     }
+    color = ApplyAiBlendMask(color, c0, c1, pixel, from0, from1, t, valid0, valid1);
     if (hybrid)
     {
         const float vb0 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, (fromB0 + 0.5f) * inverseSize, 0))) * trustB0;
         const float vb1 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, (fromB1 + 0.5f) * inverseSize, 0))) * trustB1;
         const float wb0 = (1.0f - t) * vb0, wb1 = t * vb1;
-        const float3 colorB = wb0 + wb1 > 1e-4f ? (wb0 * b0 + wb1 * b1) / (wb0 + wb1) : lerp(b0, b1, t);
+        float3 colorB = wb0 + wb1 > 1e-4f ? (wb0 * b0 + wb1 * b1) / (wb0 + wb1) : lerp(b0, b1, t);
+        colorB = ApplyAiBlendMask(colorB, b0, b1, pixel, fromB0, fromB1, t, vb0, vb1);
         const float dA = MaxComponent(abs(c0 - c1)) * kLumaScale / kAgreement;
         const float dB = MaxComponent(abs(b0 - b1)) * kLumaScale / kAgreement;
         const float wA = exp(-dA * dA), wB = exp(-dB * dB);

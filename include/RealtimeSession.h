@@ -35,6 +35,8 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
 int runD3D12SelfTest(GraphicsAdapterPreference adapter);
 // GPU regression test for projection packing and lookup from 1440p through 8K.
 int runProjectionSelfTest(GraphicsAdapterPreference adapter);
+// Exact GPU blend-mask checks; also checks network/ring lifetime if a model is installed.
+int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter);
 // AI depth on one image (DepthEstimator): average time over 20 runs, and the
 // nearness map written to `output` as an 8-bit PNG (white = near).
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter);

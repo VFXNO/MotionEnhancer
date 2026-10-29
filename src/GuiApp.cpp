@@ -142,6 +142,7 @@ struct GuiState {
     HWND ffxOcclusion = nullptr;
     HWND aiDepth = nullptr;
     HWND aiDepthRate = nullptr;
+    HWND aiBlendMask = nullptr;
     HWND input0 = nullptr;
     HWND input1 = nullptr;
     HWND output = nullptr;
@@ -1166,6 +1167,8 @@ void startCapture() {
     if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
     if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
+    if (flowSelection == 4 && SendMessageA(g_state.aiBlendMask, BM_GETCHECK, 0, 0) == BST_CHECKED)
+        captureArgs.push_back("--ai-blend-mask");
     if (SendMessageA(g_state.aiDepth, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         captureArgs.push_back("--ai-depth");
         const LRESULT rate = SendMessageA(g_state.aiDepthRate, CB_GETCURSEL, 0, 0);
@@ -1464,6 +1467,7 @@ void createControls() {
     g_state.aiDepth = makeCheckbox("AI depth (DIS, FFX occl.)", 590, 346, 200, true);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
+    g_state.aiBlendMask = makeCheckbox("AI: blending mask", 238, 396, 184, false);
     // How often the AI depth network runs (FlowSettings::aiDepthStride):
     // every frame, or every n-th with the frames between borrowing a
     // neighbour's depth (about 1.3-1.6 ms per run on an RX 9070 XT).
@@ -1504,7 +1508,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask, g_state.captureButton, liveHelp, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus

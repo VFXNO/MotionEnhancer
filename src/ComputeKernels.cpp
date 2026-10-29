@@ -8,6 +8,8 @@
 
 namespace {
 constexpr UINT kConstantStride = (sizeof(ShaderConstants) + 255u) & ~255u;
+constexpr UINT kSrvCount = 7;
+constexpr UINT kDescriptorsPerDispatch = kSrvCount + 1;
 static_assert(kConstantStride % 256u == 0u, "D3D12 constant buffers require 256-byte alignment");
 std::filesystem::path shaderPath(const char* name) {
     char path[MAX_PATH] = {};
@@ -44,7 +46,7 @@ const char* kShaderFiles[] = {
 bool ComputeKernels::load(ID3D12Device* device) {
     D3D12_DESCRIPTOR_RANGE ranges[2] = {};
     ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    ranges[0].NumDescriptors = 6;
+    ranges[0].NumDescriptors = kSrvCount;
     ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
     ranges[1].NumDescriptors = 1;
     D3D12_ROOT_PARAMETER params[3] = {};
@@ -160,10 +162,10 @@ void DispatchContext::transition(ID3D12GraphicsCommandList* list, ID3D12Resource
 bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKernels& kernels,
                                Kernel kernel, const std::array<ID3D12Resource*, 6>& inputs,
                                ID3D12Resource* output, const ShaderConstants& constants,
-                               UINT groupsX, UINT groupsY, uint32_t implicitInputs) {
+                               UINT groupsX, UINT groupsY, uint32_t implicitInputs, ID3D12Resource* extraInput) {
     ID3D12PipelineState* pso = kernels.pipeline(kernel);
     if (!pso || !output) return false;
-    if (m_descriptorCursor + 7 > m_descriptorsPerRegion || m_constantCursor >= m_constantsPerRegion) {
+    if (m_descriptorCursor + kDescriptorsPerDispatch > m_descriptorsPerRegion || m_constantCursor >= m_constantsPerRegion) {
         std::cerr << "DispatchContext: region exhausted.\n";
         return false;
     }
@@ -174,17 +176,18 @@ bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKer
     D3D12_GPU_DESCRIPTOR_HANDLE gpu = m_heap->GetGPUDescriptorHandleForHeapStart();
     gpu.ptr += static_cast<UINT64>(base) * m_descriptorSize;
 
-    D3D12_RESOURCE_BARRIER barriers[7] = {};
+    D3D12_RESOURCE_BARRIER barriers[kDescriptorsPerDispatch] = {};
     UINT barrierCount = 0;
-    for (size_t i = 0; i < 6; ++i) {
+    for (size_t i = 0; i < kSrvCount; ++i) {
+        ID3D12Resource* input = i < inputs.size() ? inputs[i] : extraInput;
         D3D12_CPU_DESCRIPTOR_HANDLE handle = cpu;
         handle.ptr += static_cast<SIZE_T>(i) * m_descriptorSize;
-        if (inputs[i]) {
-            m_device->CreateShaderResourceView(inputs[i], nullptr, handle);
+        if (input) {
+            m_device->CreateShaderResourceView(input, nullptr, handle);
             if (implicitInputs & (1u << i)) continue;
             auto& b = barriers[barrierCount++];
             b.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            b.Transition.pResource = inputs[i];
+            b.Transition.pResource = input;
             b.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
             b.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
             b.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -200,7 +203,7 @@ bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKer
         }
     }
     D3D12_CPU_DESCRIPTOR_HANDLE uav = cpu;
-    uav.ptr += static_cast<SIZE_T>(6) * m_descriptorSize;
+    uav.ptr += static_cast<SIZE_T>(kSrvCount) * m_descriptorSize;
     m_device->CreateUnorderedAccessView(output, nullptr, nullptr, uav);
     {
         auto& b = barriers[barrierCount++];
@@ -210,7 +213,7 @@ bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKer
         b.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         b.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     }
-    m_descriptorCursor += 7;
+    m_descriptorCursor += kDescriptorsPerDispatch;
 
     const UINT slot = m_region * m_constantsPerRegion + m_constantCursor++;
     std::memcpy(m_constantsCpu + static_cast<size_t>(slot) * kConstantStride, &constants, sizeof(constants));
@@ -223,7 +226,7 @@ bool DispatchContext::dispatch(ID3D12GraphicsCommandList* list, const ComputeKer
     list->SetComputeRootSignature(kernels.rootSignature());
     list->SetComputeRootDescriptorTable(0, gpu);
     D3D12_GPU_DESCRIPTOR_HANDLE uavGpu = gpu;
-    uavGpu.ptr += static_cast<UINT64>(m_descriptorSize) * 6;
+    uavGpu.ptr += static_cast<UINT64>(m_descriptorSize) * kSrvCount;
     list->SetComputeRootDescriptorTable(1, uavGpu);
     list->SetComputeRootConstantBufferView(2, cb);
     list->Dispatch(groupsX, groupsY, 1);

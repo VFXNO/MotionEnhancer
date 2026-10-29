@@ -149,6 +149,36 @@ public:
         if (FAILED(m_fence->SetEventOnCompletion(value, m_event))) return false;
         return WaitForSingleObject(m_event, 5000) == WAIT_OBJECT_0;
     }
+    // Exact synthetic inputs for GPU regression tests (no D3D11 bridge).
+    template<class FillRow>
+    bool uploadTexture(uint32_t width, uint32_t height, DXGI_FORMAT format, FillRow fillRow,
+                       ComPtr<ID3D12Resource>& texture) {
+        if (FAILED(m_device->createTexture2D(width, height, format, D3D12_RESOURCE_FLAG_NONE,
+                                             D3D12_RESOURCE_STATE_COPY_DEST, texture))) return false;
+        const auto desc = texture->GetDesc();
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
+        UINT64 total = 0;
+        m_device->device()->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &total);
+        ComPtr<ID3D12Resource> buffer;
+        if (FAILED(m_device->createBuffer(total, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
+                                           D3D12_RESOURCE_FLAG_NONE, buffer))) return false;
+        uint8_t* data = nullptr;
+        if (FAILED(buffer->Map(0, nullptr, reinterpret_cast<void**>(&data)))) return false;
+        for (uint32_t y = 0; y < height; ++y)
+            fillRow(data + footprint.Offset + static_cast<size_t>(y) * footprint.Footprint.RowPitch, y);
+        buffer->Unmap(0, nullptr);
+        if (!begin()) return false;
+        D3D12_TEXTURE_COPY_LOCATION src = {}, dst = {};
+        src.pResource = buffer.Get();
+        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        src.PlacedFootprint = footprint;
+        dst.pResource = texture.Get();
+        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        m_list->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+        DispatchContext::transition(m_list.Get(), texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+                                    D3D12_RESOURCE_STATE_COMMON);
+        return execute(nullptr, 0);
+    }
     // Copies a 2D texture into a readback buffer and returns its rows.
     bool readback(ID3D12Resource* texture, std::vector<uint8_t>& bytes, UINT& rowPitch, UINT& width, UINT& height) {
         const D3D12_RESOURCE_DESC desc = texture->GetDesc();
@@ -385,6 +415,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.flowBlockSize = entry.blockSize;
                     job.singleFlowField = entry.singleField;
                     job.uiMask = entry.uiMaskInput();
+                    job.aiBlendMask = entry.aiBlendMaskInput();
                     job.flowFence = flow.fence();
                     job.flowFenceValue = sel.f1.flowFence;
                     mode = "I";
@@ -642,8 +673,8 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     for (int i = 0; i < interpolateRepeats; ++i) {
         offline.dispatch().beginRegion(0);
         if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, tex0.texture12.Get(), tex1.texture12.Get(),
-                               entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), projection.Get(),
-                               output.texture12.Get(), 0x13)) return 1;
+                                entry.forward.Get(), entry.backward.Get(), entry.uiMaskInput(), projection.Get(),
+                                output.texture12.Get(), 0x13, nullptr, nullptr, nullptr, entry.aiBlendMaskInput())) return 1;
     }
     if (interpolateQueries) {
         offline.list()->EndQuery(interpolateQueries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
@@ -843,8 +874,8 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         if (!offline.begin()) return 1;
         if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, textures[i].texture12.Get(),
                                textures[i + 1].texture12.Get(), entry.forward.Get(), entry.backward.Get(),
-                               entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13,
-                               depth0, depth1, dilatedFields)) return 1;
+                                entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13,
+                                depth0, depth1, dilatedFields, entry.aiBlendMaskInput())) return 1;
         uint64_t done = 0;
         if (!offline.execute(flow.fence(), result.fence, &done)) return 1;
 
@@ -1593,6 +1624,240 @@ int runDepthTest(const std::string& input, const std::string& output, GraphicsAd
     return 0;
 }
 
+int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter) {
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+    constexpr uint32_t w = 64, h = 48, mw = 16, mh = 12;
+    ComPtr<ID3D12Resource> frames[2], zero[2], moving[2], missing, mask, ui, projection, output;
+    for (int side = 0; side < 2; ++side) {
+        if (!offline.uploadTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, [&](uint8_t* row, uint32_t) {
+                for (uint32_t x = 0; x < w; ++x) {
+                    row[4 * x] = side ? 0 : 64;
+                    row[4 * x + 1] = 0;
+                    row[4 * x + 2] = side ? 64 : 0;
+                    row[4 * x + 3] = 255;
+                }
+            }, frames[side]) ||
+            !offline.uploadTexture(w / 2, h / 2, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t) {
+                std::fill_n(reinterpret_cast<float*>(row), w, 0.0f);
+            }, zero[side]) ||
+            !offline.uploadTexture(w / 2, h / 2, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t) {
+                float* values = reinterpret_cast<float*>(row);
+                for (uint32_t x = 0; x < w / 2; ++x) {
+                    values[2 * x] = side ? -16.0f : 16.0f;
+                    values[2 * x + 1] = 0.0f;
+                }
+            }, moving[side])) return 1;
+    }
+    if (!createProjection(device, w, h, projection) ||
+        FAILED(device.createTexture2D(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                      D3D12_RESOURCE_STATE_COMMON, output))) return 1;
+    ShaderConstants c = {};
+    c.width = c.levelWidth = w;
+    c.height = c.levelHeight = h;
+    c.blockSize = c.parentBlockSize = 2;
+    std::vector<uint8_t> bytes;
+    UINT pitch = 0, readW = 0, readH = 0;
+    auto render = [&](ID3D12Resource* blend, ID3D12Resource* forward, ID3D12Resource* backward,
+                      ID3D12Resource* uiMask = nullptr) {
+        return offline.begin() &&
+            recordInterpolate(offline.list(), offline.dispatch(), kernels, c, frames[0].Get(), frames[1].Get(),
+                              forward, backward, uiMask, projection.Get(), output.Get(), 0,
+                              nullptr, nullptr, nullptr, blend) &&
+            offline.execute(nullptr, 0) && offline.readback(output.Get(), bytes, pitch, readW, readH);
+    };
+    auto check = [&](float frame0Weight, const char* label) {
+        const uint8_t* pixel = bytes.data() + static_cast<size_t>(h / 2) * pitch + 4 * (w / 2);
+        const int red = static_cast<int>(std::lround(64.0f * frame0Weight));
+        const int blue = static_cast<int>(std::lround(64.0f * (1.0f - frame0Weight)));
+        if (std::abs(static_cast<int>(pixel[0]) - red) > 1 || pixel[1] != 0 ||
+            std::abs(static_cast<int>(pixel[2]) - blue) > 1 || pixel[3] != 255) {
+            std::cerr << "AI blend-mask self-test: FAIL (" << label << ", t=" << c.timeT
+                      << ": expected " << red << ",0," << blue << ", got "
+                      << static_cast<int>(pixel[0]) << "," << static_cast<int>(pixel[1])
+                      << "," << static_cast<int>(pixel[2]) << ")\n";
+            return false;
+        }
+        return true;
+    };
+    auto constantMask = [&](float value) {
+        return offline.uploadTexture(mw, mh, DXGI_FORMAT_R32_FLOAT, [&](uint8_t* row, uint32_t) {
+            std::fill_n(reinterpret_cast<float*>(row), mw, value);
+        }, mask);
+    };
+    for (float value : {0.0f, 0.25f, 0.5f, 0.75f, 1.0f}) {
+        if (!constantMask(value)) return 1;
+        for (float t : {0.0f, 0.25f, 0.5f, 0.75f, 1.0f}) {
+            c.timeT = t;
+            const float preference = 0.5f + 4.0f * t * (1.0f - t) * (value - 0.5f);
+            const float a = (1.0f - t) * preference, b = t * (1.0f - preference);
+            const float weight = a + b > 1e-4f ? a / (a + b) : 1.0f - t;
+            if (!render(mask.Get(), zero[0].Get(), zero[1].Get()) || !check(weight, "mask weights / endpoints")) return 1;
+            if (!render(nullptr, zero[0].Get(), zero[1].Get()) || !check(1.0f - t, "disabled mask")) return 1;
+        }
+    }
+    // A spatial mask moves with the surface, rather than remaining fixed to
+    // the midpoint's screen coordinates when t is not 0.5.
+    if (!offline.uploadTexture(mw, mh, DXGI_FORMAT_R32_FLOAT, [&](uint8_t* row, uint32_t) {
+            float* values = reinterpret_cast<float*>(row);
+            for (uint32_t x = 0; x < mw; ++x) values[x] = x < mw / 2 ? 0.25f : 0.75f;
+        }, mask)) return 1;
+    c.timeT = 0.25f;
+    if (!render(mask.Get(), moving[0].Get(), moving[1].Get()) || !check(33.0f / 38.0f, "mask motion at t=0.25")) return 1;
+    c.timeT = 0.75f;
+    if (!render(mask.Get(), moving[0].Get(), moving[1].Get()) || !check(5.0f / 38.0f, "mask motion at t=0.75")) return 1;
+
+    // Learned preferences cannot override the static-UI protection.
+    if (!offline.uploadTexture(w, h, DXGI_FORMAT_R8_UNORM, [&](uint8_t* row, uint32_t) {
+            std::fill_n(row, w, static_cast<uint8_t>(255));
+        }, ui) || !constantMask(1.0f)) return 1;
+    c.timeT = 0.5f;
+    if (!render(mask.Get(), zero[0].Get(), zero[1].Get(), ui.Get()) || !check(0.5f, "static UI protection")) return 1;
+
+    // Prefer frame0, but it has no projected coverage here. Keep frame1, not
+    // the hidden sample and not a division by zero when both weights vanish.
+    if (!offline.uploadTexture(w / 2, h / 2, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t) {
+            float* values = reinterpret_cast<float*>(row);
+            for (uint32_t x = 0; x < w / 2; ++x) { values[2 * x] = 256.0f; values[2 * x + 1] = 0.0f; }
+        }, missing)) return 1;
+    if (!render(mask.Get(), missing.Get(), zero[1].Get()) || !check(0.0f, "sole visible sample")) return 1;
+    c.flowScale = 1.0f;
+    if (!render(mask.Get(), zero[0].Get(), zero[1].Get()) || !check(0.5f, "single-field bypass")) return 1;
+
+    // View 6 shows the raw midpoint map, not the time/visibility weights.
+    // Check both black/white extremes and a genuinely active neutral mask;
+    // an unavailable mask must be visibly different from neutral grey.
+    auto checkDebugPixel = [&](uint32_t x, uint32_t y, int red, int green, int blue, const char* label) {
+        const uint8_t* pixel = bytes.data() + static_cast<size_t>(y) * pitch + 4 * x;
+        if (std::abs(static_cast<int>(pixel[0]) - red) > 1 ||
+            std::abs(static_cast<int>(pixel[1]) - green) > 1 ||
+            std::abs(static_cast<int>(pixel[2]) - blue) > 1 || pixel[3] != 255) {
+            std::cerr << "AI blend-mask self-test: FAIL (debug view: " << label << ")\n";
+            return false;
+        }
+        return true;
+    };
+    auto checkInactive = [&]() {
+        return checkDebugPixel(16, h - 8, 61, 10, 82, "inactive light tile") &&
+               checkDebugPixel(32, h - 8, 31, 5, 46, "inactive dark tile");
+    };
+    c.flowScale = 0.0f;
+    c.neuralControl[1] = 6.0f;
+    for (float value : {0.0f, 0.5f, 1.0f}) {
+        if (!constantMask(value)) return 1;
+        const int shade = static_cast<int>(std::lround(255.0f * value));
+        for (float t : {0.0f, 0.25f, 0.5f, 0.75f, 1.0f}) {
+            c.timeT = t;
+            if (!render(mask.Get(), zero[0].Get(), zero[1].Get(), ui.Get()) ||
+                !checkDebugPixel(w / 2, h - 8, shade, shade, shade, "raw preference / UI / timestamps") ||
+                !checkDebugPixel(16, 16, t == 0.0f || t == 1.0f ? 0 : 255,
+                                 t == 0.0f || t == 1.0f ? 255 : 0,
+                                 t == 0.0f || t == 1.0f ? 0 : 255, "real/generated marker")) return 1;
+        }
+    }
+    if (!render(nullptr, zero[0].Get(), zero[1].Get()) || !checkInactive()) return 1;
+    c.flowScale = 1.0f;
+    if (!render(mask.Get(), zero[0].Get(), zero[1].Get()) || !checkInactive()) return 1;
+    c.flowScale = 0.0f;
+    if (!offline.uploadTexture(mw, mh, DXGI_FORMAT_R32_FLOAT, [&](uint8_t* row, uint32_t) {
+            float* values = reinterpret_cast<float*>(row);
+            for (uint32_t x = 0; x < mw; ++x) values[x] = x < mw / 2 ? 0.0f : 1.0f;
+        }, mask)) return 1;
+    for (float t : {0.25f, 0.75f}) {
+        c.timeT = t;
+        if (!render(mask.Get(), moving[0].Get(), moving[1].Get()) ||
+            !checkDebugPixel(w / 4, h - 8, 0, 0, 0, "spatial mask, earlier half") ||
+            !checkDebugPixel(3 * w / 4, h - 8, 255, 255, 255, "spatial mask, later half")) return 1;
+    }
+    std::array<ID3D12Resource*, 6> source = {frames[0].Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+    if (!offline.begin() ||
+        !offline.dispatch().dispatch(offline.list(), kernels, Kernel::PresentFrame, source, output.Get(), c,
+                                     (w + 15) / 16, (h + 15) / 16) ||
+        !offline.execute(nullptr, 0) || !offline.readback(output.Get(), bytes, pitch, readW, readH) ||
+        !checkInactive() || !checkDebugPixel(16, 16, 255, 217, 0, "pass-through marker")) return 1;
+    c.neuralControl[1] = 0.0f;
+    std::cout << "AI blend-mask self-test: raw-mask debug view, inactive/no-pair tiles and frame markers PASS\n";
+
+    // With a model installed, exercise the actual network-buffer -> ring
+    // texture copy and its lifetime, not just synthetic masks in synthesis.
+    if (GetFileAttributesW(AiFlowEstimator::defaultModelPath().c_str()) != INVALID_FILE_ATTRIBUTES) {
+        auto failNetwork = [&](const char* reason) {
+            std::cerr << "AI blend-mask self-test: FAIL (" << reason << ")\n";
+            device.dumpInfoQueue("AI blend-mask network failure");
+            return 1;
+        };
+        FlowSettings settings;
+        settings.aiFlow = true;
+        settings.uiMask = false;
+        FlowEngine flow;
+        // Use a capture-sized input for the full engine (the bundled SDK also
+        // creates its internal pyramid here, unlike the synthetic shader test).
+        constexpr uint32_t nw = 320, nh = 180;
+        if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(nw, nh))
+            return failNetwork("network engine initialization / resize");
+        Image a(nw, nh, 3), b(nw, nh, 3);
+        for (uint32_t y = 0; y < nh; ++y)
+            for (uint32_t x = 0; x < nw; ++x)
+                for (int ch = 0; ch < 3; ++ch) {
+                    a.set(x, y, ch, static_cast<float>((x * 7 + y * 3 + ch * 31) % 256));
+                    b.set(x, y, ch, static_cast<float>((x * 7 + y * 3 + ch * 31 + 15) % 256));
+                }
+        SharedTexture tex0, tex1;
+        uint64_t ready0 = 0, ready1 = 0;
+        if (!uploadFrame(device, a, tex0, ready0) || !uploadFrame(device, b, tex1, ready1))
+            return failNetwork("network test frame upload");
+        uint64_t id = 0;
+        auto submit = [&](bool reverse = false) {
+            const uint64_t previousId = ++id, currentId = ++id;
+            const FlowInput previous = reverse ? FlowInput{tex1.texture12.Get(), ready1, previousId, 1}
+                                               : FlowInput{tex0.texture12.Get(), ready0, previousId, 0};
+            const FlowInput current = reverse ? FlowInput{tex0.texture12.Get(), ready0, currentId, 0}
+                                              : FlowInput{tex1.texture12.Get(), ready1, currentId, 1};
+            const auto result = flow.submitPair(previous, current);
+            return result.entry >= 0 && flow.waitFence(result.fence) ? flow.entry(result.entry) : FlowEngine::Entry{};
+        };
+        const auto disabled = submit();
+        if (!disabled.valid || disabled.aiBlendMaskInput()) return failNetwork("disabled network pair");
+        if (flow.usingAi()) {
+            settings.aiBlendMask = true;
+            flow.setSettings(settings);
+            const auto first = submit();
+            if (!first.valid || !first.aiBlendMaskInput()) return failNetwork("enabled network pair");
+            std::vector<uint8_t> original;
+            if (!offline.readback(first.aiBlendMaskInput(), original, pitch, readW, readH))
+                return failNetwork("network mask readback");
+            for (UINT y = 0; y < readH; ++y) {
+                const float* row = reinterpret_cast<const float*>(original.data() + static_cast<size_t>(y) * pitch);
+                for (UINT x = 0; x < readW; ++x)
+                    if (!std::isfinite(row[x]) || row[x] < 0.0f || row[x] > 1.0f) return failNetwork("network mask range");
+            }
+            const auto second = submit(true);
+            if (!second.valid || !second.aiBlendMaskInput() || second.aiBlendMaskInput() == first.aiBlendMaskInput())
+                return failNetwork("per-pair mask resources");
+            if (!offline.readback(first.aiBlendMaskInput(), bytes, pitch, readW, readH) || bytes != original)
+                return failNetwork("earlier mask was overwritten");
+            settings.aiBlendMask = false;
+            flow.setSettings(settings);
+            for (int i = 0; i < FlowEngine::kRingSize + 1; ++i) {
+                const auto off = submit();
+                if (!off.valid || off.hasAiBlendMask || off.aiBlendMaskInput()) return failNetwork("disabled ring reuse");
+            }
+            std::cout << "AI blend-mask self-test: network copy, per-pair lifetime, enable/disable and ring reuse PASS\n";
+        } else {
+            std::cout << "AI blend-mask self-test: network checks skipped (AI backend unavailable)\n";
+        }
+    } else {
+        std::cout << "AI blend-mask self-test: network checks skipped (no installed model)\n";
+    }
+    device.dumpInfoQueue("AI blend-mask self-test");
+    std::cout << "AI blend-mask self-test: PASS (weights, neutral/disabled mask, endpoints, motion transport, UI, visibility)\n";
+    return 0;
+}
+
 int runProjectionSelfTest(GraphicsAdapterPreference adapter) {
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;
@@ -1603,35 +1868,6 @@ int runProjectionSelfTest(GraphicsAdapterPreference adapter) {
 
     // Upload exact fields rather than estimating them: an estimator can return
     // the same vector at the aliased source, hiding a broken projection index.
-    auto upload = [&](uint32_t width, uint32_t height, DXGI_FORMAT format, auto fillRow,
-                      ComPtr<ID3D12Resource>& texture) {
-        if (FAILED(device.createTexture2D(width, height, format, D3D12_RESOURCE_FLAG_NONE,
-                                          D3D12_RESOURCE_STATE_COPY_DEST, texture))) return false;
-        const auto desc = texture->GetDesc();
-        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
-        UINT64 total = 0;
-        device.device()->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &total);
-        ComPtr<ID3D12Resource> buffer;
-        if (FAILED(device.createBuffer(total, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
-                                        D3D12_RESOURCE_FLAG_NONE, buffer))) return false;
-        uint8_t* data = nullptr;
-        if (FAILED(buffer->Map(0, nullptr, reinterpret_cast<void**>(&data)))) return false;
-        for (uint32_t y = 0; y < height; ++y)
-            fillRow(data + footprint.Offset + static_cast<size_t>(y) * footprint.Footprint.RowPitch, y);
-        buffer->Unmap(0, nullptr);
-        if (!offline.begin()) return false;
-        D3D12_TEXTURE_COPY_LOCATION src = {}, dst = {};
-        src.pResource = buffer.Get();
-        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-        src.PlacedFootprint = footprint;
-        dst.pResource = texture.Get();
-        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        offline.list()->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
-        DispatchContext::transition(offline.list(), texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
-                                    D3D12_RESOURCE_STATE_COMMON);
-        return offline.execute(nullptr, 0);
-    };
-
     struct Case { uint32_t width, height, block; bool saturated = false; };
     const Case cases[] = {{2560, 1440, 2}, {3840, 2160, 2}, {4096, 2048, 2}, {4096, 2160, 2},
                           {5120, 2880, 2}, {4097, 2049, 2}, {7680, 4320, 2}, {5120, 2880, 8},
@@ -1642,13 +1878,13 @@ int runProjectionSelfTest(GraphicsAdapterPreference adapter) {
         ComPtr<ID3D12Resource> frames[2], fields[2], projection, output;
         for (int side = 0; side < 2; ++side) {
             // Constant but different frames give every splat a nonzero priority.
-            if (!upload(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, [&](uint8_t* row, uint32_t) {
+            if (!offline.uploadTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, [&](uint8_t* row, uint32_t) {
                     for (uint32_t x = 0; x < w; ++x) {
                         row[4 * x] = row[4 * x + 1] = row[4 * x + 2] = side ? 128 : 0;
                         row[4 * x + 3] = 255;
                     }
                 }, frames[side]) ||
-                !upload(gw, gh, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t y) {
+                !offline.uploadTexture(gw, gh, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t y) {
                     float* values = reinterpret_cast<float*>(row);
                     for (uint32_t x = 0; x < gw; ++x) {
                         values[2 * x] = y < gh / 2 ? 0.0f : (side && !test.saturated ? -16.0f : 16.0f);
