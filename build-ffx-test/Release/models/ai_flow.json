@@ -1,12 +1,12 @@
 {
  "format": "mefi-pyramid-flow-1",
  "arch": "pyramid-v2",
- "width": 640,
- "height": 352,
+ "width": 832,
+ "height": 480,
  "levels": 7,
- "preset": "medium",
+ "preset": "large",
  "psnr": null,
- "epoch": 119,
- "train_height": 360,
+ "epoch": 2,
+ "train_height": 480,
  "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1\\last.pt"
 }
