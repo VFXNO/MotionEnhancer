@@ -1,0 +1,218 @@
+[
+  {
+    "name": "existing_big_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big_dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big_sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big24__dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big24__dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big24__sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big24__sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big48__dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big48__dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big48__sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big48__sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big96__dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big96__dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big96__sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big96__sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big160__dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big160__dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_big160__sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_big160__sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_hd_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_hd_dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_hd_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_hd_sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_pan_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_pan_dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_pan_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_pan_sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_txt_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_txt_dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_txt_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_txt_sad_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_txtov_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_txtov_dis_10",
+    "exit": 0
+  },
+  {
+    "name": "existing_txtov_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "existing_txtov_sad_10",
+    "exit": 0
+  },
+  {
+    "name": "extra_ai__8",
+    "exit": 0
+  },
+  {
+    "name": "extra_ai__10",
+    "exit": 0
+  },
+  {
+    "name": "extra_ffx_--no-ffx-refine_8",
+    "exit": 0
+  },
+  {
+    "name": "extra_ffx_--no-ffx-refine_10",
+    "exit": 0
+  },
+  {
+    "name": "extra_ffx_--ffx-occlusion_8",
+    "exit": 0
+  },
+  {
+    "name": "extra_ffx_--ffx-occlusion_10",
+    "exit": 0
+  },
+  {
+    "name": "static_baseline_dis_8",
+    "exit": 0
+  },
+  {
+    "name": "static_baseline_sad_8",
+    "exit": 0
+  },
+  {
+    "name": "static_baseline_ffx_8",
+    "exit": 0
+  },
+  {
+    "name": "static_baseline_neural_8",
+    "exit": 0
+  },
+  {
+    "name": "debug_ten_dis",
+    "exit": 0
+  },
+  {
+    "name": "debug_ten_sad",
+    "exit": 0
+  },
+  {
+    "name": "debug_ten_ffx",
+    "exit": 0
+  },
+  {
+    "name": "debug_ten_neural",
+    "exit": 0
+  },
+  {
+    "name": "odd_ten_sad",
+    "exit": 0
+  },
+  {
+    "name": "odd_ten_ffx",
+    "exit": 0
+  },
+  {
+    "name": "odd_ten_neural",
+    "exit": 0
+  },
+  {
+    "name": "min_refine_effective_mismatch",
+    "exit": 0
+  }
+]

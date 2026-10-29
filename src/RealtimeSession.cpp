@@ -1593,6 +1593,142 @@ int runDepthTest(const std::string& input, const std::string& output, GraphicsAd
     return 0;
 }
 
+int runProjectionSelfTest(GraphicsAdapterPreference adapter) {
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+
+    // Upload exact fields rather than estimating them: an estimator can return
+    // the same vector at the aliased source, hiding a broken projection index.
+    auto upload = [&](uint32_t width, uint32_t height, DXGI_FORMAT format, auto fillRow,
+                      ComPtr<ID3D12Resource>& texture) {
+        if (FAILED(device.createTexture2D(width, height, format, D3D12_RESOURCE_FLAG_NONE,
+                                          D3D12_RESOURCE_STATE_COPY_DEST, texture))) return false;
+        const auto desc = texture->GetDesc();
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
+        UINT64 total = 0;
+        device.device()->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &total);
+        ComPtr<ID3D12Resource> buffer;
+        if (FAILED(device.createBuffer(total, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
+                                        D3D12_RESOURCE_FLAG_NONE, buffer))) return false;
+        uint8_t* data = nullptr;
+        if (FAILED(buffer->Map(0, nullptr, reinterpret_cast<void**>(&data)))) return false;
+        for (uint32_t y = 0; y < height; ++y)
+            fillRow(data + footprint.Offset + static_cast<size_t>(y) * footprint.Footprint.RowPitch, y);
+        buffer->Unmap(0, nullptr);
+        if (!offline.begin()) return false;
+        D3D12_TEXTURE_COPY_LOCATION src = {}, dst = {};
+        src.pResource = buffer.Get();
+        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        src.PlacedFootprint = footprint;
+        dst.pResource = texture.Get();
+        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        offline.list()->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+        DispatchContext::transition(offline.list(), texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+                                    D3D12_RESOURCE_STATE_COMMON);
+        return offline.execute(nullptr, 0);
+    };
+
+    struct Case { uint32_t width, height, block; bool saturated = false; };
+    const Case cases[] = {{2560, 1440, 2}, {3840, 2160, 2}, {4096, 2048, 2}, {4096, 2160, 2},
+                          {5120, 2880, 2}, {4097, 2049, 2}, {7680, 4320, 2}, {5120, 2880, 8},
+                          {5120, 2880, 2, true}};
+    for (const Case& test : cases) {
+        const uint32_t w = test.width, h = test.height, block = test.block;
+        const uint32_t gw = (w + block - 1) / block, gh = (h + block - 1) / block;
+        ComPtr<ID3D12Resource> frames[2], fields[2], projection, output;
+        for (int side = 0; side < 2; ++side) {
+            // Constant but different frames give every splat a nonzero priority.
+            if (!upload(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, [&](uint8_t* row, uint32_t) {
+                    for (uint32_t x = 0; x < w; ++x) {
+                        row[4 * x] = row[4 * x + 1] = row[4 * x + 2] = side ? 128 : 0;
+                        row[4 * x + 3] = 255;
+                    }
+                }, frames[side]) ||
+                !upload(gw, gh, DXGI_FORMAT_R32G32_FLOAT, [&](uint8_t* row, uint32_t y) {
+                    float* values = reinterpret_cast<float*>(row);
+                    for (uint32_t x = 0; x < gw; ++x) {
+                        values[2 * x] = y < gh / 2 ? 0.0f : (side && !test.saturated ? -16.0f : 16.0f);
+                        values[2 * x + 1] = 0.0f;
+                    }
+                }, fields[side])) return 1;
+        }
+        if (!createProjection(device, w, h, projection) ||
+            FAILED(device.createTexture2D(w, h, DXGI_FORMAT_R8G8B8A8_UNORM,
+                                          D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                          D3D12_RESOURCE_STATE_COMMON, output))) return 1;
+        ShaderConstants c = {};
+        c.width = c.levelWidth = w;
+        c.height = c.levelHeight = h;
+        c.blockSize = static_cast<int>(block);
+        c.flowScale = 0.0f;
+        c.timeT = 0.5f;
+        c.neuralControl[1] = 1.0f;   // Motion view exposes the decoded vectors.
+        if (!offline.begin() ||
+            !recordInterpolate(offline.list(), offline.dispatch(), kernels, c, frames[0].Get(), frames[1].Get(),
+                               fields[0].Get(), fields[1].Get(), nullptr, projection.Get(), output.Get(), 0) ||
+            !offline.execute(nullptr, 0)) return 1;
+
+        uint32_t bits = 21;
+        while ((1u << bits) < gw * gh) ++bits;
+        const uint32_t mask = (1u << bits) - 1;
+        const int priorityMax = static_cast<int>((1u << (32 - bits)) - 2);
+        std::vector<uint8_t> bytes;
+        UINT pitch = 0, readW = 0, readH = 0;
+        if (!offline.readback(projection.Get(), bytes, pitch, readW, readH)) return 1;
+        for (uint32_t y = 0; y < gh; ++y) {
+            // Inconsistent fields add 32 px of round-trip error, forcing the
+            // priority to saturate. Valid sources must not become EMPTY.
+            const int error = test.saturated && y >= gh / 2 ? 128 + 16 * 32 : 128;
+            const int priority = std::min((error * 4) >> (bits - 21), priorityMax);
+            const auto* row = reinterpret_cast<const uint32_t*>(bytes.data() + static_cast<size_t>(y) * pitch);
+            for (uint32_t half = 0; half < 2; ++half) {
+                const int shift = y < gh / 2 ? 0 : static_cast<int>(8 / block);
+                for (uint32_t x = 0; x < gw; ++x) {
+                    const int sx = static_cast<int>(x) + (half && !test.saturated ? shift : -shift);
+                    const uint32_t key = row[half * gw + x];
+                    const bool empty = sx < 0 || sx >= static_cast<int>(gw);
+                    if ((empty && key != UINT32_MAX) ||
+                        (!empty && (key == UINT32_MAX || (key & mask) != y * gw + static_cast<uint32_t>(sx) ||
+                                    std::abs(static_cast<int>(key >> bits) - priority) > 1))) {
+                        std::cerr << "Projection self-test: FAIL (packed key at " << w << "x" << h
+                                  << ", block " << block << ", field " << half << ", " << x << "," << y << ")\n";
+                        return 1;
+                    }
+                }
+            }
+        }
+        if (!offline.readback(output.Get(), bytes, pitch, readW, readH)) return 1;
+        // Check the decoder too, including the last row and indices beyond the
+        // old 21-bit limit. Aliasing a lower row into the static top half must
+        // not silently turn its motion into zero.
+        for (uint32_t y : {h / 4, 3 * h / 4, h - 1}) {
+            const float speed = y / block < gh / 2 || test.saturated ? 0.0f : 16.0f;
+            const float strength = 0.85f * speed / 48.0f;
+            const float grey = 0.2f * 255.0f + 0.6f * 64.0f;
+            const uint8_t* pixel = bytes.data() + static_cast<size_t>(y) * pitch + 4 * (w / 2);
+            for (int ch = 0; ch < 3; ++ch) {
+                const int expected = static_cast<int>(std::lround(grey * (1.0f - strength) +
+                                                                 (ch ? 255.0f * strength : 0.0f)));
+                if (std::abs(static_cast<int>(pixel[ch]) - expected) > 2) {
+                    std::cerr << "Projection self-test: FAIL (decoded motion at " << w << "x" << h
+                              << ", block " << block << ", row " << y << ")\n";
+                    return 1;
+                }
+            }
+        }
+        std::cout << "Projection self-test: " << w << "x" << h << ", block " << block
+                  << (test.saturated ? ", saturated priority" : "")
+                  << ": packed keys + decoded motion PASS\n" << std::flush;
+    }
+    device.dumpInfoQueue("projection self-test");
+    std::cout << "Projection self-test: PASS\n";
+    return 0;
+}
+
 int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;

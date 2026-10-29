@@ -32,7 +32,8 @@ static void printUsage(const char* progName) {
               << "  " << progName << " --gpu-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--save-flow f.png] [--gpu-offline-prev p.png]\n"
               << "                                        # Run the real-time GPU shader pipeline on two PNGs\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
-              << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n\n"
+              << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
+              << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n\n"
               << "  " << progName << " --train-neural <model.bin> <video.mp4|image.png> [more files...]  # Train the convolutional estimator\n"
               << "  " << progName << " --neural-epochs <n>                 # Training epochs (default: 24)\n"
               << "  " << progName << " --neural-gradient-check             # Verify the analytic gradient\n"
@@ -43,7 +44,7 @@ static void printUsage(const char* progName) {
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
               << "  --multiplier <2|3|4|max>      Output FPS multiplier (default: max = display rate)\n"
-              << "  --gpu-levels <1-8>       Real-time pyramid levels (default: 8)\n"
+              << "  --gpu-levels <1-10>      Real-time pyramid levels (default: 8)\n"
               << "  --gpu-min-refine <n>     Finest searched level, 0 to levels-1 (default: 0)\n"
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 4)\n"
               << "  --gpu-refine-radius <0-8>   Finest-level search radius (default: 6)\n"
@@ -55,7 +56,7 @@ static void printUsage(const char* progName) {
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
               << "  --time <float>          Intermediate timestamp in (0.0, 1.0) (default: 0.5)\n"
-              << "  --levels <int>          Number of pyramid levels (default: 8)\n"
+              << "  --levels <1-10>         Number of CPU pyramid levels (default: 8)\n"
               << "  --block-size <int>      Nominal block matching window size (default: 8)\n"
               << "  --search-radius <int>   Refinement search radius per level (default: 4)\n"
               << "  --coarse-radius <int>   Coarsest level search radius (default: 8)\n"
@@ -239,6 +240,7 @@ int main(int argc, char** argv) {
     bool runTest = false;
     bool listWindows = false;
     bool d3d12SelfTest = false;
+    bool projectionSelfTest = false;
     std::string neuralModelPath;
     int neuralEpochs = 24;
     bool neuralGradientCheck = false;
@@ -259,6 +261,8 @@ int main(int argc, char** argv) {
             runTest = true;
         } else if (arg == "--d3d12-self-test") {
             d3d12SelfTest = true;
+        } else if (arg == "--projection-self-test") {
+            projectionSelfTest = true;
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
         } else if (arg == "--ai-flow-test" && i + 1 < argc) {
@@ -306,7 +310,7 @@ int main(int argc, char** argv) {
         } else if (arg == "--gpu-offline-prev" && i + 1 < argc) {
             previousFramePath = argv[++i];
         } else if (arg == "--gpu-levels" && i + 1 < argc) {
-            gpuSettings.pyramidLevels = std::clamp(std::stoi(argv[++i]), 1, 8);
+            gpuSettings.pyramidLevels = std::clamp(std::stoi(argv[++i]), 1, FlowEngine::kMaxLevels);
         } else if (arg == "--gpu-min-refine" && i + 1 < argc) {
             gpuSettings.minRefineLevel = std::max(0, std::stoi(argv[++i]));
         } else if (arg == "--gpu-coarse-radius" && i + 1 < argc) {
@@ -433,7 +437,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    params.matcherParams.pyramidLevels = std::clamp(params.matcherParams.pyramidLevels, 1, 8);
+    params.matcherParams.pyramidLevels = std::clamp(params.matcherParams.pyramidLevels, 1, FlowEngine::kMaxLevels);
     params.matcherParams.blockSize = std::clamp(params.matcherParams.blockSize, 1, 64);
     params.matcherParams.minBlockSize = std::clamp(params.matcherParams.minBlockSize, 1, 64);
     params.matcherParams.maxBlockSize = std::clamp(params.matcherParams.maxBlockSize, 1, 64);
@@ -454,6 +458,7 @@ int main(int argc, char** argv) {
     if (d3d12SelfTest) {
         return runD3D12SelfTest(adapterPreference);
     }
+    if (projectionSelfTest) return runProjectionSelfTest(adapterPreference);
 
     if (!aiFlowTestModel.empty()) return runAiFlowTest(aiFlowTestModel, adapterPreference);
     if (!depthTestInput.empty()) {

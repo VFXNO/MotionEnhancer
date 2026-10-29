@@ -1,0 +1,4 @@
+Neural CPU/GPU parity on 320x240, model C:\Users\bsher\Documents\GitHub\MotionEnhancer2\neural_model.bin
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+  level-0 features: mean |CPU - GPU| 5.51e-04, worst 4.21e-03 over 149152 samples  ok
+  per level, each given the GPU's own predictor:

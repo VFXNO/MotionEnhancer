@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Pyramid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\ZNCCMatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FrameInterpolator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GraphicsDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\ComputeKernels.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FlowEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FrameTimeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\CaptureEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\Presenter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\RealtimeSession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\NeuralFlow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\NeuralFlowTrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\TrainingVideo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\WindowHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\GuiApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\OrtRuntime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\AiFlowEstimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Pyramid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\MotionVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\ZNCCMatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\FrameInterpolator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\GraphicsDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\ComputeKernels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\FlowEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\FrameTimeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\CaptureEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Presenter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\RealtimeSession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\NeuralFlow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\TrainingVideo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\WallClock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\WindowHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\GuiApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthEstimator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\app.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3A72919A-C371-33A0-94CC-D2E03A8AA9A2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{5EE6B835-2E79-364D-ADC3-5119F3D1A5E2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

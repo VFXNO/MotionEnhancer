@@ -18,8 +18,8 @@
 // Projection (R32_UINT, 2 * gridW x gridH): the left half holds the forward
 // field's winners (frame0's blocks at frame0 + t * F), the right half the
 // backward field's (frame1's blocks at frame1 + (1 - t) * B). Each texel is
-// min over (priority << 21 | source block index); 0xFFFFFFFF = nothing
-// landed (ProjectClearCS).
+// min over PackProjectionKey(priority, source block index, grid), with enough
+// index bits for this grid; 0xFFFFFFFF = nothing landed (ProjectClearCS).
 Texture2D<float4> Frame0 : register(t0);
 Texture2D<float4> Frame1 : register(t1);
 Texture2D<float4> ForwardFlow : register(t2);
@@ -67,8 +67,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     const float2 target = centre + (backward ? 1.0f - t : t) * v;
     const int2 cell = int2(floor((target - 0.5f * (float)(BlockSize - 1)) / (float)BlockSize + 0.5f));
     if (any(cell < 0) || any(cell >= int2(grid))) return;
-    const uint key = (min((uint)(priority * kPriorityQuantum), kPriorityMax) << kProjectionIndexBits) |
-                     (texel.y * grid.x + texel.x);
+    const uint key = PackProjectionKey(priority, texel.y * grid.x + texel.x, grid);
     uint previous;
     InterlockedMin(Projection[uint2(cell.x + (backward ? (int)grid.x : 0), cell.y)], key, previous);
 }

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\7a3e25a07f6f0d655299d63aa967ab03\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{FA07F693-7518-3F8D-935E-1802435355A4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

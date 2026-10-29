@@ -124,10 +124,11 @@ struct FlowInput {
 // fence queries run on the render thread. The ring is protected by a mutex.
 class FlowEngine {
 public:
-    static constexpr int kMaxLevels = 8;
-    // Levels whose short side would drop below this are not searched: half
-    // a 16 px block, so 1080p gets the full 8 levels (coarsest 15x8).
-    static constexpr uint32_t kMinCoarsestExtent = 8;
+    static constexpr int kMaxLevels = 10;
+    // Do not search below a 4 px short side; smaller levels have too little
+    // independent image content for the 8x8 SAD / DIS patches. This allows
+    // 1080p to use 9 levels and 4K to use all 10.
+    static constexpr uint32_t kMinCoarsestExtent = 4;
     static constexpr int kRingSize = 16;
     static constexpr UINT kListsInFlight = 4;
     static constexpr int kMaxSlots = 16;

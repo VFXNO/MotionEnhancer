@@ -1,0 +1,342 @@
+[
+  {
+    "name": "320x240_dis_10",
+    "exit": 0,
+    "effective_levels": 6,
+    "psnr": 27.73,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "131149e766c225dde78982cbc821ac7e67498f5425d20c37fa869a1da86eac8c"
+  },
+  {
+    "name": "1280x720_dis_10",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 35.59,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "79e3357171d28455df5bde247691a98c909656995b295b7420e5982732bfb278"
+  },
+  {
+    "name": "1920x1080_dis_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 42.32,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "7378f71aff61878d2b1cfec0d94e24931492d05be04653924db12e5ee9a3c943"
+  },
+  {
+    "name": "1920x1080_dis_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 42.34,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "d6e5f8a9a8c2cc28e1fa4b6eba535941d843fe9e059414e8d01c148788f0bffe"
+  },
+  {
+    "name": "1920x1080_sad_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 34.01,
+    "engine": "native SAD shader graph (8x8 blocks)",
+    "pixel_hash": "7931dcee56ccc29f377c87d657defb240d1450da2a32088cca274be149673435"
+  },
+  {
+    "name": "1920x1080_sad_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 34.01,
+    "engine": "native SAD shader graph (8x8 blocks)",
+    "pixel_hash": "7931dcee56ccc29f377c87d657defb240d1450da2a32088cca274be149673435"
+  },
+  {
+    "name": "1920x1080_ffx_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 38.13,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)",
+    "pixel_hash": "0d7c4ff6f1ebdb887f300caf0c294a2fc9b34f3a63233e9e916402de06edb47b"
+  },
+  {
+    "name": "1920x1080_ffx_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 38.13,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)",
+    "pixel_hash": "0d7c4ff6f1ebdb887f300caf0c294a2fc9b34f3a63233e9e916402de06edb47b"
+  },
+  {
+    "name": "1920x1080_neural_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 34.21,
+    "engine": "neural learned-feature flow (8x8 blocks)",
+    "pixel_hash": "8a3c14785a866cad48bf4589c83bef411a55b82ace5b0bd3f1eaa4d2c0b50ffb"
+  },
+  {
+    "name": "1920x1080_neural_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 34.21,
+    "engine": "neural learned-feature flow (8x8 blocks)",
+    "pixel_hash": "cc76fe331e2ee3317e980df261b1b9edaf67f6d44f71edfe6a329112a2500dbd"
+  },
+  {
+    "name": "2560x1440_dis_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 44.1,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "fe2cfa0f9b22d115b69d7bce689eaef15a66800aff558edfa099223f20bd2658"
+  },
+  {
+    "name": "3840x2160_dis_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 47.81,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "dbda7b392e1bbfb2fc5e6ea481bffed38a78dd6c6a0d7d998ce048dc5618f080"
+  },
+  {
+    "name": "3840x2160_dis_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 48.13,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "f654e128daaf1b92c108915747d6a6eb7d2b2e1cfd6c5b0270bbe26fb03d7850"
+  },
+  {
+    "name": "3840x2160_sad_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 39.4,
+    "engine": "native SAD shader graph (8x8 blocks)",
+    "pixel_hash": "88feed625232e4df26b9a223daccba7a0d6352fe1e7981f440b2b9543cf5984a"
+  },
+  {
+    "name": "3840x2160_sad_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 39.4,
+    "engine": "native SAD shader graph (8x8 blocks)",
+    "pixel_hash": "88feed625232e4df26b9a223daccba7a0d6352fe1e7981f440b2b9543cf5984a"
+  },
+  {
+    "name": "3840x2160_ffx_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 41.79,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)",
+    "pixel_hash": "907742066e7ee8d00380109d5e53c8b816d018b96c61cdad1b7327ef36c3c858"
+  },
+  {
+    "name": "3840x2160_ffx_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 41.79,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)",
+    "pixel_hash": "907742066e7ee8d00380109d5e53c8b816d018b96c61cdad1b7327ef36c3c858"
+  },
+  {
+    "name": "3840x2160_neural_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 38.46,
+    "engine": "neural learned-feature flow (8x8 blocks)",
+    "pixel_hash": "de66b0ea0b6e5381cea6e96594e8c7fd729c4288e4d6e1b17c3bdc7106195e06"
+  },
+  {
+    "name": "3840x2160_neural_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 38.46,
+    "engine": "neural learned-feature flow (8x8 blocks)",
+    "pixel_hash": "cb74b5e1af709b6cd0bfce9e6e4f9f0fa61a84d3e4cd56326ca67a5af3477023"
+  },
+  {
+    "name": "3840x2160_static_dis_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 99.0,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "max_static_pixel_error": 0,
+    "mean_static_pixel_error": 0.0
+  },
+  {
+    "name": "3840x2160_static_sad_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 64.89,
+    "engine": "native SAD shader graph (8x8 blocks)",
+    "max_static_pixel_error": 5,
+    "mean_static_pixel_error": 0.01668651941872428
+  },
+  {
+    "name": "3840x2160_static_ffx_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 99.0,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)",
+    "max_static_pixel_error": 0,
+    "mean_static_pixel_error": 0.0
+  },
+  {
+    "name": "3840x2160_static_neural_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 57.02,
+    "engine": "neural learned-feature flow (8x8 blocks)",
+    "max_static_pixel_error": 27,
+    "mean_static_pixel_error": 0.04853817033179012
+  },
+  {
+    "name": "3840x2160_exposure_dis_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 40.74,
+    "engine": "DIS optical flow (2x2 blocks)"
+  },
+  {
+    "name": "3840x2160_exposure_dis_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 40.62,
+    "engine": "DIS optical flow (2x2 blocks)"
+  },
+  {
+    "name": "3840x2160_exposure_sad_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 38.04,
+    "engine": "native SAD shader graph (8x8 blocks)"
+  },
+  {
+    "name": "3840x2160_exposure_sad_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 38.0,
+    "engine": "native SAD shader graph (8x8 blocks)"
+  },
+  {
+    "name": "3840x2160_exposure_ffx_8",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 18.23,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)"
+  },
+  {
+    "name": "3840x2160_exposure_ffx_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 18.22,
+    "engine": "AMD FidelityFX Optical Flow (2x2 blocks)"
+  },
+  {
+    "name": "4097x2049_dis_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 47.68,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "d3adce81ca0f85bc53118679069f2549df8b7bf4cc72e3987d7140f14086a249"
+  },
+  {
+    "name": "1280x1023_dis_10",
+    "exit": 0,
+    "effective_levels": 8,
+    "psnr": 34.76,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "d573a73f352858f4c738511fe6b9e74b3a7e6018fb09edf942042418101c9956"
+  },
+  {
+    "name": "1280x1024_dis_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 35.32,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "f1fa6945b2cd27a4836828ca8e5bcd96469510456648bec92a96a8c75029c676"
+  },
+  {
+    "name": "3072x2047_dis_10",
+    "exit": 0,
+    "effective_levels": 9,
+    "psnr": 44.39,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "424fb75ca0106c5983d35e3f807a4180c18eb027e08e16aa98e560ed447f49c2"
+  },
+  {
+    "name": "3072x2048_dis_10",
+    "exit": 0,
+    "effective_levels": 10,
+    "psnr": 43.9,
+    "engine": "DIS optical flow (2x2 blocks)",
+    "pixel_hash": "06a778c36a42884f7069a41207848ce025b7fd61c83fc955a5f69de11078a774"
+  },
+  {
+    "name": "temporal_dis_8",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_dis_10",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_sad_8",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_sad_10",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_ffx_8",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_ffx_10",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_neural_8",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "temporal_neural_10",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "neural_parity_small",
+    "exit": 3221225477,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  },
+  {
+    "name": "gpu_selftest_debug",
+    "exit": 0,
+    "effective_levels": null,
+    "psnr": null,
+    "engine": null
+  }
+]

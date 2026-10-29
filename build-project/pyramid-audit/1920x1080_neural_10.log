@@ -1,0 +1,5 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+GPU pipeline: 1920x1080, 9 pyramid levels, radii 4/6
+GPU offline interpolation (t = 0.5): flow 1.03 ms GPU, 11.95 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\pyramid-audit\1920x1080_neural_10.png
+  Flow estimator: neural learned-feature flow (8x8 blocks)
+  PSNR vs ground truth: 34.21 dB (naive blend: 14.14 dB)

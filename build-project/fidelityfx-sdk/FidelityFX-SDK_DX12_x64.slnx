@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Folder Name="/Backends/">
+		<Project Path="src/backends/dx12/ffx_backend_dx12_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e6e07d64-4ab7-3c2d-81b8-0262ca202b04">
+			<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="libs/pix/copied_winpixevent_bin.vcxproj"/>
+			<BuildDependency Project="src/backends/dx12/ffx_shader_permutations_dx12.vcxproj"/>
+		</Project>
+		<Project Path="src/backends/dx12/ffx_shader_permutations_dx12.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c414b1eb-0a6b-335a-b5ee-8b64e1b2a361">
+			<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/CMakePredefinedTargets/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c3d50c37-30c6-33f5-a828-e76e5cca5995" DefaultStartup="true">
+			<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="src/backends/dx12/ffx_backend_dx12_x64.vcxproj"/>
+			<BuildDependency Project="src/components/opticalflow/ffx_opticalflow_x64.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="../ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="adad4a0d-cd56-3c66-9fa8-94eac708ec2a"/>
+	</Folder>
+	<Folder Name="/Components/">
+		<Project Path="src/components/opticalflow/ffx_opticalflow_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d877d0ad-428f-3ac3-a732-bcd9d0dcbf72">
+			<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/CopyTargets/">
+		<Project Path="libs/pix/copied_winpixevent_bin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4eb7e424-bf7a-3fda-bbcf-fd23d43bcf3d">
+			<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+</Solution>

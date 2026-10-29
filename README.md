@@ -230,7 +230,7 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 | `<frame1.png>` | Positional | - | Input image at $t = 1$ |
 | `<output.png>` | Positional | - | Output path for interpolated image |
 | `--time <float>` | Float | `0.5` | Target intermediate timestamp $t \in (0.0, 1.0)$ |
-| `--levels <int>` | Integer | `8` | Number of pyramid levels (default 8) |
+| `--levels <1-10>` | Integer | `8` | Number of CPU pyramid levels (default 8) |
 | `--block-size <int>` | Integer | `8` | Nominal block matching window size |
 | `--search-radius <int>` | Integer | `4` | Refinement search radius per level |
 | `--coarse-radius <int>` | Integer | `8` | Search radius at coarsest level ($L_7$) |
@@ -252,6 +252,7 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `--flow-engine <dis\|sad\|ffx\|neural>` | String | `dis` | Flow engine; `neural` needs a trained model |
+| `--gpu-levels <int>` | Integer | `8` | Live flow pyramid levels, up to 10 (resolution may limit the effective count) |
 | `--gpu-coarse-radius <0-8>` | Integer | `4` | Search radius above the finest level |
 | `--gpu-refine-radius <0-8>` | Integer | `6` | Search radius at the finest level |
 | `--train-neural <model.bin>` | String | None | Train the estimator on the positional image/video sources |
@@ -282,7 +283,7 @@ For live capture, **Source FPS** defaults to `Auto`, which estimates WGC frame c
 
 **Output multiplier** selects `2x`, `3x`, `4x`, or `Max`. The presenter targets source FPS multiplied by this value and caps the result at the display refresh rate. For example, a 30 FPS source produces 60, 90, or 120 FPS at `2x`, `3x`, or `4x`. `Max` retains display-refresh pacing.
 
-Quality presets have been replaced by explicit advanced settings. Live capture exposes pyramid levels, the finest searched level, coarse and refinement radii, and predictor smoothness. Offline interpolation additionally exposes block sizing, grid spacing, subpixel mode, consistency and photometric thresholds, detail strength, and all algorithm feature toggles. Values are validated before processing starts.
+Quality presets have been replaced by explicit advanced settings. Live capture exposes pyramid levels (up to 10), the finest searched level, coarse and refinement radii, and predictor smoothness. Levels whose short dimension would be smaller than 4 pixels are automatically omitted; this allows 9 levels at 1080p and 10 at 4K. Offline interpolation additionally exposes block sizing, grid spacing, subpixel mode, consistency and photometric thresholds, detail strength, and all algorithm feature toggles. Values are validated before processing starts.
 
 The corresponding live command-line options are `--gpu-levels`, `--gpu-min-refine`, `--gpu-coarse-radius`, `--gpu-refine-radius`, and `--gpu-smoothness`. Choose `--flow-engine <dis|sad|ffx|neural>`: `dis` (Dense Inverse Search) is the default, `sad` the previous block matcher, `ffx` is optional AMD FidelityFX Optical Flow, and `neural` requires a trained MNFN model at `MOTION_ENHANCER_NEURAL_MODEL` (see `--train-neural`). The neural engine does not read SAD costs. Older model formats are rejected rather than misread. The active engine is shown at startup and reported per interval in the overlay status line.
 Live source cadence is available with `--source-fps <auto|24|30|60>`.
@@ -489,6 +490,8 @@ Three sharper schemes were built here and removed, and are worth not rediscoveri
 Diagnosing that: `MOTION_ENHANCER_DUMP_FRAMES=<prefix>` writes the first eight frames the capture *accepts* (duplicates already rejected — exactly the frames the flow runs between) as `<prefix>_000.png`, `_001.png`, … Consecutive files are a real pair, so `--gpu-offline <a> <b> out.png --save-flow flow.png` replays offline precisely what the live path saw, and the flow visualization shows whether the vectors were already wrong before anything was synthesised.
 
 Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predicted display time, media time, pair, alpha); `MOTION_ENHANCER_D3D_DEBUG=1` enables the D3D12/D3D11 debug layers and prints validation messages with the 2-second status line; `MOTION_ENHANCER_DUMP_FRAMES=<prefix>` saves the accepted capture frames as described above.
+
+**High-resolution projection check:** `motion_enhancer.exe --projection-self-test` runs the real projection and interpolation shaders on known motion fields at 1440p, UHD/DCI 4K, 5K, odd sizes and 8K, without capture or AI models. It checks packed source indices, priorities, empty cells and the motion decoded by interpolation. This deliberately allocates high-resolution textures, so it needs more GPU memory than `--d3d12-self-test`. Projection now sizes its source-index field from the actual flow grid: the former fixed 21-bit field wrapped indices above UHD 4K. Smaller captures retain the previous encoding; larger captures trade a little priority precision for enough index bits, without additional GPU passes.
 
 ### Hotkeys in Overlay Mode
 - `[Ctrl+Alt+F1]`: Toggle overlay visibility (Hide / Show)

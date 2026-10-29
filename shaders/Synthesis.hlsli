@@ -128,14 +128,35 @@ float3 SampleSharp(Texture2D<float4> frame, float2 position)
 // interpolating (ProjectClearCS, ProjectSplatCS): each block is written at
 // the place it occupies at time t, and where several land on one place the
 // one with the lowest priority (most likely visible there) wins. A key is
-// (priority << kProjectionIndexBits) | source block index.
+// (priority << indexBits) | source block index. Both writers and readers
+// derive indexBits from the actual flow grid, not a fixed resolution limit.
 
 static const uint kProjectionEmpty = 0xFFFFFFFFu;
-// Source block index: 2^21 blocks is a 4K frame at a 2 px grid.
-static const uint kProjectionIndexBits = 21u;
-// Largest stored priority step; one below the top so a key is never empty.
-static const uint kPriorityMax = (1u << (32u - kProjectionIndexBits)) - 2u;
-static const float kPriorityQuantum = 4.0f;    // steps per priority unit
+// Keep the old encoding through UHD 4K. DCI 4K / 5K need 22 index bits,
+// 8K needs 23, and larger D3D12 textures can need more. A fixed 21-bit mask
+// aliased the bottom of those frames into unrelated rows near the top.
+static const uint kProjectionMinIndexBits = 21u;
+uint ProjectionIndexBits(uint2 grid)
+{
+    return firstbithigh(max(grid.x * grid.y - 1u, (1u << kProjectionMinIndexBits) - 1u)) + 1u;
+}
+
+uint ProjectionIndexMask(uint2 grid)
+{
+    return (1u << ProjectionIndexBits(grid)) - 1u;
+}
+
+uint PackProjectionKey(float priority, uint sourceIndex, uint2 grid)
+{
+    const uint bits = ProjectionIndexBits(grid);
+    // Reserve the top priority step so no valid source can encode EMPTY.
+    const uint priorityMax = (1u << (32u - bits)) - 2u;
+    // Keep roughly the old priority range by trading precision for index bits:
+    // 4 steps/unit through UHD 4K, 2 at 5K, 1 at 8K. No new GPU passes or
+    // 64-bit atomics are needed, and smaller captures remain bit-identical.
+    const float quantum = 4.0f / (float)(1u << (bits - kProjectionMinIndexBits));
+    return (min((uint)(priority * quantum), priorityMax) << bits) | sourceIndex;
+}
 // Priority per pixel of round-trip error, against one luma level of
 // brightness error: a point hidden in the other frame fails the round trip
 // by the relative motion, tens of pixels, and loses to whatever covers it
@@ -159,6 +180,7 @@ float2 ProjectedVector(Texture2D<uint> projection, Texture2D<float4> field, uint
                        out bool found)
 {
     const uint2 grid = FlowGridSize(Width, Height, BlockSize);
+    const uint indexMask = ProjectionIndexMask(grid);
     const int2 cellMax = int2(grid) - 1;
     const int offset = (int)(half * grid.x);
     const float2 position = (pixel - 0.5f * (float)(BlockSize - 1)) / (float)BlockSize;
@@ -178,7 +200,7 @@ float2 ProjectedVector(Texture2D<uint> projection, Texture2D<float4> field, uint
                 const int2 n = clamp(base + int2(dx, dy), int2(0, 0), cellMax);
                 const uint key = projection.Load(int3(n.x + offset, n.y, 0));
                 if (key == kProjectionEmpty) continue;
-                const uint index = key & ((1u << kProjectionIndexBits) - 1u);
+                const uint index = key & indexMask;
                 const uint2 source = uint2(index % grid.x, index / grid.x);
                 const float2 v = field.Load(int3(source, 0)).xy;
                 const float2 landing = float2(source) * (float)BlockSize + 0.5f * (float)(BlockSize - 1) + s * v;

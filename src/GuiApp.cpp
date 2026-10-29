@@ -1,4 +1,5 @@
 #include "GuiApp.h"
+#include "FlowEngine.h"
 #include "Image.h"
 #include "WindowHelper.h"
 
@@ -1088,8 +1089,8 @@ void startCapture() {
     }
     title.resize(static_cast<size_t>(copied));
 
-    if (!validateInteger(g_state.gpuLevels, 1, 8, "Pyramid levels", g_state.liveStatus) ||
-        !validateInteger(g_state.gpuMinRefine, 0, 7, "Finest searched level", g_state.liveStatus) ||
+    if (!validateInteger(g_state.gpuLevels, 1, FlowEngine::kMaxLevels, "Pyramid levels", g_state.liveStatus) ||
+        !validateInteger(g_state.gpuMinRefine, 0, FlowEngine::kMaxLevels - 1, "Finest searched level", g_state.liveStatus) ||
         !validateInteger(g_state.gpuCoarseRadius, 0, 8, "Coarse radius", g_state.liveStatus) ||
         !validateInteger(g_state.gpuRefineRadius, 0, 8, "Refine radius", g_state.liveStatus) ||
         !validateFloat(g_state.gpuSmoothness, 0.0f, 0.1f, "Smoothness", g_state.liveStatus)) {
@@ -1199,7 +1200,7 @@ void runOffline() {
         SetWindowTextA(g_state.offlineStatus, "Interpolation time must be between 0 and 1.");
         return;
     }
-    if (!validateInteger(g_state.offlineLevels, 1, 8, "Pyramid levels", g_state.offlineStatus) ||
+    if (!validateInteger(g_state.offlineLevels, 1, FlowEngine::kMaxLevels, "Pyramid levels", g_state.offlineStatus) ||
         !validateInteger(g_state.offlineBlockSize, 1, 64, "Block size", g_state.offlineStatus) ||
         !validateInteger(g_state.offlineMinBlock, 1, 64, "Minimum block", g_state.offlineStatus) ||
         !validateInteger(g_state.offlineMaxBlock, 1, 64, "Maximum block", g_state.offlineStatus) ||
@@ -1420,7 +1421,7 @@ void createControls() {
     SendMessageA(g_state.liveAdapter, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>("Discrete GPU"));
     SendMessageA(g_state.liveAdapter, CB_SETCURSEL, 0, 0);
 
-    HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-8)", 56, 208, 160);
+    HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-10)", 56, 208, 160);
     g_state.gpuLevels = makeEdit("8", 224, 204, 80, IDC_GPU_LEVELS, true);
     HWND gpuMinRefineLabel = makeLabel("Finest searched level", 430, 208, 175);
     g_state.gpuMinRefine = makeEdit("0", 610, 204, 80, IDC_GPU_MIN_REFINE, true);
@@ -1522,7 +1523,7 @@ void createControls() {
     HWND timeLabel = makeLabel("INTERPOLATION TIME (0-1)", 36, 246, 200);
     g_state.time = makeEdit("0.5", 240, 242, 80, IDC_TIME, false);
 
-    HWND levelsLabel = makeLabel("Pyramid levels", 56, 312, 145);
+    HWND levelsLabel = makeLabel("Pyramid levels (1-10)", 56, 312, 145);
     g_state.offlineLevels = makeEdit("8", 205, 308, 70, IDC_OFFLINE_LEVELS, true);
     HWND blockLabel = makeLabel("Block size", 56, 344, 145);
     g_state.offlineBlockSize = makeEdit("8", 205, 340, 70, IDC_OFFLINE_BLOCK_SIZE, true);

@@ -1,0 +1,366 @@
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\AIFLOWINPUTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/AiFlowInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/AiFlowInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\AIFLOWTORINGCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/AiFlowToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/AiFlowToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DEPTHDILATECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthDilateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthDilateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DEPTHFINISHCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthFinishCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthFinishCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DEPTHINPUTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DEPTHVIEWCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DepthViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DISDENSIFYCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DisDensifyCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisDensifyCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DISPATCHCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DisPatchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisPatchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\DISTORINGCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DisToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/DisToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXFLOWCONVERTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxFlowConvertCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxFlowConvertCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXREFINECONSISTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineConsistCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxRefineConsistCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXREFINEINITCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineInitCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxRefineInitCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXREFINEITERATECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineIterateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxRefineIterateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXREFINETORINGCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineToRingCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxRefineToRingCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FFXREPAIRCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRepairCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FfxRepairCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FILLFLOWCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FillFlowCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FillFlowCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FLOWMEDIANCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FlowMedianCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FlowMedianCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\FRAMESTATSCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FrameStatsCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/FrameStatsCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\INTERPOLATECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/InterpolateCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/InterpolateCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\LEARNEDFEATURESCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/LearnedFeaturesCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LearnedFeaturesCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\LUMINANCECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/LuminanceCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/LuminanceCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\MOTIONSEARCHCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_6_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/MotionSearchCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/MotionSearchCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\OCCLUSIONFILLCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/OcclusionFillCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/OcclusionFillCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\PACKLUMACS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/PackLumaCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PackLumaCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\PRESENTFRAMECS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/PresentFrameCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PresentFrameCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\PROJECTCLEARCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/ProjectClearCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/ProjectClearCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\PROJECTSPLATCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/ProjectSplatCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/ProjectSplatCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\PYRAMIDCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/PyramidCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/PyramidCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\UIMASKCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiMaskCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiMaskCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\7A3E25A07F6F0D655299D63AA967AB03\MOTION_ENHANCER_SHADERS.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

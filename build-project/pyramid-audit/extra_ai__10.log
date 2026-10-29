@@ -1,0 +1,7 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+AI flow: pyramid model on DirectML at 832x480
+GPU pipeline: 3072x2048, 10 pyramid levels, radii 4/6
+GPU offline interpolation (t = 0.5): flow 4.77 ms GPU, 19.41 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\pyramid-audit\extra_ai__10.png
+  Flow estimator: AI pyramid flow (ONNX) (2x2 blocks)
+  PSNR vs ground truth: 48.63 dB (naive blend: 15.37 dB)
+FlowEngine: the AI model (832x480) has a different shape from the 3072x2048 capture; motion is stretched by 0.865385.

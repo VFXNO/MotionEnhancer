@@ -1,0 +1,5 @@
+Adapter: AMD Radeon RX 9070 XT (dedicated VRAM: 16191 MB)
+GPU pipeline: 3840x2160, 8 pyramid levels, radii 4/6
+GPU offline interpolation (t = 0.5): flow 4.21 ms GPU, 30.58 ms wall incl. readback -> C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\pyramid-audit\3840x2160_exposure_ffx_8.png
+  Flow estimator: AMD FidelityFX Optical Flow (2x2 blocks)
+  PSNR vs ground truth: 18.23 dB (naive blend: 15.39 dB)

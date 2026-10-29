@@ -1,0 +1,47 @@
+[
+  {
+    "name": "2560x1440_dis",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "2560x1440_ffx",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "2560x1440_ffx-occlusion",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "3840x2160_dis",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "3840x2160_ffx",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "3840x2160_ffx-occlusion",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "5120x2880_dis",
+    "exit": 0,
+    "pixels_identical": false
+  },
+  {
+    "name": "5120x2880_ffx",
+    "exit": 0,
+    "pixels_identical": true
+  },
+  {
+    "name": "5120x2880_ffx-occlusion",
+    "exit": 0,
+    "pixels_identical": false
+  }
+]

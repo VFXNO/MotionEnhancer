@@ -159,7 +159,9 @@ if(WIN32)
     endif()
 
     find_program(DXC_EXECUTABLE dxc
-        HINTS "C:/VulkanSDK/1.4.309.0/Bin"
+        HINTS
+            "${FIDELITYFX_SDK_DIR}/tools/ffx_shader_compiler/libs/dxc/bin/x64"
+            "$ENV{VULKAN_SDK}/Bin"
         DOC "DirectX Shader Compiler")
     if(DXC_EXECUTABLE)
         set(DXC_OUTPUTS)
@@ -229,7 +231,9 @@ if(WIN32)
                 "$<TARGET_FILE_DIR:motion_enhancer>/shaders")
         target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_DXC=1)
     else()
-        message(WARNING "DXC not found; runtime D3DCompile fallback will be used")
+        message(FATAL_ERROR
+            "DXC is required to compile the live GPU shaders. "
+            "Set -DDXC_EXECUTABLE=<path to dxc.exe> or install the Windows SDK / Vulkan SDK.")
     endif()
 
     add_custom_command(TARGET motion_enhancer POST_BUILD
