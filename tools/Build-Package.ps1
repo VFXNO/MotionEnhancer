@@ -25,6 +25,17 @@ if (-not $SkipBuild) { Invoke-Checked cmake @('--build', $build, '--config', 'Re
 $cache = Get-Content -LiteralPath (Join-Path $build 'CMakeCache.txt') -Raw
 if ($cache -notmatch 'MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW:BOOL=ON') { throw 'The complete package requires an FFX-enabled build.' }
 $compiler = Get-Command $NsisExe -ErrorAction Stop
+$nsisDirectory = Split-Path -Parent $compiler.Source
+$themeBuild = Join-Path $build 'installer-theme'
+$themeSource = Join-Path $root 'packaging\theme'
+Invoke-Checked cmake @('-S', $themeSource, '-B', $themeBuild, '-A', 'Win32', "-DNSIS_DIR=$nsisDirectory")
+Invoke-Checked cmake @('--build', $themeBuild, '--config', 'Release', '--parallel')
+$themePlugin = Join-Path $themeBuild 'Release'
+foreach ($asset in @('installer.ico', 'setup-music.wav')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root "packaging\assets\$asset"))) {
+        throw "Missing installer asset $asset. Regenerate with: python tools/make_installer_assets.py"
+    }
+}
 New-Item -ItemType Directory -Path $dist, $work -Force | Out-Null
 $stage = Join-Path $work ('stage-' + [guid]::NewGuid().ToString('N'))
 try {
@@ -62,7 +73,8 @@ try {
     $setup = Join-Path $dist "MotionEnhancer-$version-Setup-x64.exe"
     $sizeKB = [int][math]::Ceiling(($files | Measure-Object Length -Sum).Sum / 1KB)
     Invoke-Checked $compiler.Source @('/V2', "/DPAYLOAD=$stage", "/DOUTPUT=$setup", "/DVERSION=$version",
-        "/DSIZE_KB=$sizeKB", "/DUNINSTALL_LIST=$uninstallList", (Join-Path $root 'packaging\MotionEnhancer.nsi'))
+        "/DSIZE_KB=$sizeKB", "/DUNINSTALL_LIST=$uninstallList", "/DTHEME_PLUGIN=$themePlugin",
+        (Join-Path $root 'packaging\MotionEnhancer.nsi'))
     $zip = Join-Path $dist ($name + '.zip')
     Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal -Force
     @($setup, $zip) | ForEach-Object {

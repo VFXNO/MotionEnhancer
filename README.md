@@ -195,6 +195,12 @@ and several GB of GPU-specific PyTorch packages. Existing models work offline
 without training. See [installation details](packaging/INSTALLATION.md).
 The development SDKs, datasets, runs and backups remain in the source tree.
 
+The installer matches the app's dark monochrome theme and animated emblem. It
+includes a quiet original ambient loop, with **Music / Alt+M** to mute or unmute.
+`/NOMUSIC` starts muted; `/S` silent installation never starts audio. Music ends
+when setup closes. See [installer skin notes](packaging/theme/README.md).
+An [installer preview](docs/assets/installer.png) shows the matching theme.
+
 To rebuild the installer (NSIS 3 required on the packaging machine):
 
 ```powershell

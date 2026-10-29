@@ -3,6 +3,12 @@ Unicode true
 !include "LogicLib.nsh"
 !include "x64.nsh"
 !include "WinVer.nsh"
+!include "FileFunc.nsh"
+
+!ifndef THEME_PLUGIN
+  !error "Pass /DTHEME_PLUGIN=<directory containing the Win32 MotionTheme.dll>"
+!endif
+!addplugindir /x86-unicode "${THEME_PLUGIN}"
 
 !ifndef PAYLOAD
   !error "Pass /DPAYLOAD=<cmake install directory>"
@@ -31,22 +37,106 @@ VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" "Motion Enhancer contributors"
 
 !define MUI_ABORTWARNING
+!define MUI_ICON "assets\installer.ico"
+!define MUI_UNICON "assets\installer.ico"
+!define MUI_BGCOLOR "08080A"
+!define MUI_TEXTCOLOR "EEEEF2"
+!define MUI_LICENSEPAGE_BGCOLOR "0D0D0F"
+!define MUI_INSTFILESPAGE_COLORS "EEEEF2 0D0D0F"
+!define MUI_COMPONENTSPAGE_NODESC
+!define MUI_CUSTOMFUNCTION_GUIINIT ThemeInit
+!define MUI_CUSTOMFUNCTION_UNGUIINIT un.ThemeInit
 !define MUI_FINISHPAGE_RUN "$INSTDIR\motion_enhancer.exe"
 !define MUI_FINISHPAGE_RUN_PARAMETERS "--gui"
 !define MUI_FINISHPAGE_RUN_NOTCHECKED
+!define MUI_WELCOMEPAGE_TITLE "A smoother experience."
+!define MUI_WELCOMEPAGE_TEXT "Real-time frame generation, built for your GPU.$\r$\n$\r$\nINCLUDED IN THIS INSTALL$\r$\n$\r$\n    Motion Enhancer and compiled GPU shaders$\r$\n    AMD FidelityFX Optical Flow$\r$\n    AI flow and depth models$\r$\n    ONNX Runtime, DirectML and Microsoft runtimes$\r$\n$\r$\nThe AI trainer is optional. Existing models work offline.$\r$\n$\r$\nUse Music or Alt+M to toggle the ambient soundtrack."
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeWelcome
 !insertmacro MUI_PAGE_WELCOME
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeLicense
 !insertmacro MUI_PAGE_LICENSE "${PAYLOAD}\LICENSE"
+!define MUI_COMPONENTSPAGE_TEXT_TOP "All application runtime dependencies are included. Trainer setup is optional and downloads several GB of GPU-specific packages."
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeComponents
 !insertmacro MUI_PAGE_COMPONENTS
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeDirectory
 !insertmacro MUI_PAGE_DIRECTORY
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeInstall
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_FINISHPAGE_TITLE "You're ready to flow."
+!define MUI_FINISHPAGE_TEXT "The app, GPU runtimes and existing AI models are installed.$\r$\n$\r$\nOpen Motion Enhancer, select a window, and start generating frames.$\r$\n$\r$\nYou can set up the optional AI trainer later from the Start menu."
+!define MUI_FINISHPAGE_RUN_TEXT "Launch Motion Enhancer"
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeFinish
 !insertmacro MUI_PAGE_FINISH
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.ThemeConfirm
 !insertmacro MUI_UNPAGE_CONFIRM
+!define MUI_INSTFILESPAGE_FINISHHEADER_TEXT "Application removed."
+!define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT "Your models, captures and training data have been preserved."
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.ThemeRemove
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
+
+Var MusicEnabled
+
+Function ThemeInit
+  ; GUI-only extraction/playback: /S never loads the skin or starts audio.
+  InitPluginsDir
+  File "/oname=$PLUGINSDIR\setup-music.wav" "assets\setup-music.wav"
+  MotionTheme::Attach /NOUNLOAD "$PLUGINSDIR\setup-music.wav" "$MusicEnabled" "0"
+FunctionEnd
+
+Function un.ThemeInit
+  ; Match the app on removal as well, without automatically playing music.
+  MotionTheme::Attach /NOUNLOAD "" "0" "1"
+FunctionEnd
+
+Function ThemeWelcome
+  MotionTheme::Page /NOUNLOAD "$mui.WelcomePage" "0" "A smoother experience." "Motion Enhancer / Windows x64"
+FunctionEnd
+Function ThemeLicense
+  MotionTheme::Page /NOUNLOAD "$mui.LicensePage" "1" "Built on open technology." "Review the license before continuing."
+FunctionEnd
+Function ThemeComponents
+  MotionTheme::Page /NOUNLOAD "$mui.ComponentsPage" "2" "Everything you need." "Choose your installation components."
+FunctionEnd
+Function ThemeDirectory
+  MotionTheme::Page /NOUNLOAD "$mui.DirectoryPage" "3" "Find its home." "Install for this Windows account. No administrator required."
+FunctionEnd
+Function ThemeInstall
+  MotionTheme::Page /NOUNLOAD "$mui.InstFilesPage" "4" "Bringing motion to life." "Installing the app, AI models and GPU runtimes."
+FunctionEnd
+Function ThemeFinish
+  MotionTheme::Page /NOUNLOAD "$mui.FinishPage" "5" "You're ready to flow." "Your setup is complete."
+FunctionEnd
+Function un.ThemeConfirm
+  MotionTheme::Page /NOUNLOAD "$mui.UnConfirmPage" "0" "Make room for what's next." "Models, captures and training data will be preserved."
+FunctionEnd
+Function un.ThemeRemove
+  MotionTheme::Page /NOUNLOAD "$mui.InstFilesPage" "1" "Removing Motion Enhancer." "Your models, captures and training data stay with you."
+FunctionEnd
+
+Function .onGUIEnd
+  MotionTheme::Stop /NOUNLOAD
+FunctionEnd
+Function un.onGUIEnd
+  MotionTheme::Stop /NOUNLOAD
+FunctionEnd
+
+Function un.onUninstSuccess
+  IfSilent done
+  MotionTheme::Page /NOUNLOAD "$mui.InstFilesPage" "2" "Application removed." "Your models, captures and training data have been preserved."
+done:
+FunctionEnd
 
 Function .onInit
   SetShellVarContext current
   SetRegView 64
+  StrCpy $MusicEnabled "1"
+  ${GetParameters} $0
+  ClearErrors
+  ${GetOptions} $0 "/NOMUSIC" $1
+  ${IfNot} ${Errors}
+    StrCpy $MusicEnabled "0"
+  ${EndIf}
   ${IfNot} ${RunningX64}
   ${OrIfNot} ${AtLeastWin10}
     MessageBox MB_ICONSTOP "Motion Enhancer requires Windows 10/11 x64."
@@ -54,7 +144,7 @@ Function .onInit
   ${EndIf}
 FunctionEnd
 
-Section "Application, AI models, runtimes and trainer files (required)" App
+Section "Motion Enhancer, AI models and GPU runtimes (required)" App
   SectionIn RO
   SetOutPath "$INSTDIR"
   IfFileExists "$INSTDIR\motion_enhancer.exe" 0 unlocked

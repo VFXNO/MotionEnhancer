@@ -4,7 +4,7 @@ Validated 2026-10-29/30 on Windows x64 with an AMD Radeon RX 9070 XT.
 
 ## Distributables
 
-- `dist/MotionEnhancer-1.0.0-Setup-x64.exe` (approximately 45 MiB).
+- `dist/MotionEnhancer-1.0.0-Setup-x64.exe` (approximately 47 MiB with theme/music).
 - `dist/MotionEnhancer-1.0.0-win64.zip` (approximately 48 MiB).
 - `dist/SHA256SUMS.txt`; both final archive checksums verified.
 
@@ -57,3 +57,36 @@ backups, test fixtures, models, the working trainer environment, datasets and
 training runs. Short earlier validation reports are archived beside this file;
 their referenced bulky raw artifacts have been deleted. No commits or pushes
 were made. This cleanup does not remove objects from Git history.
+
+## Installer theme and music update (2026-10-30)
+
+- Installer/uninstaller now use the app's monochrome palette, animated emblem,
+  sidebar, rounded cards/buttons and dark native input/list/scroll controls.
+  [Preview](../assets/installer.png).
+- Original, generated 32-second stereo ambient soundtrack. Checked its WAV
+  format/duration and approximately 16% PCM peak limit. No external recordings,
+  music downloads or system-volume changes.
+- Default playback, `/NOMUSIC`, persistent per-session mute/unmute across pages,
+  Finish/Cancel exit and uninstaller-without-music behavior passed UI checks.
+- All welcome/license/components/location/install/finish and removal pages were
+  exercised. Back/forward navigation, visible destination/Browse controls,
+  all 68 installed payload hashes and preserved model/user data passed.
+- Installed D3D12 self-test and model-backed AI-mask self-test passed. Silent
+  install/removal passed without initializing the skin/audio. The skin DLL has
+  only Windows system DLL dependencies; skin/audio are not installed as app
+  runtime dependencies.
+- Final release installer preview/music/Cancel checks preserved the existing
+  `C:\MotionEnhancer` registration. Final full roundtrips used an isolated copy
+  of the same installer source/DLL/payload with only registry, Start menu and
+  default-directory namespaces changed, so the existing installation was not
+  overwritten. Its registration and executable hash remained unchanged.
+- `tools/test_installer_theme.py` provides the regression test; use
+  `--preview-only` when an application is already installed. Full tests refuse
+  to alter a pre-existing registration. Temporary test installations/artifacts
+  are cleaned, and the short preview image is retained as documentation.
+
+Checks ran on the current Windows 11 machine. Different Windows versions,
+monitor DPI settings and audio devices have not all been visually/audibly
+evaluated. Audio start/mute was checked through Windows playback success and
+UI state, not a subjective listening study. No application rendering/capture
+code changed in this update.

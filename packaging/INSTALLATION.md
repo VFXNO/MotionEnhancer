@@ -24,6 +24,16 @@ The portable ZIP contains the same runtime files; extract the entire folder.
 The unsigned installer may trigger Windows SmartScreen. Verify the supplied
 SHA256 checksums and the source of the download before running it.
 
+## Installer appearance and music
+
+Setup matches the app's monochrome dark interface, animated emblem and rounded
+controls. A quiet, original ambient soundtrack loops during interactive setup.
+Use **Music** (or **Alt+M**) to mute/unmute it at any step. Add `/NOMUSIC` to the
+Setup command line to start muted; `/S` silent installation never plays music.
+Music stops when setup closes and does not change your system volume. The
+uninstaller uses the dark theme but does not start music. No track is downloaded,
+and no music is added to the running Motion Enhancer application.
+
 ## AI trainer (one-time Internet setup)
 
 Run **Set up AI Trainer** from the Start menu or `Setup-AITrainer.cmd`.
