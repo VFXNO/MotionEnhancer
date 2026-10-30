@@ -1,4 +1,5 @@
 #include "GuiApp.h"
+#include "AppResources.h"
 #include "FlowEngine.h"
 #include "Image.h"
 #include "WindowHelper.h"
@@ -2475,6 +2476,10 @@ void playSplash(HWND window, const RECT& area) {
     splashClass.cbSize = sizeof(splashClass);
     splashClass.lpfnWndProc = splashProc;
     splashClass.hInstance = instance;
+    splashClass.hIcon = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED));
+    splashClass.hIconSm = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED));
     splashClass.lpszClassName = "MotionEnhancerSplashClass";
     RegisterClassExA(&splashClass);
     const int x = (area.left + area.right - kSplashW) / 2;
@@ -2611,7 +2616,10 @@ int runGuiApplication() {
     windowClass.lpfnWndProc = guiWindowProc;
     windowClass.hInstance = instance;
     windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    windowClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    windowClass.hIcon = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED));
+    windowClass.hIconSm = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED));
     windowClass.hbrBackground = nullptr;
     windowClass.lpszClassName = "MotionEnhancerGuiClass";
     RegisterClassExA(&windowClass);

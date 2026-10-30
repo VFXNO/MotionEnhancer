@@ -90,3 +90,21 @@ monitor DPI settings and audio devices have not all been visually/audibly
 evaluated. Audio start/mute was checked through Windows playback success and
 UI state, not a subjective listening study. No application rendering/capture
 code changed in this update.
+
+## Application icon update (2026-10-30)
+
+- Embedded the existing app/setup emblem in `motion_enhancer.exe`, with seven
+  resolutions (16 through 256 pixels). GUI, splash and overlay classes load
+  large/small embedded icons; the main shortcut and Installed apps registration
+  explicitly select executable icon index 0.
+- Rebuilt the FidelityFX-enabled application, installer and portable ZIP.
+  `tools/test_app_icon.py` passed for development, portable and isolated-installed
+  executables: exact embedded image bytes, Windows shell extraction, and actual
+  off-screen GUI/splash large/small icons all matched the shared emblem.
+- Isolated silent install/remove verified 68 payload hashes, shortcut target,
+  shortcut icon and quoted `DisplayIcon` path. D3D12 and model-backed AI-mask
+  self-tests passed; final archive checksums matched.
+- Existing `C:\MotionEnhancer` registration and executable hash were unchanged.
+  No live capture session was started to test the overlay icon. Reinstalling
+  the new package updates an existing copy; pinned-icon cache refresh was not
+  forced on this machine.

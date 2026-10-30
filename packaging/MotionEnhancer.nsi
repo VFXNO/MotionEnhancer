@@ -167,7 +167,7 @@ unlocked:
   SetOverwrite on
   SetOutPath "$INSTDIR"
   CreateDirectory "$SMPROGRAMS\Motion Enhancer"
-  CreateShortcut "$SMPROGRAMS\Motion Enhancer\Motion Enhancer.lnk" "$INSTDIR\motion_enhancer.exe" "--gui"
+  CreateShortcut "$SMPROGRAMS\Motion Enhancer\Motion Enhancer.lnk" "$INSTDIR\motion_enhancer.exe" "--gui" "$INSTDIR\motion_enhancer.exe" 0
   CreateShortcut "$SMPROGRAMS\Motion Enhancer\Set up AI Trainer.lnk" "$INSTDIR\Setup-AITrainer.cmd"
   CreateShortcut "$SMPROGRAMS\Motion Enhancer\Installation guide.lnk" "$INSTDIR\INSTALLATION.md"
   CreateShortcut "$SMPROGRAMS\Motion Enhancer\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
@@ -177,7 +177,7 @@ unlocked:
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "Publisher" "Motion Enhancer contributors"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "InstallLocation" "$INSTDIR"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "DisplayIcon" "$INSTDIR\motion_enhancer.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "DisplayIcon" '$\"$INSTDIR\motion_enhancer.exe$\",0'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "QuietUninstallString" '$\"$INSTDIR\Uninstall.exe$\" /S'
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MotionEnhancer" "NoModify" 1

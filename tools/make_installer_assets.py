@@ -1,4 +1,4 @@
-"""Generate original installer music and a matching emblem icon (stdlib only).
+"""Generate original installer music and the shared app/setup emblem (stdlib only).
 
 Run with Python 3: python tools/make_installer_assets.py
 The generated assets are checked in; normal packaging does not need Python.

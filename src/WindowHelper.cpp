@@ -1,4 +1,5 @@
 #include "WindowHelper.h"
+#include "AppResources.h"
 #include "CaptureEngine.h"
 #include "Presenter.h"
 #include <iostream>
@@ -223,6 +224,10 @@ bool OverlayWindow::create(HWND target, const std::string& windowTitle) {
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = OverlayWndProc;
     wc.hInstance = hInstance;
+    wc.hIcon = static_cast<HICON>(LoadImageW(hInstance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED));
+    wc.hIconSm = static_cast<HICON>(LoadImageW(hInstance, MAKEINTRESOURCEW(IDI_MOTION_ENHANCER),
+        IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED));
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.lpszClassName = className;
 

@@ -14,6 +14,20 @@ DLLs; it does not require the application or its runtimes to be installed first.
 It and the audio are extracted to NSIS's temporary plug-in directory, not into
 the application's runtime payload. They do not affect capture or inference.
 
+## Application icon
+
+`../assets/installer.ico` is also the application's emblem, embedded by `app.rc`
+at 16, 24, 32, 48, 64, 128 and 256 pixels. Explorer, Start menu shortcuts and
+Windows Installed apps use this embedded icon; no loose ICO is required at
+runtime. The GUI, splash and overlay window classes load its large/small forms
+instead of the generic Windows application icon.
+
+Run `python tools\test_app_icon.py` to verify every embedded image, shell icon
+extraction and the actual GUI/splash icons using the off-screen startup test.
+An optional executable path tests a portable or installed copy instead.
+Re-run the updated installer to update an existing installation and its
+shortcut. Windows may retain an old pinned icon until it is unpinned/re-pinned.
+
 ## Music
 
 `../assets/setup-music.wav` is an original, procedurally composed 32-second
