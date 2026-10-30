@@ -1,0 +1,14 @@
+{
+  "source_sha256": "aa858fb4c8cbe69ed3f56cfaa103208ea3d2376e411ff4dbb3466268859a5dae",
+  "source_frames": 240,
+  "source_fps": 24.0,
+  "width": 216,
+  "height": 312,
+  "padding": 2,
+  "columns": 9,
+  "frames": 216,
+  "fps": 24,
+  "period_seconds": 9.0,
+  "loop_crossfade_seconds": 1.0,
+  "atlas_sha256": "634cce9fe2678c04bab7aecca79145f2ed6e702d63297226baffc9674bf3152b"
+}

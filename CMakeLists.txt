@@ -60,6 +60,8 @@ set(SOURCES
 set(HEADERS
     include/AppResources.h
     include/BrandLogo.h
+    include/BrandCharacter.h
+    include/BrandCharacterAtlas.h
     include/Image.h
     include/Pyramid.h
     include/MotionVector.h

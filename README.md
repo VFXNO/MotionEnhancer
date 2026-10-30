@@ -112,6 +112,10 @@ cmake --build build-project --config Release --target motion_enhancer --parallel
 
 From a terminal, `motion_enhancer.exe --list-windows` lists the capturable windows and `--capture-window "<title>"` starts directly. All options are listed under [Usage](#usage).
 
+The GUI also features a silent animated celestial-character portrait, blended
+into the sidebar and startup splash while retaining the orbital icon.
+[GUI and splash previews](docs/character-brand.md).
+
 <br>
 
 <a id="how-it-works"></a>

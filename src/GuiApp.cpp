@@ -16,6 +16,7 @@ using std::min;
 }
 #include <gdiplus.h>
 #include "BrandLogo.h"
+#include "BrandCharacter.h"
 
 #include <algorithm>
 #include <cctype>
@@ -191,6 +192,7 @@ HFONT g_fontBrand = nullptr;
 HFONT g_fontNav = nullptr;
 ULONG_PTR g_gdiplusToken = 0;
 BrandLogo g_brandLogo;
+BrandCharacter g_brandCharacter;
 int g_offsetX = 0;   // added to x by addControl: the page area starts right of the sidebar
 
 // ---- Animation (WM_TIMER kAnimTimer, animate()) ----
@@ -1730,9 +1732,16 @@ void paintSidebar(HDC hdc, const RECT& client) {
     Gdiplus::Graphics g(hdc);
     prepare(g);
 
-    // Flowing lines drifting slowly, and twinkling points of light.
+    // The character's own orbit/particles fill the unused space below navigation.
+    // Keep the icon, controls and status card clear. Short windows scale to fit.
     const float top = 384.0f, bottom = static_cast<float>(client.bottom) - 116.0f;
-    if (bottom > top + 40.0f) {
+    const float characterTop = 370.0f;
+    const float characterHeight = std::min(312.0f, static_cast<float>(client.bottom) - 98.0f - characterTop);
+    if (g_brandCharacter.loaded() && characterHeight >= 100.0f) {
+        const float width = characterHeight * CharacterAtlas::Width / CharacterAtlas::Height;
+        g_brandCharacter.draw(g, Gdiplus::RectF((kSidebarW - width) / 2.0f, characterTop, width, characterHeight), t);
+    } else if (bottom > top + 40.0f) {
+        // Retain the original ambient treatment if the artwork is unavailable.
         for (int i = 0; i < 5; ++i) {
             const float o = 16.0f * i;
             const float drift = 14.0f * std::sin(t * 0.5f + i * 0.8f);
@@ -2228,7 +2237,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 // Splash: the emblem builds itself before the window appears, then the
 // window fades in under it. A click or a key skips to the end.
 // ------------------------------------------------------------------
-constexpr int kSplashW = 460, kSplashH = 360;
+constexpr int kSplashW = 580, kSplashH = 360;
 constexpr float kSplashLength = 2.6f;    // seconds, the last kSplashFade of them crossfading
 constexpr float kSplashFade = 0.45f;
 bool g_splashSkip = false;
@@ -2280,11 +2289,17 @@ void paintSplash(Gdiplus::Graphics& target, float t) {
         g.DrawPath(&pen, &edge);
     }
 
+    // A separate character cameo, feathered into the right side of the card.
+    // The orbital mark and all lettering retain their own uncluttered space.
+    g_brandCharacter.draw(g, Gdiplus::RectF(356.0f, 44.0f, 184.0f, 266.0f), t,
+                          easeOut(phase(t, 0.15f, 0.65f)));
+
     // Reveal the same refined orbit-and-motion emblem as the window icon.
     EmblemState e;
     e.time = t;
     e.assembling = true;
-    const float ex = kSplashW / 2.0f, ey = 140.0f;
+    const float brandCentre = 210.0f;
+    const float ex = brandCentre, ey = 140.0f;
     g.TranslateTransform(ex, ey);
     g.ScaleTransform(1.35f, 1.35f);
     paintEmblem(g, 0.0f, 0.0f, e);
@@ -2296,7 +2311,7 @@ void paintSplash(Gdiplus::Graphics& target, float t) {
         Gdiplus::FontFamily face(family);
         Gdiplus::Font font(&face, 17.0f, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
         const std::wstring name = L"MOTION ENHANCER";
-        const float track = 7.0f + 4.0f * (1.0f - easeOut(phase(t, 1.0f, 0.9f)));
+        const float track = 5.0f + 2.0f * (1.0f - easeOut(phase(t, 1.0f, 0.9f)));
         std::vector<float> widths;
         float total = 0.0f;
         for (wchar_t c : name) {
@@ -2308,7 +2323,7 @@ void paintSplash(Gdiplus::Graphics& target, float t) {
             total += w + track;
         }
         total -= track;
-        float x = kSplashW / 2.0f - total / 2.0f;
+        float x = brandCentre - total / 2.0f;
         for (size_t i = 0; i < name.size(); ++i) {
             const float a = easeOut(phase(t, 1.05f + 0.035f * i, 0.35f));
             if (a > 0.0f && name[i] != L' ') {
@@ -2328,11 +2343,11 @@ void paintSplash(Gdiplus::Graphics& target, float t) {
         Gdiplus::StringFormat centred;
         centred.SetAlignment(Gdiplus::StringAlignmentCenter);
         g.DrawString(L"Real-time frame generation", -1, &font,
-                     Gdiplus::RectF(0.0f, 262.0f + 4.0f * (1.0f - a), static_cast<float>(kSplashW), 20.0f), &centred, &ink);
+                     Gdiplus::RectF(30.0f, 262.0f + 4.0f * (1.0f - a), 360.0f, 20.0f), &centred, &ink);
     }
     // A thin progress line filling under it.
     {
-        const float w = 140.0f, x = kSplashW / 2.0f - w / 2.0f, y = 296.0f;
+        const float w = 140.0f, x = brandCentre - w / 2.0f, y = 296.0f;
         const float a = phase(t, 0.3f, 0.4f);
         Gdiplus::Pen track(gpColor(RGB(255, 255, 255), static_cast<int>(26 * a)), 2.0f);
         track.SetStartCap(Gdiplus::LineCapRound);
@@ -2574,6 +2589,7 @@ int runGuiApplication() {
     Gdiplus::GdiplusStartupInput gdiplusInput;
     Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusInput, nullptr);
     g_brandLogo.load(GetModuleHandleW(nullptr));
+    g_brandCharacter.load(GetModuleHandleW(nullptr));
     ensureTheme();
 
     HINSTANCE instance = GetModuleHandleA(nullptr);
@@ -2594,6 +2610,7 @@ int runGuiApplication() {
     char logoFrames[MAX_PATH] = {};
     if (GetEnvironmentVariableA("MOTION_ENHANCER_LOGO_FRAMES", logoFrames, sizeof(logoFrames))) {
         const bool written = writeLogoFrames(logoFrames);
+        g_brandCharacter.reset();
         g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return written ? 0 : 1;
@@ -2602,6 +2619,7 @@ int runGuiApplication() {
     char splashFrames[MAX_PATH] = {};
     if (GetEnvironmentVariableA("MOTION_ENHANCER_SPLASH_FRAMES", splashFrames, sizeof(splashFrames))) {
         const bool written = writeSplashFrames(splashFrames);
+        g_brandCharacter.reset();
         g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return written ? 0 : 1;
@@ -2626,6 +2644,7 @@ int runGuiApplication() {
         nullptr, nullptr, instance, nullptr
     );
     if (!window) {
+        g_brandCharacter.reset();
         g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return 1;
@@ -2698,6 +2717,7 @@ int runGuiApplication() {
         ReleaseDC(window, screen);
         const bool saved = image.savePNG(snapshot);
         DestroyWindow(window);
+        g_brandCharacter.reset();
         g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return saved ? 0 : 1;
@@ -2733,6 +2753,7 @@ int runGuiApplication() {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
+    g_brandCharacter.reset();
     g_brandLogo.reset();
     Gdiplus::GdiplusShutdown(g_gdiplusToken);
     return static_cast<int>(message.wParam);
