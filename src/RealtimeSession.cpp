@@ -35,6 +35,33 @@ bool envFlag(const char* name) {
     return GetEnvironmentVariableA(name, buffer, sizeof(buffer)) > 0 && buffer[0] != '0';
 }
 
+// Diagnostic-only statistics. A best-case time does not establish a deadline.
+void printBenchmark(const char* stage, std::vector<double> samples) {
+    if (samples.empty()) return;
+    const std::vector<double> raw = samples;
+    std::sort(samples.begin(), samples.end());
+    double total = 0.0;
+    size_t overBudget = 0;
+    for (const double value : samples) {
+        total += value;
+        if (value > 2.0) ++overBudget;
+    }
+    const auto percentile = [&](double fraction) {
+        const double index = fraction * (samples.size() - 1);
+        const size_t lo = static_cast<size_t>(index);
+        const size_t hi = std::min(lo + 1, samples.size() - 1);
+        return samples[lo] + (samples[hi] - samples[lo]) * (index - lo);
+    };
+    std::cout << std::fixed << std::setprecision(6)
+              << "BENCH_JSON {\"stage\":\"" << stage << "\",\"count\":" << samples.size()
+              << ",\"mean_ms\":" << total / samples.size() << ",\"median_ms\":" << percentile(0.5)
+              << ",\"p95_ms\":" << percentile(0.95) << ",\"p99_ms\":" << percentile(0.99)
+              << ",\"min_ms\":" << samples.front() << ",\"max_ms\":" << samples.back()
+              << ",\"over_2ms\":" << overBudget << ",\"samples_ms\":[";
+    for (size_t i = 0; i < raw.size(); ++i) std::cout << (i ? "," : "") << raw[i];
+    std::cout << "]}\n";
+}
+
 // Console writes block for milliseconds when stdout is a pipe or a slow
 // terminal; the render thread hands its lines to this thread instead.
 class AsyncLog {
@@ -723,6 +750,9 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
               << "  Flow estimator: " << (flow.usingFfx() ? "AMD FidelityFX Optical Flow" :
                                              flow.usingAi() ? "AI pyramid flow (ONNX)" : flow.usingNeural() ? "neural learned-feature flow" : flow.usingDis() ? "DIS optical flow" : "native SAD shader graph")
               << " (" << entry.blockSize << "x" << entry.blockSize << " blocks)\n";
+    if (flow.usingAi())
+        std::cout << "  AI refinement selected: " << (entry.aiRefined ? "integrated AI" : "DIS")
+                  << "; DIS patch passes: " << entry.aiDisPatchPasses << "\n";
 
     if (!flowOutputPath.empty()) {
         std::vector<uint8_t> flowBytes;
@@ -766,6 +796,65 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
             std::cout << "  PSNR vs ground truth: " << std::fixed << std::setprecision(2)
                       << computePsnr(result, truth) << " dB (naive blend: " << computePsnr(blend, truth) << " dB)\n";
         }
+    }
+    // Opt-in flow + synthesis diagnostics, never part of live playback.
+    // Alternate A/B as a chain with fresh IDs: one new cached luma pyramid
+    // per pair. Capture, upload, readback, file IO and presentation are excluded.
+    if (envFlag("MOTION_ENHANCER_BENCH_SERIAL")) {
+        ComPtr<ID3D12QueryHeap> queries;
+        ComPtr<ID3D12Resource> times;
+        D3D12_QUERY_HEAP_DESC desc = {};
+        desc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+        desc.Count = 2;
+        uint64_t frequency = 0;
+        if (FAILED(device.device()->CreateQueryHeap(&desc, IID_PPV_ARGS(&queries))) ||
+            FAILED(device.createBuffer(2 * sizeof(uint64_t), D3D12_HEAP_TYPE_READBACK,
+                                       D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_FLAG_NONE, times)) ||
+            FAILED(device.presentQueue()->GetTimestampFrequency(&frequency)) || !frequency) return 1;
+        std::vector<double> flowSamples, synthesisSamples, gpuSamples, wallSamples;
+        const int warmup = 20;
+        FlowInput previousInput = in0;
+        for (int i = 0; i < warmup + benchIterations; ++i) {
+            FlowInput currentInput = (i % 2 == 0) ? in1 : in0;
+            currentInput.id = static_cast<uint64_t>(1000 + i);
+            const auto begin = std::chrono::steady_clock::now();
+            const auto pair = flow.submitPair(previousInput, currentInput);
+            if (pair.entry < 0 || !offline.begin()) return 1;
+            const FlowEngine::Entry field = flow.entry(pair.entry);
+            ShaderConstants constants = {};
+            constants.width = constants.levelWidth = width;
+            constants.height = constants.levelHeight = height;
+            setInterpolationConstants(constants, field, t);
+            offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
+            if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, constants,
+                                   previousInput.texture, currentInput.texture, field.forward.Get(), field.backward.Get(),
+                                   field.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13,
+                                   nullptr, nullptr, nullptr, field.aiBlendMaskInput())) return 1;
+            D3D12_RESOURCE_BARRIER barrier = {};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+            offline.list()->ResourceBarrier(1, &barrier);
+            offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
+            offline.list()->ResolveQueryData(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, times.Get(), 0);
+            if (!offline.execute(flow.fence(), pair.fence)) return 1;
+            const double wall = std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - begin).count();
+            uint64_t* stamps = nullptr;
+            if (FAILED(times->Map(0, nullptr, reinterpret_cast<void**>(&stamps)))) return 1;
+            const double synthesis = static_cast<double>(stamps[1] - stamps[0]) * 1000.0 / frequency;
+            times->Unmap(0, nullptr);
+            const double motion = flow.lastGpuTimeMs();
+            if (i >= warmup) {
+                flowSamples.push_back(motion);
+                synthesisSamples.push_back(synthesis);
+                gpuSamples.push_back(motion + synthesis);
+                wallSamples.push_back(wall);
+            }
+            previousInput = currentInput;
+        }
+        printBenchmark("flow_gpu", flowSamples);
+        printBenchmark("synthesis_gpu", synthesisSamples);
+        printBenchmark("pipeline_gpu_sum", gpuSamples);
+        printBenchmark("pipeline_serial_wall", wallSamples);
     }
     device.dumpInfoQueue("offline");
     return 0;
@@ -1530,33 +1619,95 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     ComPtr<ID3D12Fence> fence;
     if (!hi || !hf || !hm || FAILED(device.device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) return 1;
     HANDLE event = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (!event) return 1;
     uint64_t value = 0;
+    // Deterministic input instead of uninitialized device memory. Optional
+    // FP32 planar input/output files let the Python tests check DirectML
+    // numerics against PyTorch, without adding a Python runtime provider.
+    std::vector<float> frames(ai.inputBytes() / sizeof(float), 0.5f);
+    char inputPath[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_AI_TEST_INPUT", inputPath, MAX_PATH) > 0) {
+        std::ifstream file(inputPath, std::ios::binary);
+        if (!file.read(reinterpret_cast<char*>(frames.data()), static_cast<std::streamsize>(ai.inputBytes())) ||
+            file.peek() != std::ifstream::traits_type::eof()) {
+            std::cerr << "AI test input must contain exactly one FP32 planar frames tensor\n";
+            CloseHandle(event);
+            return 1;
+        }
+    }
+    ComPtr<ID3D12Resource> upload;
+    ComPtr<ID3D12CommandAllocator> allocator;
+    ComPtr<ID3D12GraphicsCommandList> commands;
+    if (FAILED(device.createBuffer(ai.inputBytes(), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
+                                   D3D12_RESOURCE_FLAG_NONE, upload)) ||
+        FAILED(device.device()->CreateCommandAllocator(device.flowQueue()->GetDesc().Type, IID_PPV_ARGS(&allocator))) ||
+        FAILED(device.device()->CreateCommandList(0, device.flowQueue()->GetDesc().Type, allocator.Get(), nullptr,
+                                                  IID_PPV_ARGS(&commands)))) return 1;
+    void* mapped = nullptr;
+    if (FAILED(upload->Map(0, nullptr, &mapped))) return 1;
+    std::memcpy(mapped, frames.data(), ai.inputBytes());
+    upload->Unmap(0, nullptr);
+    commands->CopyBufferRegion(input.Get(), 0, upload.Get(), 0, ai.inputBytes());
+    if (FAILED(commands->Close())) return 1;
+    ID3D12CommandList* lists[] = {commands.Get()};
+    device.flowQueue()->ExecuteCommandLists(1, lists);
     auto once = [&]() {
         if (!ai.run(hi, hf, hm)) return false;
-        device.flowQueue()->Signal(fence.Get(), ++value);
-        fence->SetEventOnCompletion(value, event);
+        if (FAILED(device.flowQueue()->Signal(fence.Get(), ++value)) ||
+            FAILED(fence->SetEventOnCompletion(value, event))) return false;
         return WaitForSingleObject(event, 5000) == WAIT_OBJECT_0;
     };
     for (int i = 0; i < 10; ++i)
         if (!once()) return 1;
     const int runs = 200;
     double best = 1e30, total = 0.0;
+    std::vector<double> samples;
     for (int i = 0; i < runs; ++i) {
         const auto t0 = std::chrono::steady_clock::now();
         if (!once()) return 1;
         const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
         best = std::min(best, ms);
         total += ms;
+        samples.push_back(ms);
     }
     std::cout << "AI flow network at " << ai.width() << "x" << ai.height() << ": " << total / runs
               << " ms per frame pair (mean of " << runs << ", fence wait included), best " << best << " ms\n"
               << "The whole engine (input scaling and conversion included): "
                  "--flow-engine ai with MOTION_ENHANCER_BENCH_ITERS=40 --gpu-offline a.png b.png out.png\n";
+    printBenchmark("network_fence_wall", samples);
+    ComPtr<ID3D12Resource> readback;
+    const size_t totalBytes = ai.flowBytes() + ai.maskBytes();
+    if (FAILED(device.createBuffer(totalBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
+                                   D3D12_RESOURCE_FLAG_NONE, readback)) ||
+        FAILED(allocator->Reset()) || FAILED(commands->Reset(allocator.Get(), nullptr))) return 1;
+    commands->CopyBufferRegion(readback.Get(), 0, flow.Get(), 0, ai.flowBytes());
+    commands->CopyBufferRegion(readback.Get(), ai.flowBytes(), mask.Get(), 0, ai.maskBytes());
+    if (FAILED(commands->Close())) return 1;
+    device.flowQueue()->ExecuteCommandLists(1, lists);
+    if (FAILED(device.flowQueue()->Signal(fence.Get(), ++value)) ||
+        FAILED(fence->SetEventOnCompletion(value, event)) || WaitForSingleObject(event, 5000) != WAIT_OBJECT_0) return 1;
+    float* output = nullptr;
+    if (FAILED(readback->Map(0, nullptr, reinterpret_cast<void**>(&output)))) return 1;
+    bool valid = true;
+    const size_t flowFloats = ai.flowBytes() / sizeof(float);
+    for (size_t i = 0; i < totalBytes / sizeof(float); ++i) {
+        if (!std::isfinite(output[i]) || (i >= flowFloats && (output[i] < 0.0f || output[i] > 1.0f))) valid = false;
+    }
+    char outputPrefix[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_AI_TEST_OUTPUT", outputPrefix, MAX_PATH) > 0) {
+        std::ofstream flowFile(std::string(outputPrefix) + ".flow.f32", std::ios::binary);
+        std::ofstream maskFile(std::string(outputPrefix) + ".mask.f32", std::ios::binary);
+        flowFile.write(reinterpret_cast<const char*>(output), static_cast<std::streamsize>(ai.flowBytes()));
+        maskFile.write(reinterpret_cast<const char*>(output + flowFloats), static_cast<std::streamsize>(ai.maskBytes()));
+        valid = valid && flowFile.good() && maskFile.good();
+    }
+    readback->Unmap(0, nullptr);
     ai.releaseBuffer(hi);
     ai.releaseBuffer(hf);
     ai.releaseBuffer(hm);
     CloseHandle(event);
-    return 0;
+    std::cout << "AI flow output finite and mask range: " << (valid ? "PASS" : "FAIL") << "\n";
+    return valid ? 0 : 1;
 }
 
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter) {
@@ -1621,6 +1772,69 @@ int runDepthTest(const std::string& input, const std::string& output, GraphicsAd
     if (!gpuOk) return 1;
     std::cout << "AI depth, GPU path: " << gpuMs << " ms per frame until the network is done (mean of " << runs
               << ", no CPU copies)\n";
+    return 0;
+}
+
+int runAiRefinementSelfTest(GraphicsAdapterPreference adapter) {
+    std::wstring selected;
+    std::string reason;
+    if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), true, selected, reason)) {
+        std::cerr << "AI refinement self-test requires a paired refined export: " << reason << "\n";
+        return 1;
+    }
+    GraphicsDevice device;
+    ComputeKernels kernels;
+    OfflineContext offline;
+    if (!device.initialize(adapter) || !kernels.load(device.device()) || !offline.initialize(&device, &kernels)) return 1;
+    constexpr UINT width = 320, height = 192;
+    SharedTexture textures[2];
+    uint64_t ready[2] = {};
+    for (int i = 0; i < 2; ++i) {
+        Image image(width, height, 3);
+        for (UINT y = 0; y < height; ++y)
+            for (UINT x = 0; x < width; ++x)
+                for (int channel = 0; channel < 3; ++channel)
+                    image.set(x, y, channel, 127.0f + 100.0f * std::sin((x - i * 7.0f) * 0.11f + channel) *
+                        std::cos((y - i * 2.0f) * 0.07f));
+        if (!uploadFrame(device, image, textures[i], ready[i])) return 1;
+    }
+    for (const bool integrated : {false, true}) {
+        FlowSettings settings;
+        settings.aiFlow = settings.disFlow = true;
+        settings.aiRefinement = integrated;
+        settings.uiMask = true;
+        FlowEngine flow;
+        if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, 2)) return 1;
+        for (int pair = 0; pair < FlowEngine::kRingSize + 4; ++pair) {
+            // Exercise mask allocation after resize and entry reuse in both
+            // refinement modes; this option never selects a refiner.
+            settings.aiBlendMask = pair % 2 != 0;
+            flow.setSettings(settings);
+            const int a = pair % 2, b = 1 - a;
+            const FlowInput in0{textures[a].texture12.Get(), ready[a], static_cast<uint64_t>(pair), a};
+            const FlowInput in1{textures[b].texture12.Get(), ready[b], static_cast<uint64_t>(pair + 1), b};
+            const auto result = flow.submitPair(in0, in1);
+            if (result.entry < 0 || !flow.waitFence(result.fence) || !flow.usingAi() ||
+                flow.usingAiRefinement() != integrated) return 1;
+            const auto entry = flow.entry(result.entry);
+            if (!entry.valid || entry.aiRefined != integrated || entry.singleField || entry.blockSize != 2 ||
+                (integrated ? entry.aiDisPatchPasses != 0 : entry.aiDisPatchPasses <= 0) ||
+                bool(entry.aiBlendMaskInput()) != settings.aiBlendMask || !entry.uiMaskInput()) return 1;
+            for (ID3D12Resource* field : {entry.forward.Get(), entry.backward.Get()}) {
+                std::vector<uint8_t> bytes;
+                UINT w = 0, h = 0, pitch = 0;
+                if (!offline.readback(field, bytes, pitch, w, h) || w != width / 2 || h != height / 2) return 1;
+                for (UINT y = 0; y < h; ++y) {
+                    const float* row = reinterpret_cast<const float*>(bytes.data() + static_cast<size_t>(y) * pitch);
+                    for (UINT x = 0; x < 2 * w; ++x) if (!std::isfinite(row[x])) return 1;
+                }
+            }
+        }
+        std::cout << "AI refinement self-test: " << (integrated ? "AI graph, zero DIS patch passes" : "bypass graph + DIS patch passes")
+                  << ", blend-mask independent, ring reuse: PASS\n";
+    }
+    device.dumpInfoQueue("AI refinement self-test");
+    std::cout << "AI refinement self-test: PASS\n";
     return 0;
 }
 

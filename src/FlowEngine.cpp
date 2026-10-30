@@ -105,11 +105,24 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
     }
     ID3D12Device* d3d = device->device();
     m_aiFlow.reset();
+    m_aiIntegrated = false;
     if (settings.aiFlow) {
+        std::wstring selected;
+        std::string reason;
+        if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), settings.aiRefinement,
+                                                   selected, reason)) {
+            std::cerr << "FlowEngine: cannot select AI refinement: " << reason << "\n";
+            return false;
+        }
         m_aiFlow = std::make_unique<AiFlowEstimator>();
-        if (!m_aiFlow->initialize(d3d, device->flowQueue(), AiFlowEstimator::defaultModelPath())) {
+        if (!m_aiFlow->initialize(d3d, device->flowQueue(), selected)) {
+            if (settings.aiRefinement) return false; // Never claim AI refinement while silently running DIS.
             std::cerr << "FlowEngine: AI pyramid flow unavailable; using DIS.\n";
             m_aiFlow.reset();
+        } else {
+            m_aiIntegrated = settings.aiRefinement;
+            std::cout << "AI flow refinement: " << (m_aiIntegrated ? "integrated AI (DIS bypassed)"
+                : "DIS (integrated AI bypassed or absent)") << "\n";
         }
     }
     if (settings.aiBlendMask) {
@@ -152,6 +165,10 @@ void FlowEngine::setSettings(const FlowSettings& settings) {
                                settings.neuralFlow != m_settings.neuralFlow ||
                                settings.disFlow != m_settings.disFlow;
     m_settings = settings;
+    if (aiFlowActive() && m_settings.aiRefinement != m_aiIntegrated) {
+        std::cerr << "FlowEngine: restart capture to change AI/DIS refinement; keeping the loaded graph.\n";
+        m_settings.aiRefinement = m_aiIntegrated;
+    }
     if (engineChanged) {
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
         m_ffxLastId = UINT64_MAX;
@@ -559,8 +576,9 @@ bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) 
 
 // The AI pyramid flow engine: both frames scaled to the network's
 // resolution (AiFlowInputCS), the network on the flow queue between the two
-// halves of this pair's list (splitList), and its two fields refined by DIS
-// against the frames themselves before they reach the ring.
+// halves of this pair's list (splitList). Integrated mode sends the neural
+// correction straight to the ring; unchecked mode loads the headless graph
+// and refines its two fields with DIS against the frames themselves.
 //
 // The network's field seeds DIS's dense field kAiSeedLevel levels up
 // (AiFlowToRingCS); DIS's levels below it, down to half resolution, refine
@@ -578,10 +596,12 @@ bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) 
 // scored worse on the real captures (the field drifts from the network's).
 bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& current, Entry& out) {
     ID3D12GraphicsCommandList* list = m_list.Get();
-    // At least one DIS level must lie between the seed and the finest level,
+    // DIS mode: at least one level must lie between the seed and the finest level,
     // or the network's field goes straight to the ring.
     const int seed = std::min(kAiSeedLevel, m_levels - 1);
-    const bool refine = seed > kAiFinestLevel && m_disDense[0][0];
+    const bool refine = !m_aiIntegrated && seed > kAiFinestLevel && m_disDense[0][0];
+    out.aiRefined = m_aiIntegrated;
+    out.aiDisPatchPasses = 0;
     Pyramid& prevPyramid = m_pyramids[static_cast<size_t>(std::clamp(previous.slot, 0, m_slotCount - 1))];
     Pyramid& currPyramid = m_pyramids[static_cast<size_t>(std::clamp(current.slot, 0, m_slotCount - 1))];
     if (refine) {
@@ -684,6 +704,7 @@ bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& curren
                                                   join ? dense[l + 1].Get() : nullptr};
             if (!m_dispatch.dispatch(list, *m_kernels, Kernel::DisPatch, din, patch[l].Get(), d,
                                      static_cast<UINT>(patchDesc.Width), patchDesc.Height)) return false;
+            ++out.aiDisPatchPasses;
             din = {ref.level[l].Get(), cand.level[l].Get(), patch[l].Get(), ref.stats.Get(), cand.stats.Get(), nullptr};
             if (!m_dispatch.dispatch(list, *m_kernels, Kernel::DisDensify, din, dense[l].Get(), d,
                                      (d.levelWidth + 15) / 16, (d.levelHeight + 15) / 16)) return false;
@@ -1127,6 +1148,8 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     }
     Entry scratch = m_ring[static_cast<size_t>(entryIndex)];  // textures only
     scratch.hasAiBlendMask = false;   // Never reuse an older pair's enable flag.
+    scratch.aiRefined = false;
+    scratch.aiDisPatchPasses = 0;
     m_currentEntry = entryIndex;
     if (!beginList()) return result;
 
@@ -1204,6 +1227,8 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         e.hasUiMask = scratch.hasUiMask;
         e.aiBlendMask = scratch.aiBlendMask;
         e.hasAiBlendMask = scratch.hasAiBlendMask;
+        e.aiRefined = scratch.aiRefined;
+        e.aiDisPatchPasses = scratch.aiDisPatchPasses;
         e.flowFence = fenceValue;
         e.valid = true;
     }

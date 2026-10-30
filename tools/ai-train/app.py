@@ -15,6 +15,7 @@ import os
 import shutil
 import sys
 import time
+import uuid
 
 from PySide6.QtCore import QPointF, QProcess, QProcessEnvironment, QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import (QBrush, QColor, QFont, QIcon, QImage, QLinearGradient, QPainter, QPainterPath,
@@ -304,6 +305,7 @@ class Job:
 
     def start(self, module, args):
         self.errors = []
+        self.buffer = b''
         self.proc.start(sys.executable, ['-m', module] + args)
 
     def failure(self):
@@ -505,7 +507,7 @@ class DatasetPage(Page):
         try:
             with open(index, encoding='utf-8') as f:
                 items = json.load(f)
-            vids = len({e['video'] for e in items})
+            vids = len({('source', e['source']) if e.get('source') else ('legacy', e['video']) for e in items})
             self.summary.setText(f'This folder holds {len(items)} triplets from {vids} video(s).')
         except Exception:  # noqa: BLE001
             self.summary.setText('New dataset.')
@@ -551,7 +553,8 @@ class DatasetPage(Page):
             self.bar.setValue(min(e['frame'], self.bar.maximum()))
             r = e['rejected']
             self.status.setText(f"{self.current}: frame {e['frame']} / {e['frames']}, kept {e['kept']} "
-                                f"(skipped: {r['duplicate']} repeated, {r['cut']} cuts, {r['still']} still, {r['fast']} fast)")
+                                f"({e.get('flashes', 0)} flashes; skipped: {r['duplicate']} repeated, {r['cut']} cuts, "
+                                f"{r['still']} still, {r['fast']} fast)")
         elif kind == 'sample':
             ims = [QImage(os.path.join(e['path'], f'im{k}.jpg')) for k in range(3)]
             if all(not i.isNull() for i in ims):
@@ -569,7 +572,8 @@ class DatasetPage(Page):
         elif kind == 'video_done':
             self.total_bar.setValue(e['index'] + 1)
         elif kind == 'done':
-            text = f"Done: {e['kept']} new triplets, {e['total']} in the dataset ({e['seconds']} s)."
+            text = (f"Done: {e['kept']} new triplets (including {e.get('flashes', 0)} flashes), "
+                    f"{e['total']} in the dataset ({e['seconds']} s).")
             if getattr(self, 'unreadable', []):
                 text += f"  Could not read: {', '.join(self.unreadable)}."
             self.status.setText(text)
@@ -584,13 +588,13 @@ class DatasetPage(Page):
         self.stop_button.setEnabled(False)
         self.app.set_busy(None)
         self.refresh_summary()
-        if code != 0 and not self.status.text().startswith('Done'):
+        if code != 0 and not self.status.text().startswith(('Done', 'Error')):
             self.status.setText('Stopped.' if self.stopping else f'Failed: {self.job.failure()}')
         self.stopping = False
 
 
-PRESET_TEXT = {'small': 'Small — about 1.3 ms at 640×352', 'medium': 'Medium — about 1.3 ms (recommended)',
-               'large': 'Large — about 1.5 ms'}
+PRESET_TEXT = {'small': 'Small — lowest compute', 'medium': 'Medium — balanced',
+               'large': 'Large — highest compute; benchmark before realtime use'}
 
 
 class TrainPage(Page):
@@ -636,15 +640,26 @@ class TrainPage(Page):
         self.crop = spin(s.get('crop', 256), 64, 1024, 16)
         self.run = QLineEdit(s.get('run', os.path.join(HERE, 'runs', 'run1')))
         self.resume = QCheckBox('Continue this run from its last checkpoint')
+        self.resume.setToolTip('Restores the saved model, dataset and training settings. '
+                                'Total epochs includes epochs already trained; increase it to extend a finished run.')
+        self.refiner = QCheckBox('Integrated flow refinement (experimental; benchmark speed)')
+        self.refiner.setChecked(s.get('refiner', False))
+        self.refiner.setToolTip('Reuses the finest block’s features to correct motion vectors. '
+                                'Same training losses and triplets; no teacher or extra dataset processing. '
+                                'Continue restores the checkpoint’s architecture instead.')
+        self.init_from = QLineEdit(s.get('init_from', ''))
         grid.addWidget(label('Size'), 0, 0)
         grid.addWidget(self.preset, 0, 1, 1, 2)
-        for r, (name, w, hint) in enumerate((('Epochs', self.epochs, ''), ('Batch', self.batch, '8-16; lower only if memory runs out'),
+        for r, (name, w, hint) in enumerate((('Total epochs', self.epochs, 'Including completed; raise to extend this run'), ('Batch', self.batch, '8-16; lower only if memory runs out'),
                                              ('Learning rate', self.lr, ''), ('Crop height (px)', self.crop, '16:9 patch, a multiple of 16 (352 = 640x352)')), 1):
             grid.addWidget(label(name), r, 0)
             grid.addWidget(w, r, 1)
             grid.addWidget(label(hint, 'dim'), r, 2)
         ml.addLayout(grid)
-        ml.addWidget(label('Run folder (checkpoints and previews)', 'dim'))
+        ml.addWidget(self.refiner)
+        ml.addWidget(label('Initial weights (optional; same size, NEW run only)', 'dim'))
+        ml.addLayout(path_row(self.init_from, 'Browse', self.pick_initial))
+        ml.addWidget(label('Run folder (use a new folder for a new quality experiment)', 'dim'))
         ml.addLayout(path_row(self.run, 'Browse', self.pick_run))
         ml.addWidget(self.resume)
         row = QHBoxLayout()
@@ -673,11 +688,12 @@ class TrainPage(Page):
         self.m_psnr = label('–', 'metric')
         self.m_gain = label('–', 'metric')
         self.m_eta = label('–', 'metric')
-        for name, w in (('Best quality on moving clips (dB)', self.m_psnr), ('Over a plain blend', self.m_gain),
-                        ('Time left', self.m_eta)):
+        self.m_quality_caption = label('Best quality on moving clips (dB)', 'dim')
+        for caption, w in ((self.m_quality_caption, self.m_psnr), (label('Over a plain blend', 'dim'), self.m_gain),
+                           (label('Time left', 'dim'), self.m_eta)):
             col = QVBoxLayout()
             col.addWidget(w)
-            col.addWidget(label(name, 'dim'))
+            col.addWidget(caption)
             mrow.addLayout(col)
         mtl.addLayout(mrow)
         right.addWidget(metrics)
@@ -719,41 +735,91 @@ class TrainPage(Page):
         if d:
             self.run.setText(d)
 
+    def pick_initial(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Initial checkpoint', HERE, 'PyTorch checkpoint (*.pt)')
+        if path:
+            self.init_from.setText(path)
+
     def start(self):
+        if not self.run.text().strip():
+            self.status.setText('Choose a run folder first.')
+            return
         sets = [self.datasets.item(i).text() for i in range(self.datasets.count())]
         sets = [d for d in sets if os.path.exists(os.path.join(d, 'index.json'))]
-        if not sets:
+        if not sets and not self.resume.isChecked():
             self.status.setText('Add a dataset folder (build one on the Dataset page first).')
             return
+        self.active_run = os.path.abspath(self.run.text().strip())
+        self.stop_token = uuid.uuid4().hex
         v = {'train_datasets': sets, 'preset': self.preset.currentData(), 'epochs': self.epochs.value(),
-             'batch': self.batch.value(), 'lr': self.lr.value(), 'crop': self.crop.value(), 'run': self.run.text()}
+             'batch': self.batch.value(), 'lr': self.lr.value(), 'crop': self.crop.value(), 'run': self.active_run,
+             'refiner': self.refiner.isChecked(), 'init_from': self.init_from.text().strip()}
         self.app.store(v)
-        args = ['--data'] + sets + ['--run', v['run'], '--preset', v['preset'], '--epochs', str(v['epochs']),
-                                    '--batch', str(v['batch']), '--lr', str(v['lr']), '--crop', str(v['crop'])]
+        args = ['--run', v['run'], '--preset', v['preset'], '--epochs', str(v['epochs']),
+                '--batch', str(v['batch']), '--lr', str(v['lr']), '--crop', str(v['crop']),
+                '--stop-token', self.stop_token]
+        if sets:
+            args += ['--data'] + sets
         if self.resume.isChecked():
             args.append('--resume')
         else:
+            if v['refiner']:
+                args.append('--refiner')
+            if v['init_from']:
+                args += ['--init-from', v['init_from']]
             self.loss_chart.clear()
             self.psnr_chart.clear()
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
+        self.run.setEnabled(False)
+        self.refiner.setEnabled(False)
+        self.init_from.setEnabled(False)
+        self.bar.setRange(0, 1)
+        self.bar.setValue(0)
         self.status.setText('Starting…')
         self.app.set_busy('Training')
         self.job.start('mefi.train', args)
 
     def stop(self):
         # Graceful: the trainer finishes the step and keeps its checkpoints.
-        os.makedirs(self.run.text(), exist_ok=True)
-        open(os.path.join(self.run.text(), 'STOP'), 'w').close()
+        os.makedirs(self.active_run, exist_ok=True)
+        with open(os.path.join(self.active_run, 'STOP'), 'w', encoding='utf-8') as handle:
+            handle.write(self.stop_token)
         self.status.setText('Stopping after this step…')
+        self.stop_button.setEnabled(False)
 
     def on_job(self, e):
         kind = e.get('event')
         if kind == 'device':
             self.app.set_device(e['name'])
+        elif kind == 'resumed':
+            config = e['config']
+            self.preset.setCurrentIndex(list(PRESET_TEXT).index(config['preset']))
+            self.refiner.setChecked(config.get('refiner', False))
+            self.init_from.clear()
+            for name in ('batch', 'crop', 'lr'):
+                widget = getattr(self, name)
+                widget.setMinimum(min(widget.minimum(), config[name]))
+                widget.setValue(config[name])
+            self.datasets.clear()
+            for folder in config['data']:
+                self.add_dataset(folder)
+            self.app.store({'train_datasets': config['data'], 'preset': config['preset'],
+                            'batch': config['batch'], 'crop': config['crop'], 'lr': config['lr'],
+                            'refiner': config.get('refiner', False), 'init_from': ''})
+            self.bar.setRange(0, e['steps'])
+            self.bar.setValue(e['step'])
+            self.m_psnr.setText(f"{e['best']:.2f}" if e['best'] >= 0 else '–')
+            self.status.setText(f"Continuing at epoch {e['epoch'] + 1}, batch {e['batch'] + 1} "
+                                f"(step {e['step']} / {e['steps']}); saved training settings restored.")
+        elif kind == 'rescored':
+            self.m_psnr.setText(f"{e['best']:.2f}")
+            self.psnr_chart.clear()
+            self.status.setText(f"Saved models re-scored on current validation: best {e['best']:.2f} dB. Continuing…")
         elif kind == 'data':
-            self.status.setText(f"{e['train']} training and {e['val']} validation triplets ({e.get('val_moving', 0)} moving) "
-                                f"from {e['videos']} video(s); {e['steps_per_epoch']} steps per epoch."
+            self.status.setText(f"{e['train']} training; {e['val']} scored validation triplets "
+                                f"of {e.get('val_available', e['val'])} held out ({e.get('val_moving', 0)} moving) "
+                                f"from {e.get('val_videos', e['videos'])} video(s); {e['steps_per_epoch']} steps per epoch."
                                 + ("  Few moving clips: add footage with real camera and object motion."
                                    if e.get('val_moving', 0) < 10 else ""))
         elif kind == 'step':
@@ -763,20 +829,40 @@ class TrainPage(Page):
             eta = e.get('eta', 0)
             self.m_eta.setText(f'{eta // 3600}:{eta % 3600 // 60:02d}:{eta % 60:02d}' if eta >= 3600 else f'{eta // 60}:{eta % 60:02d}')
         elif kind == 'epoch':
-            self.psnr_chart.add('model', e['epoch'] + 1, e['psnr'])
-            self.psnr_chart.add('blend', e['epoch'] + 1, e['blend_psnr'])
+            if 'steps' in e:
+                self.bar.setRange(0, e['steps'])
+                self.bar.setValue(e['step'])
+            moving_score = e.get('scored', 'moving') == 'moving'
+            self.m_quality_caption.setText('Best quality on moving clips (dB)' if moving_score
+                                           else 'Best quality on all clips (dB)')
+            if e.get('complete', True):
+                self.psnr_chart.add('model', e['epoch'] + 1, e['psnr'])
+                self.psnr_chart.add('blend', e['epoch'] + 1, e['blend_psnr'])
             self.m_psnr.setText(f"{e['best']:.2f}")
             self.m_gain.setText(f"{e['psnr'] - e['blend_psnr']:+.2f} dB")
             pix = scaled(e['preview'], max(300, self.preview.width() - 10))
             if not pix.isNull():
                 self.preview.setPixmap(pix)
-            self.status.setText(f"Epoch {e['epoch'] + 1} / {e['epochs']}: {e['psnr']:.2f} dB on "
-                                f"{e.get('moving', 0)} moving clips (blend {e['blend_psnr']:.2f}); "
+            count = e.get('scored_count', e.get('moving', 0))
+            clips = 'moving clips' if moving_score else 'validation clips (all)'
+            prefix = 'Epoch' if e.get('complete', True) else 'Paused in epoch'
+            self.status.setText(f"{prefix} {e['epoch'] + 1} / {e['epochs']}: {e['psnr']:.2f} dB on "
+                                f"{count} {clips} (blend {e['blend_psnr']:.2f}); "
                                 f"all clips {e.get('psnr_all', float('nan')):.2f} dB"
                                 + ('  (best so far, saved)' if e['improved'] else ''))
         elif kind == 'done':
-            self.status.setText(f"Finished: best {e['best']:.2f} dB. Export it on the Export page.")
-            self.app.export.set_checkpoint(os.path.join(self.run.text(), 'best.pt'))
+            if 'steps' in e:
+                self.bar.setRange(0, e['steps'])
+                self.bar.setValue(e['step'])
+            if e.get('already_complete'):
+                self.status.setText(e['message'])
+            elif e.get('stopped'):
+                self.status.setText(f"Paused at step {e['step']} / {e['steps']}. Checkpoint saved; "
+                                    'select Continue this run to resume.')
+            else:
+                self.status.setText(f"Finished: best {e['best']:.2f} dB. Export it on the Export page.")
+            self.m_eta.setText('–')
+            self.app.export.set_checkpoint(os.path.join(getattr(self, 'active_run', self.run.text()), 'best.pt'))
         elif kind == 'error':
             self.status.setText(f"Error: {e.get('message')}")
         elif kind == 'warning':
@@ -787,6 +873,9 @@ class TrainPage(Page):
     def finished(self, code):
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
+        self.run.setEnabled(True)
+        self.refiner.setEnabled(True)
+        self.init_from.setEnabled(True)
         self.app.set_busy(None)
         if code != 0 and not self.status.text().startswith(('Finished', 'Error')):
             self.status.setText(f'Failed: {self.job.failure()}')
@@ -905,6 +994,8 @@ class ExportPage(Page):
             # resolution line is not.
             score = f", validation {e['psnr']:.2f} dB" if e.get('psnr') else ''
             lines = [f"Written: {e['out']}", f"Resolution {e['width']}×{e['height']}, preset {e['preset']}{score}"]
+            if e.get('dis_out'):
+                lines.append(f"DIS-bypass companion: {e['dis_out']} (keep both ONNX and both JSON files together)")
             if self.copy_all.isChecked():
                 src = e['out']
                 for build in program_builds():
@@ -915,21 +1006,19 @@ class ExportPage(Page):
                     # the model) must not stop the others or the report.
                     try:
                         os.makedirs(os.path.dirname(dst), exist_ok=True)
-                        shutil.copy2(src, dst)
-                        shutil.copy2(os.path.splitext(src)[0] + '.json', os.path.splitext(dst)[0] + '.json')
-                        stale = dst + '.data'   # weights of an older export, now inside the .onnx
-                        if os.path.exists(stale):
-                            os.remove(stale)
+                        from mefi.bundle import copy_export
+                        copy_export(src, dst)
                         lines.append(f'Copied to {dst}')
-                    except OSError as error:
-                        lines.append(f'Not copied to {dst} ({error.strerror or error}; close Motion Enhancer '
+                    except (OSError, ValueError) as error:
+                        lines.append(f'Not copied to {dst} ({getattr(error, "strerror", None) or error}; close Motion Enhancer '
                                       f'there and export again)')
             self.result.setPlainText('\n'.join(l for l in lines if l))
             if getattr(self, 'warning', None):
                 lines.append(f'Warning: {self.warning}')
                 self.warning = None
             self.result.setPlainText('\n'.join(l for l in lines if l))
-            self.status.setText('Exported. Select "AI pyramid" as the flow engine in Motion Enhancer.')
+            self.status.setText('Exported. Select "AI pyramid" in Motion Enhancer. '
+                                + ('AI flow refinement: checked = AI, unchecked = DIS.' if e.get('dis_out') else 'This model uses DIS refinement.'))
         elif e.get('event') == 'warning':
             self.warning = e.get('message')
         elif e.get('event') == 'error':

@@ -52,6 +52,7 @@ constexpr int IDC_OPEN_TRAINER = 116;
 constexpr int IDC_USE_AI_ENGINE = 117;
 constexpr int IDC_AI_REFRESH = 118;
 constexpr int IDC_AI_STATUS = 119;
+constexpr int IDC_AI_REFINEMENT = 120;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -146,6 +147,8 @@ struct GuiState {
     HWND aiDepth = nullptr;
     HWND aiDepthRate = nullptr;
     HWND aiBlendMask = nullptr;
+    HWND aiRefinement = nullptr;
+    HWND aiRefinementHelp = nullptr;
     HWND input0 = nullptr;
     HWND input1 = nullptr;
     HWND output = nullptr;
@@ -795,6 +798,8 @@ std::string trainingResult(DWORD exitCode, const std::string& output) {
 // as the Live Capture status: which flow engine runs and its GPU time. The
 // AI engine's fallback message is kept in front of it for that capture.
 std::string* liveStatusFromLine(const std::string& line, std::string& fallback) {
+    if (line.find("cannot select AI refinement:") != std::string::npos)
+        return new std::string(line.substr(line.find("cannot select AI refinement:")));
     if (line.find("AI pyramid flow unavailable") != std::string::npos) {
         fallback = "AI model not loaded (export one on the AI Model page) - ";
         return new std::string(fallback + "using DIS.");
@@ -1063,6 +1068,8 @@ std::string checkValue(HWND control) {
     return SendMessageA(control, BM_GETCHECK, 0, 0) == BST_CHECKED ? "1" : "0";
 }
 
+void updateAiRefinementControl();
+
 void startCapture() {
     if (g_state.captureStopEvent) {
         if (SetEvent(g_state.captureStopEvent)) {
@@ -1173,6 +1180,17 @@ void startCapture() {
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
     if (flowSelection == 4 && SendMessageA(g_state.aiBlendMask, BM_GETCHECK, 0, 0) == BST_CHECKED)
         captureArgs.push_back("--ai-blend-mask");
+    if (flowSelection == 4 && SendMessageA(g_state.aiRefinement, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+        std::wstring selected;
+        std::string reason;
+        if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), true, selected, reason)) {
+            CloseHandle(stopEvent);
+            SetWindowTextA(g_state.liveStatus, reason.c_str());
+            updateAiRefinementControl();
+            return;
+        }
+        captureArgs.push_back("--ai-refinement");
+    }
     if (SendMessageA(g_state.aiDepth, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         captureArgs.push_back("--ai-depth");
         const LRESULT rate = SendMessageA(g_state.aiDepthRate, CB_GETCURSEL, 0, 0);
@@ -1186,6 +1204,7 @@ void startCapture() {
     }
 
     g_state.captureStopEvent = stopEvent;
+    updateAiRefinementControl();
     SetWindowTextA(g_state.captureButton, "STOP CAPTURE");
     EnableWindow(g_state.trainButton, FALSE);
     SetWindowTextA(g_state.liveStatus, "Capture running. Click Stop Capture to exit cleanly.");
@@ -1291,11 +1310,12 @@ std::wstring trainerFolder() {
 
 // What models\ai_flow.onnx (and its .json from the trainer's export) says.
 std::string aiModelSummary() {
-    const std::wstring model = executableFolder() + L"\\models\\ai_flow.onnx";
+    const std::wstring model = AiFlowEstimator::defaultModelPath();
     WIN32_FILE_ATTRIBUTE_DATA info = {};
     if (!GetFileAttributesExW(model.c_str(), GetFileExInfoStandard, &info))
         return "No AI model yet: open the trainer, build a dataset from your videos, train and export.";
-    std::ifstream file(executableFolder() + L"\\models\\ai_flow.json");
+    const size_t dot = model.find_last_of(L'.');
+    std::ifstream file(model.substr(0, dot) + L".json");
     std::stringstream text;
     text << file.rdbuf();
     const std::string json = text.str();
@@ -1318,8 +1338,25 @@ std::string aiModelSummary() {
     return line;
 }
 
+void updateAiRefinementControl() {
+    if (!g_state.aiRefinement) return;
+    const bool ai = SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0) == 4;
+    std::wstring selected;
+    std::string reason;
+    const bool available = AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), true, selected, reason);
+    if (!available) SendMessageA(g_state.aiRefinement, BM_SETCHECK, BST_UNCHECKED, 0);
+    EnableWindow(g_state.aiRefinement, ai && available && !g_state.captureStopEvent);
+    const char* help = g_state.captureStopEvent ? "Stop capture to change refinement."
+                     : !ai ? "Select AI pyramid to choose its refiner."
+                     : !available ? "AI refiner unavailable: export a refined model pair."
+                     : "Checked: AI only. Unchecked: DIS. Choose before capture.";
+    SetWindowTextA(g_state.aiRefinementHelp, help);
+    InvalidateRect(g_state.aiRefinement, nullptr, FALSE);
+}
+
 void refreshAiStatus() {
     if (g_state.aiStatus) SetWindowTextA(g_state.aiStatus, aiModelSummary().c_str());
+    updateAiRefinementControl();
 }
 
 void openTrainer() {
@@ -1486,6 +1523,10 @@ void createControls() {
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
     g_state.aiBlendMask = makeCheckbox("AI: blending mask", 238, 396, 184, false);
+    g_state.aiRefinement = makeCheckbox("AI flow refinement (off: DIS)", 36, 434, 310, false);
+    SetWindowLongPtrA(g_state.aiRefinement, GWLP_ID, IDC_AI_REFINEMENT);
+    g_state.aiRefinementHelp = makeLabel("Select AI pyramid to choose its refiner.", 360, 436, 470);
+    SetWindowSubclass(g_state.aiRefinementHelp, changingStaticProc, 3, 0);
     // How often the AI depth network runs (FlowSettings::aiDepthStride):
     // every frame, or every n-th with the frames between borrowing a
     // neighbour's depth (about 1.3-1.6 ms per run on an RX 9070 XT).
@@ -1496,11 +1537,11 @@ void createControls() {
     SendMessageA(g_state.aiDepthRate, CB_SETCURSEL, 0, 0);
     HWND liveHelp = addControl(
         "STATIC",
-        "Values remain fixed during capture. Click Stop Capture to exit; Ctrl+Alt+F1 toggles the overlay, Ctrl+Alt+F3 cycles debug views.",
-        SS_LEFT, 36, 436, 760, 40, 0);
+        "Settings apply on capture start. Stop Capture to exit. Ctrl+Alt+F1: overlay; Ctrl+Alt+F3: debug views.",
+        SS_LEFT, 36, 466, 794, 20, 0);
     setControlFont(liveHelp, g_fontLabel);
     g_state.liveStatus = addControl("STATIC", "", SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS,
-                                     36, 476, 760, 24, IDC_LIVE_STATUS);
+                                     36, 490, 794, 20, IDC_LIVE_STATUS);
     setControlFont(g_state.liveStatus, g_fontBody);
     SetWindowSubclass(g_state.liveStatus, changingStaticProc, 3, 0);
 
@@ -1526,7 +1567,8 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask, g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
+        g_state.aiRefinement, g_state.aiRefinementHelp, g_state.captureButton, liveHelp, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
@@ -1599,8 +1641,8 @@ void createControls() {
     // ---- AI Model page ----
     HWND aiIntro = addControl("STATIC",
         "Train your own frame-interpolation model on footage like what you play, then use it as the flow engine. "
-        "The model is a small pyramid network whose depth follows its resolution; DIS then refines its motion "
-        "against the full frames. At a quarter of 1440p the whole engine takes about 2.5 ms on an RX 9070 XT.",
+        "The model estimates motion; the program synthesizes intermediate frames. Select integrated AI refinement "
+        "or DIS refinement on Live Capture. AI refinement requires a model trained with it and a paired export. Benchmark your model's speed.",
         SS_LEFT, 56, 124, 740, 60, 0);
     setControlFont(aiIntro, g_fontBody);
     g_state.aiStatus = addControl("STATIC", "", SS_LEFT, 56, 196, 740, 40, IDC_AI_STATUS);
@@ -1609,7 +1651,7 @@ void createControls() {
     HWND aiSteps = addControl("STATIC",
         "1.  Dataset - add your videos; the trainer cuts them into triplets of frames (repeats, cuts and stills left out).\n"
         "2.  Train - on the GPU with ROCm; it shows the quality on the part of each video it never trains on.\n"
-        "3.  Export - writes models\\ai_flow.onnx next to this program.\n"
+        "3.  Export - refined models also write ai_flow.dis.onnx; keep both ONNX and JSON files together.\n"
         "4.  Choose \"AI pyramid (trained model)\" as the flow engine on the Live Capture page.",
         SS_LEFT, 56, 248, 740, 92, 0);
     setControlFont(aiSteps, g_fontLabel);
@@ -2126,6 +2168,9 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 return 0;
             }
             switch (LOWORD(wParam)) {
+                case IDC_LIVE_FLOW_ENGINE:
+                    if (HIWORD(wParam) == CBN_SELCHANGE) updateAiRefinementControl();
+                    return 0;
                 case IDC_REFRESH_WINDOWS: refreshWindowList(); return 0;
                 case IDC_START_CAPTURE: startCapture(); return 0;
                 case IDC_TRAIN_IMAGES: selectTrainingImages(); return 0;
@@ -2140,6 +2185,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 case IDC_AI_REFRESH: refreshAiStatus(); return 0;
                 case IDC_USE_AI_ENGINE:
                     SendMessageA(g_state.liveFlowEngine, CB_SETCURSEL, 4, 0);
+                    updateAiRefinementControl();
                     switchPage(0);
                     return 0;
             }
@@ -2156,6 +2202,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 }
                 EnableWindow(g_state.captureButton, TRUE);
                 SetWindowTextA(g_state.captureButton, "START CAPTURE");
+                updateAiRefinementControl();
                 EnableWindow(g_state.trainButton, TRUE);
                 SetWindowTextA(g_state.liveStatus, exitCode == 0 ? "Capture stopped." : "Capture ended with an error.");
             } else if (jobType == JobType::Offline) {

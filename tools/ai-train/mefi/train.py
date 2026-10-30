@@ -23,8 +23,11 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from .data import FullFrames, Triplets, is_moving, load_index, split
-from .model import ARCH, COMPATIBLE, PyramidFlow, image_pyramid, level_sizes, warp
+from .checkpoint import (RESUME_VERSION, backup_checkpoint, lr_factor, restore_rng,
+                         rng_state, save_checkpoint, save_config)
+from .data import EpochBatches, FullFrames, Triplets, is_moving, load_index, sample_identity, split, validation_identity
+from .model import (ARCH, COMPATIBLE, REFINED_ARCH, PyramidFlow, image_pyramid,
+                    initialize_from, level_sizes, warp)
 
 
 def emit(**event):
@@ -217,17 +220,77 @@ def save_preview(path, preview):
     cv2.imwrite(path, cv2.cvtColor(np.concatenate(rows, 0), cv2.COLOR_RGB2BGR))
 
 
+def headline(scores):
+    group = 'moving' if scores['moving'][2] else 'all'
+    if not math.isfinite(scores[group][0]):
+        raise ValueError('validation is not finite; existing checkpoints have been kept')
+    return group, scores[group]
+
+
+def read_resume(path, args):
+    """CPU loading also keeps RNG byte tensors usable on either device."""
+    ck = torch.load(path, map_location='cpu')
+    if not isinstance(ck, dict) or not all(k in ck for k in ('model', 'opt', 'sched', 'epoch', 'preset')):
+        raise ValueError('last.pt is incomplete: it needs model, optimizer, scheduler and epoch state')
+    if ck.get('arch') not in COMPATIBLE:
+        raise ValueError(f"this checkpoint is {ck.get('arch', 'older')}, not a compatible {ARCH} model")
+    if ck.get('resume_version', 0) > RESUME_VERSION:
+        raise ValueError('this checkpoint needs a newer trainer version')
+    if ck.get('resume_version') and not all(k in ck for k in
+            ('config', 'rng', 'scaler', 'step', 'next_epoch', 'next_batch', 'training', 'steps_per_epoch', 'schedule')):
+        raise ValueError('last.pt is incomplete: continuation state is missing')
+    config = ck.get('config')
+    if not config:
+        path = os.path.join(args.run, 'config.json')
+        if os.path.isfile(path):
+            with open(path, encoding='utf-8') as handle:
+                config = json.load(handle)
+    config = config or {}
+    # Continue means the same experiment, not a silent change of batch size,
+    # crop, seed, initial LR or model because the UI still has other defaults.
+    for name in ('data', 'batch', 'crop', 'lr', 'val', 'pan', 'warmup', 'occlusion_start', 'seed'):
+        if name in config:
+            setattr(args, name, config[name])
+    args.preset = ck['preset']
+    args.refiner = ck['arch'] == REFINED_ARCH
+    args.init_from = None
+    return ck
+
+
+def rescore_resume(net, ck, previous, dataset, device, validation, train_height):
+    """Rebase legacy/changed metrics instead of discarding learned weights or
+    comparing old and new scores. The old best is evaluated, not forgotten."""
+    best, candidate = -1.0, None
+    try:
+        for state in ([previous] if previous else []) + [ck]:
+            if (state.get('arch') not in COMPATIBLE or state.get('preset') != ck['preset']
+                    or (state.get('arch') == REFINED_ARCH) != (ck['arch'] == REFINED_ARCH)):
+                raise ValueError('best.pt belongs to a different model; existing checkpoints have been kept')
+            net.load_state_dict(state['model'])
+            scores, _ = validate(net, dataset, device, max(0, state['epoch']))
+            _, (score, _, _) = headline(scores)
+            if score > best:
+                best = score
+                candidate = {'arch': net.arch, 'preset': ck['preset'], 'model': state['model'],
+                             'psnr': score, 'epoch': state['epoch'], 'train_height': train_height,
+                             'validation': validation}
+    finally:
+        net.load_state_dict(ck['model'])
+    return best, candidate
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--data', nargs='+', required=True, help='dataset folder(s)')
+    p.add_argument('--data', nargs='+', help='dataset folder(s); restored from the checkpoint on resume')
     p.add_argument('--run', required=True, help='run folder (checkpoints, previews, log)')
     p.add_argument('--preset', default='medium', choices=['small', 'medium', 'large'])
-    p.add_argument('--epochs', type=int, default=60)
+    p.add_argument('--refiner', action='store_true', help='integrated lightweight flow-only refinement (new run)')
+    p.add_argument('--epochs', type=int, default=60, help='total target epochs, including epochs already trained')
     p.add_argument('--batch', type=int, default=16)
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--crop', type=int, default=256)
     p.add_argument('--workers', type=int, default=4)
-    p.add_argument('--val', type=float, default=0.1, help='fraction of videos held out')
+    p.add_argument('--val', type=float, default=0.1, help='last fraction of each video held out')
     p.add_argument('--pan', type=float, default=0.0,
                    help='largest synthetic camera pan, frame0 to frame2, as a fraction of the crop (0 = off)')
     p.add_argument('--warmup', type=int, default=-1, help='learning-rate warmup steps (-1: 5%% of the run, at most 500)')
@@ -235,12 +298,51 @@ def main(argv=None):
     # without, synthetic test) and fading it in at 20% stalled training.
     p.add_argument('--occlusion-start', type=float, default=2.0,
                    help='fraction of the run where occlusion masking starts fading in (over 0.2); 2 = never')
-    p.add_argument('--resume', action='store_true')
+    start = p.add_mutually_exclusive_group()
+    start.add_argument('--resume', action='store_true')
+    start.add_argument('--init-from', help='weights-only initialization in a new run; preserves the source checkpoint')
     p.add_argument('--seed', type=int, default=1)
+    p.add_argument('--save-every', type=int, default=100, help='checkpoint interval in steps (0: only stop/epoch end)')
+    p.add_argument('--stop-token', help=argparse.SUPPRESS)
     args = p.parse_args(argv)
 
+    last_path = os.path.join(args.run, 'last.pt')
+    best_path = os.path.join(args.run, 'best.pt')
+    if not args.resume and any(os.path.exists(os.path.join(args.run, name)) for name in ('best.pt', 'last.pt')):
+        emit(event='error', message='This run already has checkpoints. Choose a new run folder or Continue this run; '
+             'existing checkpoints have not been changed.')
+        return 1
+    if args.resume and not os.path.exists(last_path):
+        emit(event='error', message='Cannot continue: this run has no last.pt checkpoint. Choose the original '
+             'run folder, or start a new run without Continue this run.')
+        return 1
+    ck = None
+    if args.resume:
+        try:
+            ck = read_resume(last_path, args)
+        except Exception as error:
+            emit(event='error', message=f'Cannot continue: {error}')
+            return 1
+    if not args.data:
+        emit(event='error', message='Choose a dataset folder (--data). This checkpoint has no saved dataset settings.')
+        return 1
+    if args.epochs < 1 or args.batch < 1 or args.workers < 0 or args.save_every < 0 or not 0 < args.val < 1:
+        p.error('epochs/batch must be positive, workers/save-every nonnegative, and val between 0 and 1')
     os.makedirs(args.run, exist_ok=True)
+    stop_file = os.path.join(args.run, 'STOP')
+    if not args.stop_token and os.path.exists(stop_file):
+        os.remove(stop_file)
+
+    def stop_requested():
+        if not os.path.isfile(stop_file):
+            return False
+        if not args.stop_token:
+            return True
+        with open(stop_file, encoding='utf-8') as handle:
+            return handle.read().strip() == args.stop_token
+
     random.seed(args.seed)
+    np.random.seed(args.seed % (2 ** 32))
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     emit(event='device', name=torch.cuda.get_device_name(0) if device.type == 'cuda' else 'CPU',
@@ -263,53 +365,143 @@ def main(argv=None):
     # the network resolution it is asked for.
     train_height = int(np.median([e['height'] for _, _, e in train_items]))
     val_set = FullFrames(val_items)
-    train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True, num_workers=args.workers,
-                              drop_last=True, persistent_workers=args.workers > 0, pin_memory=True)
-    emit(event='data', train=len(train_items), val=len(val_items),
-         val_moving=sum(1 for i in val_items if is_moving(i)),
-         videos=len({v for _, v, _ in items}), steps_per_epoch=len(train_loader))
+    validation = validation_identity(val_set)
+    training = sample_identity(train_items)
+    batches = EpochBatches(len(train_set), args.batch, args.seed)
+    per_epoch = batches.steps
+    train_loader = DataLoader(train_set, batch_sampler=batches, num_workers=args.workers,
+                              persistent_workers=args.workers > 0, pin_memory=device.type == 'cuda',
+                              generator=torch.Generator().manual_seed(args.seed))
+    emit(event='data', train=len(train_items), val=len(val_set), val_available=len(val_items),
+         val_moving=sum(1 for i in val_set.items if is_moving(i)),
+         val_videos=len({v for _, v, _ in val_set.items}), validation=validation,
+         videos=len({v for _, v, _ in items}), steps_per_epoch=per_epoch)
+    if len(train_set) < args.batch:
+        emit(event='warning', message=f'Only {len(train_set)} training triplets: using one batch of that size '
+             f'instead of dropping every step. Add more varied motion footage for a useful model.')
 
-    net = PyramidFlow(args.preset).to(device)
+    net = PyramidFlow(args.preset, refiner=args.refiner)
+    if args.init_from:
+        try:
+            source = initialize_from(net, args.init_from)
+        except Exception as error:
+            emit(event='error', message=f'Cannot initialize new run: {error}')
+            return 1
+        emit(event='initialized', checkpoint=os.path.abspath(args.init_from), source_arch=source['arch'],
+             arch=net.arch, message='Weights only; optimizer, learning rate and validation start a new experiment.')
+    net = net.to(device)
+    emit(event='model', arch=net.arch, preset=args.preset, parameters=sum(p.numel() for p in net.parameters()))
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=1e-4)
-    steps = max(1, args.epochs * len(train_loader))
+    steps = args.epochs * per_epoch
     warmup = args.warmup if args.warmup >= 0 else min(500, steps // 20)
+    plan = {'kind': 'cosine', 'steps': steps, 'warmup': warmup}
+    start_epoch, start_batch, step, best = 0, 0, 0, -1.0
+    if ck:
+        step = int(ck.get('step', ck['sched'].get('last_epoch', 0)))
+        start_epoch = int(ck.get('next_epoch', step // per_epoch))
+        start_batch = int(ck.get('next_batch', step % per_epoch))
+        if (step < 0 or start_epoch < 0 or not 0 <= start_batch <= per_epoch
+                or step != start_epoch * per_epoch + start_batch):
+            emit(event='error', message='Cannot continue: checkpoint batch position is invalid; files are unchanged.')
+            return 1
+        if ck.get('training') and (ck['training'] != training or ck.get('steps_per_epoch') != per_epoch):
+            emit(event='error', message='Cannot continue exactly: the training samples changed. Restore the original '
+                 'dataset for this run; existing checkpoints are unchanged.')
+            return 1
+        original_steps = int(ck.get('epochs', args.epochs)) * per_epoch
+        original_warmup = args.warmup if args.warmup >= 0 else min(500, original_steps // 20)
+        plan = ck.get('schedule', {'kind': 'cosine', 'steps': max(1, original_steps), 'warmup': original_warmup})
+        if steps != original_steps:
+            group = ck['opt']['param_groups'][0]
+            factor = group['lr'] / group.get('initial_lr', args.lr)
+            # Extend/retarget from the saved LR, not the high initial LR or a
+            # newly evaluated cosine that jumps when its duration changes.
+            plan = {'kind': 'tail', 'start': int(ck['sched']['last_epoch']),
+                    'steps': int(ck['sched']['last_epoch']) + max(1, steps - step),
+                    'factor': factor, 'floor': min(0.02, factor)}
     sched = torch.optim.lr_scheduler.LambdaLR(
-        opt, lambda s: min(1.0, (s + 1) / max(1, warmup)) * (0.02 + 0.98 * 0.5 * (1 + math.cos(math.pi * min(1.0, s / steps)))))
+        opt, lambda s: lr_factor(s, plan))
     scaler = torch.amp.GradScaler('cuda', enabled=device.type == 'cuda')
-    start_epoch, best = 0, -1.0
-    last_path = os.path.join(args.run, 'last.pt')
-    if args.resume and os.path.exists(last_path):
-        ck = torch.load(last_path, map_location=device)
-        if ck.get('arch') not in COMPATIBLE or ck.get('preset') != args.preset:
-            emit(event='error', message=f"cannot continue: that run is a {ck.get('arch', 'older')} "
-                                        f"{ck.get('preset')} model, not a {ARCH} {args.preset} one. Start a new run.")
+    if ck:
+        try:
+            net.load_state_dict(ck['model'])
+            opt.load_state_dict(ck['opt'])
+            sched.load_state_dict(ck['sched'])
+            if scaler.is_enabled() and ck.get('scaler'):
+                scaler.load_state_dict(ck['scaler'])
+            best = float(ck.get('best', -1.0))
+            if not all(torch.isfinite(value).all() for value in net.parameters()):
+                raise ValueError('the checkpoint contains nonfinite model weights')
+            emit(event='resumed', epoch=start_epoch, batch=start_batch, step=step, steps=steps,
+                 lr=opt.param_groups[0]['lr'], best=best, config=vars(args))
+            if start_epoch >= args.epochs:
+                emit(event='done', best=best, stopped=False, already_complete=True, epoch=start_epoch,
+                     message=f'Already completed {start_epoch} epochs. Increase Total epochs above '
+                     f'{start_epoch} to continue training.')
+                return 0
+            previous = torch.load(best_path, map_location='cpu') if os.path.isfile(best_path) else None
+            if previous is not None and (previous.get('arch') not in COMPATIBLE
+                    or previous.get('preset') != ck['preset']
+                    or (previous.get('arch') == REFINED_ARCH) != args.refiner):
+                raise ValueError('best.pt belongs to a different model; existing checkpoints have been kept')
+            changed = ck.get('validation') != validation or (
+                previous is not None and previous.get('validation') != validation)
+            if previous is None and best >= 0:
+                changed = True
+            if changed:
+                emit(event='warning', message='Validation changed or this is a legacy checkpoint. '
+                     'Re-scoring the saved best and last weights on the current hold-out before continuing; '
+                     'original checkpoints will be backed up.')
+                best, rescored = rescore_resume(net, ck, previous, val_set, device, validation, train_height)
+            else:
+                rescored = None
+                if previous is not None:
+                    best = max(best, float(previous['psnr']))
+            if ck.get('rng'):
+                restore_rng(ck['rng'], device)
+            else:
+                emit(event='warning', message='Legacy checkpoint restored model/optimizer/scheduler. '
+                     'Its batch position was inferred from the scheduler; old random/AMP states were not '
+                     'recorded, so historical augmentation cannot be reproduced exactly.')
+            if changed or not ck.get('resume_version'):
+                backup_checkpoint(last_path)
+                backup_checkpoint(best_path)
+            if rescored is not None:
+                save_checkpoint(rescored, best_path)
+                emit(event='rescored', best=best, validation=validation)
+        except Exception as error:
+            emit(event='error', message=f'Cannot continue: {error}')
             return 1
-        if ck.get('epochs', args.epochs) != args.epochs:
-            emit(event='error', message=f"cannot continue with a different epoch count "
-                                        f"(the run was started for {ck['epochs']}); keep it at {ck['epochs']}.")
-            return 1
-        net.load_state_dict(ck['model'])
-        opt.load_state_dict(ck['opt'])
-        sched.load_state_dict(ck['sched'])
-        start_epoch, best = ck['epoch'] + 1, ck.get('best', -1.0)
-        emit(event='resumed', epoch=start_epoch)
-    with open(os.path.join(args.run, 'config.json'), 'w', encoding='utf-8') as f:
-        json.dump(vars(args), f, indent=1)
-
-    stop_file = os.path.join(args.run, 'STOP')
-    if os.path.exists(stop_file):
-        os.remove(stop_file)
+    save_config(vars(args), os.path.join(args.run, 'config.json'))
     started = time.time()
-    step = start_epoch * len(train_loader)
+    first_step = step
     stopped = False
-    skipped = 0
-    in_a_row = 0
+    skipped = ck.get('skipped', 0) if ck else 0
+    in_a_row = ck.get('in_a_row', 0) if ck else 0
+
+    def write_last(epoch, next_epoch, next_batch, running, count):
+        if not all(torch.isfinite(value).all() for value in net.parameters()):
+            raise ValueError('Training produced nonfinite weights; the last usable checkpoint has been kept.')
+        save_checkpoint({'resume_version': RESUME_VERSION, 'arch': net.arch, 'model': net.state_dict(),
+                         'opt': opt.state_dict(), 'sched': sched.state_dict(), 'scaler': scaler.state_dict(),
+                         'rng': rng_state(device), 'config': vars(args), 'schedule': plan,
+                         'preset': args.preset, 'epoch': epoch, 'next_epoch': next_epoch, 'next_batch': next_batch,
+                         'step': step, 'steps_per_epoch': per_epoch, 'training': training,
+                         'loss_sum': float(running), 'loss_count': count, 'skipped': skipped, 'in_a_row': in_a_row,
+                         'best': best, 'epochs': args.epochs, 'train_height': train_height,
+                         'validation': validation}, last_path)
+
     if args.batch < 4:
         emit(event='warning', message=f'batch {args.batch} is very small: each step sees one or two clips, so '
                                       f'training is noisy and slow and can blow up; 8-16 is normal')
     for epoch in range(start_epoch, args.epochs):
         net.train()
-        running, count = torch.zeros((), device=device), 0
+        batches.epoch = epoch
+        batches.start_batch = start_batch if epoch == start_epoch else 0
+        partial = ck is not None and epoch == start_epoch and start_batch > 0
+        running = torch.tensor(ck.get('loss_sum', 0.0) if partial else 0.0, device=device)
+        count = ck.get('loss_count', 0) if partial else 0
+        consumed = batches.start_batch
         for batch in train_loader:
             batch = batch.to(device, non_blocking=True)
             # Occlusion masking fades in between 40% and 60% of the run.
@@ -340,18 +532,22 @@ def main(argv=None):
             scaler.update()
             sched.step()
             step += 1
+            consumed += 1
             if torch.isfinite(loss):
                 running += loss.detach().float()
                 count += 1
             if step % 20 == 0:
                 elapsed = time.time() - started
-                done = step - start_epoch * len(train_loader)
+                done = step - first_step
                 remaining = (steps - step) * elapsed / max(1, done)
                 emit(event='step', step=step, steps=steps, epoch=epoch, loss=float(running) / max(1, count),
                      lr=sched.get_last_lr()[0], eta=round(remaining), skipped=skipped,
                      **{k: float(v) for k, v in parts.items()})
-            if os.path.exists(stop_file):
-                stopped = True
+            stopped = stop_requested()
+            if stopped or (args.save_every and step % args.save_every == 0):
+                write_last(epoch, epoch, consumed, running, count)
+                emit(event='checkpoint', step=step, epoch=epoch, batch=consumed, path=last_path)
+            if stopped:
                 break
         if not all(torch.isfinite(p).all() for p in net.parameters()):
             # Broken beyond what skipping steps prevents: stop, and keep the
@@ -362,28 +558,28 @@ def main(argv=None):
         scores, preview = validate(net, val_set, device, epoch)
         preview_path = os.path.join(args.run, 'preview.png')
         save_preview(preview_path, preview)
-        # The headline is the moving triplets (a still one is rebuilt by a
-        # plain blend already); all of them when none moves.
-        group = 'moving' if scores['moving'][2] else 'all'
-        psnr, blend, _ = scores[group]
-        if not math.isfinite(psnr):
-            emit(event='error', message=f'validation is not a number in epoch {epoch + 1}: training diverged; '
-                                        f'best.pt is kept. Use a larger batch or a lower learning rate.')
+        # Keep the motion-only headline, but score all triplets when none
+        # moves, including flash-only datasets with identical endpoints.
+        try:
+            group, (psnr, blend, _) = headline(scores)
+        except ValueError as error:
+            emit(event='error', message=str(error))
             return 1
         improved = psnr > best
         if improved:
             best = psnr
-            torch.save({'arch': ARCH, 'model': net.state_dict(), 'preset': args.preset, 'psnr': psnr,
-                        'epoch': epoch, 'train_height': train_height}, os.path.join(args.run, 'best.pt'))
-        torch.save({'arch': ARCH, 'model': net.state_dict(), 'opt': opt.state_dict(), 'sched': sched.state_dict(),
-                    'preset': args.preset, 'epoch': epoch, 'best': best, 'epochs': args.epochs,
-                    'train_height': train_height}, last_path)
+            save_checkpoint({'arch': net.arch, 'model': net.state_dict(), 'preset': args.preset, 'psnr': psnr,
+                             'epoch': epoch, 'train_height': train_height, 'validation': validation}, best_path)
+        complete = consumed == per_epoch
+        write_last(epoch, epoch + 1 if complete else epoch, 0 if complete else consumed,
+                   0.0 if complete else running, 0 if complete else count)
         emit(event='epoch', epoch=epoch, epochs=args.epochs, loss=float(running) / max(1, count), psnr=psnr,
              blend_psnr=blend, best=best, improved=improved, preview=preview_path, scored=group,
+             scored_count=scores[group][2], complete=complete, step=step, steps=steps, batch=consumed,
              moving=scores['moving'][2], psnr_all=scores['all'][0], blend_all=scores['all'][1])
         if stopped:
             break
-    emit(event='done', best=best, stopped=stopped, seconds=round(time.time() - started))
+    emit(event='done', best=best, stopped=stopped, step=step, steps=steps, seconds=round(time.time() - started))
     return 0
 
 

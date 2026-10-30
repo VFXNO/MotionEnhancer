@@ -14,9 +14,10 @@ and a triplet is kept only when it is a clean sample of motion:
     the game ran below the recording rate; a repeat breaks "frame1 is the
     middle")
   * no scene cut (frame0 and frame2 differ too much, or one half of the
-    triplet changes far more than the other)
+    triplet changes far more than the other); strong A-B-A flashes are kept
   * motion between frame0 and frame2 within --min-motion .. --max-motion
-    pixels (median, by OpenCV's DIS flow at a small size)
+    pixels (median, by OpenCV's DIS flow at a small size); a recognised
+    return flash is kept even with no endpoint motion
   * at least --gap frames after the previous kept triplet, at most
     --max-per-video triplets
 
@@ -27,6 +28,7 @@ existing dataset adds to it.
 Progress goes to stdout as JSON lines (the trainer app reads them).
 """
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -100,6 +102,18 @@ def mean_abs_diff(a, b):
     return float(np.mean(np.abs(a.astype(np.int16) - b.astype(np.int16))))
 
 
+def source_identity(video):
+    """Display stem and stable identity, including directory and extension.
+
+    clip.mp4 and clip.webm (or two folders' clip.mp4) are different footage,
+    even though a basename-only dataset used to give them the same samples.
+    """
+    stem = os.path.splitext(os.path.basename(video))[0]
+    stem = ''.join(c if c.isalnum() or c in '-_' else '_' for c in stem)[:48]
+    path = os.path.normcase(os.path.realpath(video))
+    return stem, hashlib.sha256(path.encode('utf-8')).hexdigest()
+
+
 class MotionMeter:
     """Median motion (pixels at the dataset scale) between two frames."""
 
@@ -118,7 +132,6 @@ class MotionMeter:
 
 
 def build(args):
-    os.makedirs(args.out, exist_ok=True)
     index_path = os.path.join(args.out, 'index.json')
     index = []
     if os.path.exists(index_path):
@@ -129,15 +142,26 @@ def build(args):
     # already made.
     index = [e for e in index
              if all(os.path.exists(os.path.join(args.out, 'triplets', e['dir'], f'im{i}.jpg')) for i in range(3))]
+    sources = [(video, *source_identity(video)) for video in args.videos]
+    legacy = {e['video'] for e in index if not e.get('source')}
+    ambiguous = sorted({stem for _, stem, _ in sources if stem in legacy})
+    if ambiguous:
+        # The old index never stored directory/extension: it is impossible to
+        # safely assign its images to the current input, especially when two
+        # videos shared a stem. Do not relabel or duplicate the user's data.
+        emit(event='error', message='This dataset has legacy source names without video identities: '
+             + ', '.join(ambiguous) + '. Build these videos into a new dataset folder; '
+             'the existing dataset is unchanged and can still be used for training.')
+        return 1
+    os.makedirs(args.out, exist_ok=True)
     known = {e['dir'] for e in index}
     meter = MotionMeter()
     strides = sorted(set(args.strides))
     reach = 2 * strides[-1]
     started = time.time()
     total_kept = 0
-    for v, video in enumerate(args.videos):
-        stem = os.path.splitext(os.path.basename(video))[0]
-        stem = ''.join(c if c.isalnum() or c in '-_' else '_' for c in stem)[:48]
+    total_flashes = 0
+    for v, (video, stem, source) in enumerate(sources):
         try:
             _, _, fps, count = probe(video)
         except Exception as e:  # noqa: BLE001 - reported to the app
@@ -153,13 +177,15 @@ def build(args):
         kept = 0
         taken = 0               # kept now or already in the dataset
         last_kept = -10 ** 9
+        flash_kept = 0
         rejected = {'duplicate': 0, 'cut': 0, 'still': 0, 'fast': 0}
         for i, frame in enumerate(frames(video, args.height)):
             history.append(frame)
             if len(history) > reach + 1:
                 history.pop(0)
             if i % 30 == 0:
-                emit(event='progress', index=v, frame=i, frames=count, kept=kept, rejected=rejected)
+                emit(event='progress', index=v, frame=i, frames=count, kept=kept,
+                     flashes=flash_kept, rejected=rejected)
             if taken >= args.max_per_video:
                 break
             if i - last_kept < gap:
@@ -172,17 +198,22 @@ def build(args):
                 if min(d01, d12) < args.duplicate:
                     rejected['duplicate'] += 1
                     continue
-                if d02 > args.cut or max(d01, d12) > args.asymmetry * max(min(d01, d12), 0.5):
+                # Keep strong return flashes as training examples. Both halves
+                # change strongly while the endpoints are similar. They must
+                # not be mistaken for cuts or stills just because endpoint
+                # optical flow is small; keep the original middle-frame target.
+                flash = min(d01, d12) > args.cut and d02 * args.asymmetry < min(d01, d12)
+                if not flash and (d02 > args.cut or max(d01, d12) > args.asymmetry * max(min(d01, d12), 0.5)):
                     rejected['cut'] += 1
                     continue
                 median, p90 = meter(f0, f2)
-                if p90 < args.min_motion:
+                if not flash and p90 < args.min_motion:
                     rejected['still'] += 1
                     continue
                 if median > args.max_motion:
                     rejected['fast'] += 1
                     continue
-                name = f'{stem}_{i - 2 * s:06d}_s{s}'
+                name = f'{stem}_{source[:12]}_{i - 2 * s:06d}_s{s}'
                 folder = os.path.join(args.out, 'triplets', name)
                 if name in known:
                     # Made by an earlier build: the slot is taken, as it was
@@ -196,21 +227,25 @@ def build(args):
                 for k, img in enumerate((f0, f1, f2)):
                     cv2.imwrite(os.path.join(folder, f'im{k}.jpg'), cv2.cvtColor(img, cv2.COLOR_RGB2BGR),
                                 [cv2.IMWRITE_JPEG_QUALITY, args.quality])
-                entry = {'dir': name, 'video': stem, 'frame': i - 2 * s, 'stride': s,
+                entry = {'dir': name, 'video': stem, 'source': source, 'frame': i - 2 * s, 'stride': s,
+                         'flash': flash,
                          'motion': round(median, 2), 'motion90': round(p90, 2),
                          'width': int(f0.shape[1]), 'height': int(f0.shape[0])}
                 index.append(entry)
                 known.add(name)
                 kept += 1
+                flash_kept += int(flash)
+                total_flashes += int(flash)
                 taken += 1
                 total_kept += 1
                 last_kept = i
-                emit(event='sample', path=folder, motion=entry['motion'], kept=kept)
+                emit(event='sample', path=folder, motion=entry['motion'], kept=kept, flash=flash)
                 break
         with open(index_path, 'w', encoding='utf-8') as f:
             json.dump(index, f, indent=1)
-        emit(event='video_done', index=v, video=video, kept=kept, rejected=rejected)
-    emit(event='done', kept=total_kept, total=len(index), seconds=round(time.time() - started, 1))
+        emit(event='video_done', index=v, video=video, kept=kept, flashes=flash_kept, rejected=rejected)
+    emit(event='done', kept=total_kept, flashes=total_flashes, total=len(index), seconds=round(time.time() - started, 1))
+    return 0
 
 
 def main(argv=None):
@@ -229,8 +264,8 @@ def main(argv=None):
     p.add_argument('--asymmetry', type=float, default=4.0, help='one half changing this much more = a cut')
     p.add_argument('--quality', type=int, default=95, help='JPEG quality')
     args = p.parse_args(argv)
-    build(args)
+    return build(args)
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

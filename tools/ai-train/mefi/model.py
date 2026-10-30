@@ -36,9 +36,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 ARCH = 'pyramid-v2'
-# Checkpoints of these architectures have the same weights (the 8-level
-# model was this one with a fixed level count).
-COMPATIBLE = ('pyramid-v2', 'pyramid8-v1')
+REFINED_ARCH = 'pyramid-refine-v1'
+# The first two names share weights (the 8-level model was this one with a
+# fixed level count). The refined architecture has additional versioned keys.
+COMPATIBLE = (ARCH, 'pyramid8-v1', REFINED_ARCH)
 FINE = 4        # levels 0..3 have their own blocks; all above share one
 
 
@@ -121,6 +122,52 @@ class Block(nn.Module):
         return F.pixel_shuffle(self.head(f), 2)[:, :, :h, :w]
 
 
+class FlowRefiner(nn.Module):
+    """Local vector correction using the finest block's existing features.
+
+    No second encoder, image generator, extra warp or extra scored pyramid
+    level. Pixel shuffle exposes the half-resolution body's features at full
+    resolution; a narrow, depthwise spatial filter then corrects the four flow
+    channels only. The existing blend mask is unchanged. The correction starts
+    at zero and is bounded to +/-2 network pixels per component, so this head
+    cannot replace the coarse pyramid's large-displacement search.
+    """
+
+    LIMIT = 2.0
+
+    def __init__(self, width):
+        super().__init__()
+        # mix is deliberately 1x1: only the inexpensive depthwise layer works
+        # spatially at full resolution.
+        self.mix = nn.Sequential(nn.Conv2d(BLOCK_INPUT + width // 4 + 5, 16, 1), nn.LeakyReLU(0.1))
+        self.local = nn.Sequential(nn.Conv2d(16, 16, 3, padding=1, groups=16), nn.LeakyReLU(0.1))
+        self.head = nn.Conv2d(16, 4, 1)
+        nn.init.zeros_(self.head.weight)
+        nn.init.zeros_(self.head.bias)
+
+    def forward(self, x, features, residual):
+        detail = F.pixel_shuffle(features, 2)[:, :, :x.shape[-2], :x.shape[-1]]
+        context = torch.cat((x, detail, residual), 1)
+        return torch.tanh(self.head(self.local(self.mix(context)))) * self.LIMIT
+
+
+class RefinedBlock(Block):
+    """The existing finest block plus a shared-feature, flow-only head."""
+
+    def __init__(self, cin, width, depth):
+        super().__init__(cin, width, depth)
+        self.refiner = FlowRefiner(width)
+
+    def forward(self, x):
+        h, w = x.shape[-2:]
+        features = self.stem(x)
+        features = self.body(features) + features
+        residual = F.pixel_shuffle(self.head(features), 2)[:, :, :h, :w]
+        correction = self.refiner(x, features, residual)
+        # The caller scales the block's four flow outputs by FLOW_GAIN.
+        return torch.cat((residual[:, :4] + correction / FLOW_GAIN, residual[:, 4:5]), 1)
+
+
 # The blocks' flow outputs are scaled up: motion is tens of pixels while a
 # freshly initialised layer outputs about one. Without the gain, training
 # spent its first dozen epochs only growing the output (on a small test set
@@ -142,16 +189,30 @@ BLOCK_INPUT = 6 + 6 + 4 + 1
 
 
 class PyramidFlow(nn.Module):
-    def __init__(self, preset='medium'):
+    def __init__(self, preset='medium', refiner=False):
         super().__init__()
         (coarse_width, coarse_depth), fine_widths, fine_depth = PRESETS[preset]
         self.preset = preset
+        self.arch = REFINED_ARCH if refiner else ARCH
         self.coarse = Block(BLOCK_INPUT, coarse_width, coarse_depth)
-        self.fine = nn.ModuleList([Block(BLOCK_INPUT, w, fine_depth) for w in fine_widths])
+        self.fine = nn.ModuleList([(RefinedBlock if refiner and i == FINE - 1 else Block)(
+            BLOCK_INPUT, w, fine_depth) for i, w in enumerate(fine_widths)])
 
     def block(self, level):
         """The block of a level: its own for levels 0..3, the shared one above."""
         return self.coarse if level >= FINE else self.fine[FINE - 1 - level]
+
+    def without_refiner(self):
+        """Export-only backbone copy: omit the head AND its computation.
+
+        These are the jointly trained backbone weights, not a separately
+        trained baseline. Never mutate the checkpoint or a training model.
+        """
+        net = PyramidFlow(self.preset)
+        weights = {key: value for key, value in self.state_dict().items()
+                   if not key.startswith(f'fine.{FINE - 1}.refiner.')}
+        net.load_state_dict(weights, strict=True)
+        return net
 
     def forward(self, frame0, frame1, all_levels=False):
         """frame0, frame1: [N, 3, H, W] in 0..1. Any H, W (multiples of 16
@@ -197,9 +258,30 @@ def load_checkpoint(path, map_location='cpu'):
     if arch not in COMPATIBLE:
         raise ValueError(f'{path} is a {arch} checkpoint; this trainer makes {ARCH} models. '
                          'Train a new run (the model changed to a pyramid of up to 10 levels).')
-    net = PyramidFlow(ck['preset'])
+    net = PyramidFlow(ck['preset'], refiner=arch == REFINED_ARCH)
     net.load_state_dict(ck['model'])
     return ck, net
+
+
+def initialize_from(net, path):
+    """Explicit weights-only start of a NEW run, never an architecture resume.
+
+    A legacy model may seed its refined variant without losing any learned
+    weights. Only the new, initially zero-output refiner may be missing.
+    Optimizer/schedule/validation state is intentionally not imported.
+    """
+    ck, source = load_checkpoint(path)
+    if source.preset != net.preset:
+        raise ValueError(f"initial checkpoint is {source.preset}; select the same model size")
+    if source.arch == REFINED_ARCH and net.arch != REFINED_ARCH:
+        raise ValueError('cannot discard a trained integrated refiner; enable --refiner')
+    if not all(bool(torch.isfinite(value).all()) for value in ck['model'].values()):
+        raise ValueError('initial checkpoint contains nonfinite weights')
+    missing = set(net.state_dict()) - set(ck['model'])
+    if any(not name.startswith('fine.3.refiner.') for name in missing):
+        raise ValueError('initial checkpoint is missing backbone weights')
+    net.load_state_dict(ck['model'], strict=not missing)
+    return ck
 
 
 class Exported(nn.Module):

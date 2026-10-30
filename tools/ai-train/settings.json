@@ -27,12 +27,14 @@
  "train_datasets": [
   "C:/Users/bsher/Downloads/Video"
  ],
- "preset": "large",
+ "preset": "medium",
  "epochs": 6,
- "batch": 16,
- "lr": 0.0007,
+ "batch": 4,
+ "lr": 0.0006,
  "crop": 480,
- "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1",
- "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/run1/last.pt",
- "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-ffx-local\\Release\\models\\ai_flow.onnx"
+ "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs",
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\best.pt",
+ "export": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-refinement-preview/Release/models/ai_flow.onnx",
+ "refiner": true,
+ "init_from": ""
 }

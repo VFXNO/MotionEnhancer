@@ -63,12 +63,16 @@ struct FlowSettings {
     bool disFlow = true;
     // The AI pyramid flow engine: the network trained and exported with
     // tools/ai-train (models\ai_flow.onnx), run by ONNX Runtime on the flow
-    // queue (AiFlowEstimator), its two fields filling DIS's 2x2 ring. Falls
+    // queue (AiFlowEstimator), its two fields filling the 2x2 ring. Falls
     // back to DIS when there is no model.
     bool aiFlow = false;
     // AI pyramid only: use the network's learned midpoint blend mask during
     // synthesis. Experimental, off by default; transported in time by motion.
     bool aiBlendMask = false;
+    // AI pyramid only: integrated neural correction INSTEAD OF DIS. Off
+    // selects the paired backbone-only ONNX + DIS. Choose before capture;
+    // switching requires a new session so in-flight tensor bindings stay valid.
+    bool aiRefinement = false;
     // With FFX: refine its whole-pixel 8x8 field into a per-pixel one at half
     // resolution by variational refinement (FfxRefine.hlsli), stored on a
     // 2x2 grid. Off = FFX's field as it comes.
@@ -183,6 +187,8 @@ public:
         // a mask that the presenter is still reading for an earlier pair.
         ComPtr<ID3D12Resource> aiBlendMask;
         bool hasAiBlendMask = false;
+        bool aiRefined = false;
+        int aiDisPatchPasses = 0;   // Per-pair diagnostics; zero in integrated mode.
         ID3D12Resource* aiBlendMaskInput() const { return hasAiBlendMask ? aiBlendMask.Get() : nullptr; }
         uint64_t flowFence = 0;            // flow-queue value completing this entry
         uint64_t presentFence = 0;         // last present-queue value that read it
@@ -229,6 +235,7 @@ public:
     bool usingNeural() const { return m_neuralModelLoaded && !m_usingFfx; }
     bool usingDis() const { return m_usingDis; }
     bool usingAi() const { return m_usingAi; }
+    bool usingAiRefinement() const { return m_usingAi && m_aiIntegrated; }
     bool ffxAvailable() const { return m_ffxReady; }
     uint32_t width() const { return m_width; }
     uint32_t height() const { return m_height; }
@@ -334,6 +341,7 @@ private:
     std::array<Pyramid, kMaxSlots> m_pyramids;
     std::unique_ptr<DepthService> m_depth;   // FlowSettings::aiDepth
     std::unique_ptr<AiFlowEstimator> m_aiFlow;   // FlowSettings::aiFlow
+    bool m_aiIntegrated = false;   // Selected graph; immutable for this initialized session.
     ComPtr<ID3D12Resource> m_aiPlanar;    // network input, planar, W x 6H R32 (AiFlowInputCS)
     ComPtr<ID3D12Resource> m_aiInput;     // ... as the network's input buffer
     ComPtr<ID3D12Resource> m_aiFlowOut;   // network outputs (buffers)
