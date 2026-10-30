@@ -101,6 +101,12 @@ cmake --build build-project --config Release --target motion_enhancer --parallel
 
 **2. Run** **Motion Enhancer** from the Start menu, or `build-project\Release\motion_enhancer.exe` for a source build. Pick the target window, leave **Source FPS** on `Auto` and **Output multiplier** on `Max`, then press **Start Capture**.
 
+Use `build-project` as the single active build folder. Earlier preview builds
+are archived under `backup/`; the main EXE includes the 24 FPS character branding.
+For the restored **AI flow refinement (off: DIS)** checkbox, select **AI pyramid
+(trained model)** under **Flow Engine**. Checked uses integrated AI refinement;
+unchecked uses DIS refinement. Stop/restart capture to change modes.
+
 **3. In the overlay:**
 
 | Keys | Action |

@@ -5,6 +5,7 @@
 #include <regex>
 #include <sstream>
 #include <vector>
+#include <filesystem>
 
 #include "OrtRuntime.h"
 
@@ -45,6 +46,31 @@ std::wstring AiFlowEstimator::defaultModelPath() {
 }
 
 namespace {
+std::wstring metadataPath(const std::wstring& modelPath) {
+    auto path = std::filesystem::path(modelPath);
+    path.replace_extension(L".json");
+    return path.wstring();
+}
+
+std::string metadataText(const std::wstring& modelPath) {
+    std::ifstream file(metadataPath(modelPath));
+    std::stringstream text;
+    text << file.rdbuf();
+    return text.str();
+}
+
+std::string stringField(const std::string& text, const char* name) {
+    std::smatch match;
+    return std::regex_search(text, match, std::regex(std::string("\"") + name + "\"\\s*:\\s*\"([^\"]*)\""))
+        ? match[1].str() : std::string();
+}
+
+bool boolField(const std::string& text, const char* name, bool fallback) {
+    std::smatch match;
+    return std::regex_search(text, match, std::regex(std::string("\"") + name + "\"\\s*:\\s*(true|false)"))
+        ? match[1] == "true" : fallback;
+}
+
 // The network resolution from mefi.export's <model>.json.
 bool readResolution(const std::wstring& modelPath, int& width, int& height) {
     std::wstring json = modelPath;
@@ -58,11 +84,48 @@ bool readResolution(const std::wstring& modelPath, int& width, int& height) {
     std::smatch w, h;
     if (!std::regex_search(s, w, std::regex("\"width\"\\s*:\\s*(\\d+)")) ||
         !std::regex_search(s, h, std::regex("\"height\"\\s*:\\s*(\\d+)"))) return false;
-    width = std::stoi(w[1]);
-    height = std::stoi(h[1]);
+    try {
+        width = std::stoi(w[1]);
+        height = std::stoi(h[1]);
+    } catch (const std::exception&) {
+        return false;
+    }
     return width > 0 && height > 0;
 }
 }  // namespace
+
+bool AiFlowEstimator::selectRefinementModel(const std::wstring& modelPath, bool integrated,
+                                           std::wstring& selected, std::string& reason) {
+    selected = modelPath;
+    reason.clear();
+    const std::string primary = metadataText(modelPath);
+    const bool hasRefiner = stringField(primary, "arch") == "pyramid-refine-v1" ||
+                            boolField(primary, "integrated_refiner", false);
+    if (!hasRefiner) {
+        if (!integrated) return true; // Legacy load/errors still handled by initialize().
+        reason = "This model has no integrated refiner. Train with refinement and export the pair first.";
+        return false;
+    }
+    auto companion = std::filesystem::path(modelPath);
+    companion.replace_extension(L".dis.onnx");
+    const std::string bypass = metadataText(companion.wstring());
+    int width = 0, height = 0, bypassWidth = 0, bypassHeight = 0;
+    std::error_code error;
+    const bool primaryExists = std::filesystem::is_regular_file(modelPath, error);
+    const bool bypassExists = std::filesystem::is_regular_file(companion, error);
+    const std::string bundle = stringField(primary, "bundle_id");
+    if (!primaryExists || !bypassExists || bundle.empty() || bundle != stringField(bypass, "bundle_id") ||
+        stringField(primary, "arch") != "pyramid-refine-v1" ||
+        stringField(bypass, "arch") != "pyramid-v2" || boolField(bypass, "integrated_refiner", true) ||
+        stringField(primary, "preset") != stringField(bypass, "preset") ||
+        !readResolution(modelPath, width, height) || !readResolution(companion.wstring(), bypassWidth, bypassHeight) ||
+        width != bypassWidth || height != bypassHeight) {
+        reason = "The AI/DIS export pair is missing or mismatched. Re-export and copy both ONNX files and both JSON files.";
+        return false;
+    }
+    if (!integrated) selected = companion.wstring();
+    return true;
+}
 
 bool AiFlowEstimator::initialize(ID3D12Device* device, ID3D12CommandQueue* queue, const std::wstring& modelPath) {
 #ifndef MOTION_ENHANCER_AI_DEPTH

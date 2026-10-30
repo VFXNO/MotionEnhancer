@@ -45,6 +45,12 @@ public:
     // models\ai_flow.onnx next to the executable, or MOTION_ENHANCER_AI_FLOW_MODEL.
     static std::wstring defaultModelPath();
 
+    // Select a paired export without loading DirectML. Unchecked loads the
+    // backbone-only .dis.onnx; checked loads the integrated graph. Legacy
+    // unrefined models support only DIS. Invalid/mixed pairs fail explicitly.
+    static bool selectRefinementModel(const std::wstring& modelPath, bool integrated,
+                                      std::wstring& selected, std::string& reason);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> m_impl;

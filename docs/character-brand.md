@@ -3,7 +3,8 @@
 The user-supplied celestial-character clip is used as silent decorative artwork
 below the native GUI's navigation and beside the startup splash. The original
 orbital icon, app name, controls and status card remain separate and unchanged.
-The installer/trainer UI and motion-estimation/training code are not changed.
+The artwork is separate from motion estimation and training. The earlier
+AI-refinement support has also been restored to the main build.
 
 ![Native GUI with character branding](assets/character-gui.png)
 
@@ -34,17 +35,36 @@ To check the assets and real GUI without reading the desktop or starting capture
 tools\ai-train\.venv\Scripts\python.exe tools\test_character_brand.py --exe "path\to\motion_enhancer.exe" --artifacts "path\to\screenshots"
 ```
 
-## Verified preview
+## Main build
 
-`build-character-preview/Release/motion_enhancer.exe` is a separate Release build
-with the native flow backends, runtime DLLs and 29 freshly compiled shaders.
-Its `models/` folder is deliberately empty: no existing model or installed
-executable was replaced. The trainer is not bundled in this UI preview.
+Run `build-project/Release/motion_enhancer.exe`. This is the only active build
+folder and includes the verified 24 FPS character animation, native flow
+backends, runtime DLLs and 29 compiled shaders. Future trainer exports target its
+`models/ai_flow.onnx`.
+
+The main build also contains **AI flow refinement (off: DIS)**. Select **AI pyramid
+(trained model)** on Live Capture to enable the checkbox. Checked selects
+integrated AI only; unchecked selects the backbone plus DIS. The blending mask
+is independent. Choose before capture; stop/restart to apply a different mode.
+
+With the user's approval, the active models are now exact copies of the four
+refinement-capable files supplied in Documents. Previous models were backed up;
+the source files and training checkpoints remain untouched. See
+[restoration verification](validation/ai-refinement-restored-2026-10-30.md).
+
+![Restored checkbox with AI engine selected](assets/ai-refinement-gui.png)
+
+The old character/refinement preview folders and `build-ffx-local` were moved
+intact into a dated archive under `backup/`; their different models and captures
+were not deleted. The previous main runtime and trainer settings were backed
+up there too. See [consolidation verification](validation/single-build-2026-10-30.md).
+The installation at `C:\MotionEnhancer` was not replaced.
 
 Asset/hash/alpha/padding/loop tests passed, as did native off-screen rendering
 on all three pages, native 24 fps frame selection, the nine-second loop,
 splash fade/handoff and existing
 Explorer/window-icon checks. Native portrait compositing matched the generated
-artwork to a mean error of 0.220/255. All 26 protected file hashes matched after
-verification, including the source clip, orbital assets, existing executables
-and checked checkpoints/models. No capture or training job was started.
+artwork to a mean error of 0.220/255. The initial isolated-preview verification
+matched all 26 protected hashes; consolidation separately verifies the retained
+models, checkpoints, dataset index, installation and archived files.
+No capture or training job was started.

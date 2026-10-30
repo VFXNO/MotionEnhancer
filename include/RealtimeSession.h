@@ -37,6 +37,7 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter);
 int runProjectionSelfTest(GraphicsAdapterPreference adapter);
 // Exact GPU blend-mask checks; also checks network/ring lifetime if a model is installed.
 int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter);
+int runAiRefinementSelfTest(GraphicsAdapterPreference adapter);
 // AI depth on one image (DepthEstimator): average time over 20 runs, and the
 // nearness map written to `output` as an 8-bit PNG (white = near).
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter);

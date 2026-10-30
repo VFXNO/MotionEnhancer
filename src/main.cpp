@@ -35,6 +35,7 @@ static void printUsage(const char* progName) {
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
               << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n"
               << "  " << progName << " --ai-blend-mask-self-test           # Learned-mask synthesis regression\n\n"
+              << "  " << progName << " --ai-refinement-self-test           # Paired AI/DIS refinement regression\n"
               << "  " << progName << " --train-neural <model.bin> <video.mp4|image.png> [more files...]  # Train the convolutional estimator\n"
               << "  " << progName << " --neural-epochs <n>                 # Training epochs (default: 24)\n"
               << "  " << progName << " --neural-gradient-check             # Verify the analytic gradient\n"
@@ -53,6 +54,8 @@ static void printUsage(const char* progName) {
               << "  --flow-engine <dis|sad|ffx|neural|ai>  Engine (default: dis = Dense Inverse Search;\n"
               << "                             ai = the trained model in models\\ai_flow.onnx)\n"
               << "  --ai-blend-mask          Use AI's learned blending mask (AI only, experimental; default: off)\n"
+              << "  --ai-refinement          Integrated AI refinement instead of DIS (paired refined export required)\n"
+              << "  --no-ai-refinement       Backbone-only AI + DIS refinement (default; independent of blending mask)\n"
               << "  --no-ui-mask             Interpolate static UI too (default: HUD/subtitles kept sharp)\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
@@ -244,6 +247,7 @@ int main(int argc, char** argv) {
     bool d3d12SelfTest = false;
     bool projectionSelfTest = false;
     bool aiBlendMaskSelfTest = false;
+    bool aiRefinementSelfTest = false;
     std::string neuralModelPath;
     int neuralEpochs = 24;
     bool neuralGradientCheck = false;
@@ -268,6 +272,8 @@ int main(int argc, char** argv) {
             projectionSelfTest = true;
         } else if (arg == "--ai-blend-mask-self-test") {
             aiBlendMaskSelfTest = true;
+        } else if (arg == "--ai-refinement-self-test") {
+            aiRefinementSelfTest = true;
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
         } else if (arg == "--ai-flow-test" && i + 1 < argc) {
@@ -326,6 +332,10 @@ int main(int argc, char** argv) {
             gpuSettings.uiMask = false;
         } else if (arg == "--ai-blend-mask") {
             gpuSettings.aiBlendMask = true;
+        } else if (arg == "--ai-refinement") {
+            gpuSettings.aiRefinement = true;
+        } else if (arg == "--no-ai-refinement") {
+            gpuSettings.aiRefinement = false;
         } else if (arg == "--no-occlusion-fill") {
             gpuSettings.occlusionFill = false;
         } else if (arg == "--ai-depth") {
@@ -467,6 +477,7 @@ int main(int argc, char** argv) {
     }
     if (projectionSelfTest) return runProjectionSelfTest(adapterPreference);
     if (aiBlendMaskSelfTest) return runAiBlendMaskSelfTest(adapterPreference);
+    if (aiRefinementSelfTest) return runAiRefinementSelfTest(adapterPreference);
 
     if (!aiFlowTestModel.empty()) return runAiFlowTest(aiFlowTestModel, adapterPreference);
     if (!depthTestInput.empty()) {

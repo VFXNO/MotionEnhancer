@@ -34,5 +34,5 @@
  "crop": 480,
  "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1",
  "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/run1/last.pt",
- "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-ffx-local\\Release\\models\\ai_flow.onnx"
+ "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow.onnx"
 }
