@@ -59,6 +59,7 @@ set(SOURCES
 # Header files
 set(HEADERS
     include/AppResources.h
+    include/BrandLogo.h
     include/Image.h
     include/Pyramid.h
     include/MotionVector.h

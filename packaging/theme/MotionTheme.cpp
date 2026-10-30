@@ -4,6 +4,7 @@
 #include <commctrl.h>
 #include <objidl.h>
 #include <gdiplus.h>
+#include "BrandLogo.h"
 #include <uxtheme.h>
 #include <dwmapi.h>
 #include <mmsystem.h>
@@ -21,12 +22,12 @@ constexpr COLORREF Field = RGB(13, 13, 15), Border = RGB(42, 42, 48);
 constexpr COLORREF Text = RGB(238, 238, 242), Dim = RGB(138, 138, 148);
 constexpr UINT MusicId = 1200;
 constexpr UINT_PTR SkinId = 0x4d45, AnimationId = 0x4d46;
-constexpr float Pi = 3.14159265358979323846f;
 HMODULE g_module = nullptr;
 HWND g_window = nullptr, g_musicButton = nullptr, g_page = nullptr;
 HFONT g_body = nullptr, g_title = nullptr;
 HBRUSH g_background = nullptr, g_panel = nullptr, g_field = nullptr, g_border = nullptr;
 ULONG_PTR g_gdi = 0;
+BrandLogo g_logo;
 float g_scale = 1.0f;
 int g_originalWidth = 450, g_originalHeight = 230, g_step = 0;
 bool g_uninstall = false, g_playing = false, g_audioFailed = false;
@@ -68,35 +69,7 @@ void label(Gdiplus::Graphics& g, const wchar_t* text, Gdiplus::RectF r,
 }
 
 void emblem(Gdiplus::Graphics& g, float t) {
-    const float x = 114, y = 91;
-    for (int i = 10; i > 0; --i) {
-        Gdiplus::SolidBrush glow(Gdiplus::Color(static_cast<BYTE>(2 + (10 - i) / 2), 235, 235, 242));
-        const float r = 43.0f + i * 3.4f;
-        g.FillEllipse(&glow, x - r, y - r, r * 2, r * 2);
-    }
-    Gdiplus::Pen orbit(Gdiplus::Color(160, 220, 220, 228), 1.2f);
-    g.DrawEllipse(&orbit, x - 34, y - 34, 68.0f, 68.0f);
-    orbit.SetColor(Gdiplus::Color(85, 220, 220, 228));
-    g.DrawEllipse(&orbit, x - 43, y - 43, 86.0f, 86.0f);
-    for (int k = 0; k < 6; ++k) {
-        const float a = (k * 60.0f + t * 6.0f) * Pi / 180;
-        const float dx = std::cos(a), dy = std::sin(a);
-        g.DrawLine(&orbit, x + 43 * dx, y + 43 * dy, x + 55 * dx, y + 55 * dy);
-        Gdiplus::SolidBrush dot(Gdiplus::Color(205, 238, 238, 244));
-        g.FillEllipse(&dot, x + 55 * dx - 2, y + 55 * dy - 2, 4.0f, 4.0f);
-    }
-    for (int k = 14; k > 0; --k) {
-        Gdiplus::Pen trail(Gdiplus::Color(static_cast<BYTE>(230 * (15 - k) / 15), 240, 240, 246), 2.4f);
-        trail.SetStartCap(Gdiplus::LineCapRound);
-        trail.SetEndCap(Gdiplus::LineCapRound);
-        g.DrawArc(&trail, x - 34, y - 34, 68.0f, 68.0f, t * 60 - k * 4, 4.4f);
-    }
-    Gdiplus::Pen streak(Gdiplus::Color(230, 235, 235, 241), 1.5f);
-    for (int k = -1; k <= 1; ++k)
-        g.DrawLine(&streak, x - 22.0f + std::abs(k) * 5, y + k * 8.0f, x + 5, y + k * 8.0f);
-    Gdiplus::SolidBrush core(Gdiplus::Color(246, 244, 244, 248));
-    g.FillEllipse(&core, x + 1, y - 7, 14.0f, 14.0f);
-    g.DrawEllipse(&orbit, x - 4, y - 12, 24.0f, 24.0f);
+    g_logo.draw(g, 114, 91, 104, t);
 }
 
 void paintWindow(HWND window, HDC supplied = nullptr) {
@@ -459,6 +432,7 @@ void cleanUp() {
     g_controls.clear();
     for (HFONT font : {g_body, g_title}) if (font) DeleteObject(font);
     for (HBRUSH brush : {g_background, g_panel, g_field, g_border}) if (brush) DeleteObject(brush);
+    g_logo.reset();
     if (g_gdi) Gdiplus::GdiplusShutdown(g_gdi);
     g_gdi = 0;
     g_window = g_musicButton = g_page = nullptr;
@@ -487,6 +461,7 @@ extern "C" __declspec(dllexport) void Attach(HWND parent, int, wchar_t*, stack_t
                        (monitor.rcWork.bottom - monitor.rcWork.top - 80) / 600.0f});
     Gdiplus::GdiplusStartupInput startup;
     Gdiplus::GdiplusStartup(&g_gdi, &startup, nullptr);
+    g_logo.load(g_module);
     auto font = [](int height, int weight) {
         return CreateFontW(-px(static_cast<float>(height)), 0, 0, 0, weight, FALSE, FALSE, FALSE,
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,

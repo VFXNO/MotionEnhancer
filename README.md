@@ -200,6 +200,9 @@ includes a quiet original ambient loop, with **Music / Alt+M** to mute or unmute
 `/NOMUSIC` starts muted; `/S` silent installation never starts audio. Music ends
 when setup closes. See [installer skin notes](packaging/theme/README.md).
 An [installer preview](docs/assets/installer.png) shows the matching theme.
+The [logo preview](docs/assets/logo-preview.png) shows the original orbital icon on
+light, dark and transparent backgrounds, including its native small sizes.
+The [motion preview](docs/assets/logo-motion.gif) shows its seamless animation.
 
 To rebuild the installer (NSIS 3 required on the packaging machine):
 
@@ -309,7 +312,37 @@ Disable it with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
 
 ### Graphical Interface
 
-Launch the executable without arguments (or pass `--gui`) to open the native Windows interface. Its theme is monochrome: near-black surfaces, white accents and rounded cards drawn anti-aliased with GDI+. A sidebar holds the emblem, the two pages (**Live Capture**, **Offline Interpolation**; Ctrl+Tab switches) and a status card (Idle / Capturing / Working). It is animated at about 60 frames per second. The emblem's spark circles the ring, its nodes orbit and its glow breathes. The sidebar's lines drift and its points of light twinkle, and the status dot pulses while a job runs. The navigation highlight glides between pages, a new page's title slides in, buttons fade on hover, and the primary button shows a moving sheen. The ambient motion runs only while the window is in front; the transitions always finish. On Windows 11 the window has rounded corners, a dark caption and Segoe UI Variable text. On start a splash plays for 2.6 s while the window is set up behind it. The emblem builds itself: the rings are drawn round behind the spark, the nodes shoot out, the trails sweep in and the core flashes. Then the name settles in letter by letter, and the card fades out as the window fades in. A click or a key skips to the end; `MOTION_ENHANCER_NO_SPLASH=1` turns it off. For offline checks, `MOTION_ENHANCER_SPLASH_FRAMES=<prefix>` writes its frames as PNGs, and `MOTION_ENHANCER_SPLASH_TEST=1` plays it off screen and reports the window's state. For offline UI checks, `MOTION_ENHANCER_GUI_SNAPSHOT=<png>` renders the window off screen into a PNG and exits, without reading the screen; `MOTION_ENHANCER_GUI_PAGE=1` selects the second page and `MOTION_ENHANCER_GUI_TIME=<seconds>` the animation's time.
+Launch the executable without arguments (or pass `--gui`) to open the native
+Windows interface. Its theme is monochrome: near-black surfaces, white accents
+and rounded cards drawn anti-aliased with GDI+. A sidebar holds the emblem,
+navigation (**Live Capture**, **Offline Interpolation**, **AI Model**; Ctrl+Tab
+switches) and a status card (Idle / Capturing / Working).
+
+The original orbital identity is retained: two rings, six evenly spaced nodes
+and a bright core with three motion trails. Finer stroke weights, shorter node
+stems and balanced core spacing keep it crisp. Its seamless 12-second animation
+combines a steady circling spark, slow node rotation, a soft radial glow and
+gently flowing trails, without flicker or bouncing geometry.
+The static app icon uses the same identity with
+transparent corners—no square background. The sidebar's lines drift and its
+points of light twinkle, the status dot pulses while a job runs, navigation
+glides between pages, buttons fade on hover and the primary button has a moving
+sheen. Ambient animation runs only while the app is in front; transitions always
+finish. Windows 11 adds rounded corners, a dark caption and Segoe UI Variable text.
+
+The 2.6-second startup splash builds the logo in stages with smooth easing:
+rings draw in, nodes extend one by one, motion trails sweep in, and the core
+settles with a soft bloom. The name appears letter by letter, then the splash
+fades as the main window appears, keeping the logo's motion in phase.
+A click or key skips it; `MOTION_ENHANCER_NO_SPLASH=1` disables it.
+`MOTION_ENHANCER_SPLASH_FRAMES=<prefix>` writes PNG frames, and
+`MOTION_ENHANCER_SPLASH_TEST=1` plays it off screen and reports the window state.
+For offline UI checks, `MOTION_ENHANCER_GUI_SNAPSHOT=<png>` renders the window
+off screen into a PNG and exits without reading the screen;
+`MOTION_ENHANCER_GUI_PAGE=1` selects the second page and
+`MOTION_ENHANCER_GUI_TIME=<seconds>` sets the animation time.
+`MOTION_ENHANCER_LOGO_FRAMES=<prefix>` exports one complete logo/sidebar loop
+at 30 fps plus matching intro/ambient frames for regression checks.
 
 ```powershell
 .\build-project\Release\motion_enhancer.exe

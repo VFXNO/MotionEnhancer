@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Motion Enhancer">
+  <title>Motion Enhancer — orbital motion</title>
+  <!-- The original orbit, six nodes, and frame-in-motion core, with balanced
+       spacing and optical stroke adjustments for the smallest Windows icons. -->
+  <circle cx="50" cy="50" r="39" fill="#111115" stroke="#737380" stroke-width="1.1" data-min-stroke-px="0.6"/>
+  <line x1="89" y1="50" x2="95" y2="50" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <line x1="69.5" y1="16.225" x2="72.5" y2="11.029" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <line x1="30.5" y1="16.225" x2="27.5" y2="11.029" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <line x1="11" y1="50" x2="5" y2="50" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <line x1="30.5" y1="83.775" x2="27.5" y2="88.971" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <line x1="69.5" y1="83.775" x2="72.5" y2="88.971" stroke="#92929F" stroke-width="1.1" stroke-linecap="round" data-min-stroke-px="0.6"/>
+  <circle cx="95" cy="50" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="72.5" cy="11.029" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="27.5" cy="11.029" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="5" cy="50" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="27.5" cy="88.971" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="72.5" cy="88.971" r="1.75" fill="#E0E0E9" stroke="#111115" stroke-width="0.55" data-min-radius-px="0.45"/>
+  <circle cx="50" cy="50" r="30" fill="none" stroke="#C3C3CD" stroke-width="1.45" data-min-stroke-px="0.75"/>
+  <polyline points="69.284,27.019 71.213,28.787 72.981,30.716 74.575,32.793 75.981,35 77.189,37.321 78.191,39.739 78.978,42.235 79.544,44.791"
+    fill="none" stroke="#F0F0F6" stroke-width="2" stroke-linecap="round" data-min-size="32"/>
+  <circle cx="59" cy="50" r="9.8" fill="none" stroke="#878794" stroke-width="1" data-min-size="32"/>
+  <line x1="31" y1="42.5" x2="52" y2="42.5" stroke="#C9C9D4" stroke-width="1.4" stroke-linecap="round" data-min-stroke-px="0.65"/>
+  <line x1="27" y1="50" x2="54" y2="50" stroke="#E1E1E9" stroke-width="1.8" stroke-linecap="round" data-min-stroke-px="0.8"/>
+  <line x1="31" y1="57.5" x2="52" y2="57.5" stroke="#C9C9D4" stroke-width="1.4" stroke-linecap="round" data-min-stroke-px="0.65"/>
+  <circle cx="59" cy="50" r="6" fill="#F1F1F6"/>
+</svg>

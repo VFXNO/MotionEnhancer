@@ -1,0 +1,3 @@
+#include "AppResources.h"
+
+IDR_BRAND_LOGO RCDATA "assets/logo.png"

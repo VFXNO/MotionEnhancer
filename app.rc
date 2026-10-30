@@ -3,3 +3,4 @@
 
 1 RT_MANIFEST "app.manifest"
 IDI_MOTION_ENHANCER ICON "packaging/assets/installer.ico"
+IDR_BRAND_LOGO RCDATA "packaging/assets/logo.png"

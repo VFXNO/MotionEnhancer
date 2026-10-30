@@ -15,11 +15,13 @@ using std::max;
 using std::min;
 }
 #include <gdiplus.h>
+#include "BrandLogo.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstddef>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -188,6 +190,7 @@ HFONT g_fontTitle = nullptr;
 HFONT g_fontBrand = nullptr;
 HFONT g_fontNav = nullptr;
 ULONG_PTR g_gdiplusToken = 0;
+BrandLogo g_brandLogo;
 int g_offsetX = 0;   // added to x by addControl: the page area starts right of the sidebar
 
 // ---- Animation (WM_TIMER kAnimTimer, animate()) ----
@@ -1676,101 +1679,16 @@ void paintSectionPanel(HDC hdc, const RECT& rc, const char* title, SectionIcon i
     SelectObject(hdc, oldFont);
 }
 
-// How far the emblem has built itself (the splash animates these from 0;
-// the sidebar draws it complete) and its clock.
+// The original staged orbit/node/trail animation is shared with the installer.
 struct EmblemState {
-    float ring = 1.0f;     // the rings, drawn round from the top
-    float nodes = 1.0f;    // the circuit nodes, shooting out
-    float trails = 1.0f;   // the motion trails, sweeping in
-    float flash = 0.0f;    // a flash of the core, 0..1
+    float reveal = 1.0f;
     float time = -1.0f;    // seconds; < 0 = g_time
-    float spark = -1e9f;   // the spark's angle in degrees; < -1e8 = from the time
+    bool assembling = false;
 };
 
-// The emblem: a ring with circuit nodes around a frame in motion - a bright
-// core and the trails it leaves - with a soft glow behind. Animated by its
-// clock: the nodes orbit slowly, a spark runs round the ring, the glow
-// breathes and the trails flicker.
 void paintEmblem(Gdiplus::Graphics& g, float cx, float cy, const EmblemState& e = {}) {
     const float t = e.time >= 0.0f ? e.time : static_cast<float>(g_time);
-    const float breath = 0.5f + 0.5f * std::sin(t * 1.6f);
-    for (int i = 7; i >= 1; --i) {
-        const float r = 32.0f + (5.0f + 1.5f * breath) * i;
-        Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), static_cast<int>((4 + 2 * breath) * e.ring)));
-        g.FillEllipse(&glow, cx - r, cy - r, 2 * r, 2 * r);
-    }
-    Gdiplus::Pen ring(gpColor(RGB(255, 255, 255), 215), 1.6f);
-    Gdiplus::Pen thin(gpColor(RGB(255, 255, 255), 80), 1.0f);
-    if (e.ring >= 1.0f) {
-        g.DrawEllipse(&ring, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f);
-        g.DrawEllipse(&thin, cx - 38.0f, cy - 38.0f, 76.0f, 76.0f);
-    } else if (e.ring > 0.0f) {
-        g.DrawArc(&ring, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f, -90.0f, 360.0f * e.ring);
-        g.DrawArc(&thin, cx - 38.0f, cy - 38.0f, 76.0f, 76.0f, -90.0f, -360.0f * e.ring);
-    }
-    // A spark running round the ring, its tail a thinning, fading arc.
-    const float head = e.spark > -1e8f ? e.spark : t * 70.0f;
-    for (int k = 0; k < 14; ++k) {
-        const float f = k / 14.0f;
-        Gdiplus::Pen tail(gpColor(RGB(255, 255, 255), static_cast<int>(220 * (1.0f - f) * (1.0f - f))),
-                          2.6f - 1.8f * f);
-        tail.SetStartCap(Gdiplus::LineCapRound);
-        tail.SetEndCap(Gdiplus::LineCapRound);
-        g.DrawArc(&tail, cx - 30.0f, cy - 30.0f, 60.0f, 60.0f, head - 4.0f * (k + 1), 4.2f);
-    }
-    {
-        const float a = head * 3.14159265f / 180.0f;
-        const float sx = cx + 30.0f * std::cos(a), sy = cy + 30.0f * std::sin(a);
-        Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), 40));
-        g.FillEllipse(&glow, sx - 6.0f, sy - 6.0f, 12.0f, 12.0f);
-        Gdiplus::SolidBrush spark(gpColor(RGB(255, 255, 255)));
-        g.FillEllipse(&spark, sx - 2.4f, sy - 2.4f, 4.8f, 4.8f);
-    }
-    // Circuit nodes on the outer ring, orbiting slowly, with traces outward.
-    if (e.nodes > 0.0f) {
-        Gdiplus::SolidBrush node(gpColor(RGB(255, 255, 255), 230));
-        int k = 0;
-        for (float a0 : {-140.0f, -40.0f, 40.0f, 140.0f, -90.0f, 90.0f}) {
-            // One after another, each with a small overshoot.
-            const float p = std::clamp(e.nodes * 1.6f - 0.12f * k++, 0.0f, 1.0f);
-            if (p <= 0.0f) continue;
-            const float reach = 10.0f * (1.0f + 0.25f * std::sin(3.14159265f * p)) * p;
-            const float rad = (a0 + t * 8.0f) * 3.14159265f / 180.0f;
-            const float x = cx + 38.0f * std::cos(rad), y = cy + 38.0f * std::sin(rad);
-            const float ox = cx + (38.0f + reach) * std::cos(rad), oy = cy + (38.0f + reach) * std::sin(rad);
-            g.DrawLine(&thin, x, y, ox, oy);
-            const float r = 2.5f * p;
-            g.FillEllipse(&node, ox - r, oy - r, 2 * r, 2 * r);
-        }
-    }
-    // Motion trails left of the core, flickering.
-    for (int i = 0; i < 3 && e.trails > 0.0f; ++i) {
-        const float y = cy - 9.0f + 9.0f * i;
-        const float sweep = std::clamp(e.trails * 1.5f - 0.25f * i, 0.0f, 1.0f);
-        if (sweep <= 0.0f) continue;
-        const float len = (i == 1 ? 26.0f : 18.0f) * (1.0f + 0.12f * std::sin(t * 4.0f + i * 2.1f)) * sweep;
-        Gdiplus::LinearGradientBrush fade(Gdiplus::PointF(cx - len - 4.0f, y), Gdiplus::PointF(cx, y),
-                                          gpColor(RGB(255, 255, 255), 0),
-                                          gpColor(RGB(255, 255, 255), static_cast<int>(220 * sweep)));
-        Gdiplus::Pen trail(&fade, i == 1 ? 2.4f : 1.6f);
-        trail.SetStartCap(Gdiplus::LineCapRound);
-        trail.SetEndCap(Gdiplus::LineCapRound);
-        g.DrawLine(&trail, cx - len - 4.0f, y, cx + 2.0f, y);
-    }
-    if (e.flash > 0.0f)
-        for (int i = 6; i >= 1; --i) {
-            const float r = 7.0f + 5.0f * i * e.flash;
-            Gdiplus::SolidBrush glow(gpColor(RGB(255, 255, 255), static_cast<int>(36 * e.flash)));
-            g.FillEllipse(&glow, cx + 8.0f - r, cy - r, 2 * r, 2 * r);
-        }
-    const float coreR = 7.0f * std::clamp(e.ring * 1.4f, 0.0f, 1.0f);
-    if (coreR > 0.0f) {
-        Gdiplus::SolidBrush core(gpColor(RGB(255, 255, 255)));
-        g.FillEllipse(&core, cx + 8.0f - coreR, cy - coreR, 2 * coreR, 2 * coreR);
-    }
-    Gdiplus::Pen halo(gpColor(RGB(255, 255, 255), static_cast<int>((80 + 80 * breath) * e.ring)), 1.2f);
-    const float hr = 11.0f + 2.0f * breath;
-    g.DrawEllipse(&halo, cx + 8.0f - hr, cy - hr, 2 * hr, 2 * hr);
+    g_brandLogo.draw(g, cx, cy, 104.0f, t, e.reveal, e.assembling);
 }
 
 // The navigation icons: a live signal, and two frames with the one made
@@ -2362,18 +2280,11 @@ void paintSplash(Gdiplus::Graphics& target, float t) {
         g.DrawPath(&pen, &edge);
     }
 
-    // The emblem builds itself: the rings drawn round behind the spark,
-    // the nodes shooting out, the trails sweeping in, the core flashing.
+    // Reveal the same refined orbit-and-motion emblem as the window icon.
     EmblemState e;
     e.time = t;
-    e.ring = easeOut(phase(t, 0.15f, 0.8f));
-    e.nodes = easeOut(phase(t, 0.6f, 0.6f));
-    e.trails = easeOut(phase(t, 0.85f, 0.5f));
-    e.flash = std::sin(3.14159265f * phase(t, 0.95f, 0.7f));
-    // The spark leads the ring, then keeps circling at the sidebar's speed.
-    const float drawn = phase(t, 0.15f, 0.8f);
-    e.spark = drawn < 1.0f ? -90.0f + 360.0f * easeOut(drawn) : 270.0f + (t - 0.95f) * 160.0f;
-    const float ex = kSplashW / 2.0f - 4.0f, ey = 140.0f;
+    e.assembling = true;
+    const float ex = kSplashW / 2.0f, ey = 140.0f;
     g.TranslateTransform(ex, ey);
     g.ScaleTransform(1.35f, 1.35f);
     paintEmblem(g, 0.0f, 0.0f, e);
@@ -2519,6 +2430,9 @@ void playSplash(HWND window, const RECT& area) {
             skipShift += kSplashLength - kSplashFade - t;
             t = kSplashLength - kSplashFade;
         }
+        // The main window uses this same clock underneath the crossfade. Do
+        // not restart the spark/nodes at zero when the splash goes away.
+        g_time = std::min(t, kSplashLength);
         if (t >= kSplashLength) break;
         {
             Gdiplus::Graphics g(&surface);
@@ -2561,19 +2475,21 @@ void playSplash(HWND window, const RECT& area) {
     // Fully opaque, and not layered any more (layering costs a copy of every frame).
     SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA);
     SetWindowLongA(window, GWL_EXSTYLE, GetWindowLongA(window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+    QueryPerformanceCounter(&g_lastTick);
     RedrawWindow(window, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
     SetForegroundWindow(window);
 }
 
 // Offline check: MOTION_ENHANCER_SPLASH_FRAMES=<prefix> writes the splash's
-// frames (every 0.1 s, over black) as <prefix>_NN.png.
+// frames (30 fps, over the README background) as <prefix>_NN.png.
 bool writeSplashFrames(const char* prefix) {
+    constexpr int fps = 30;
     Gdiplus::Bitmap surface(kSplashW, kSplashH, PixelFormat32bppPARGB);
-    int index = 0;
-    for (float t = 0.0f; t < kSplashLength; t += 0.1f, ++index) {
+    const int count = static_cast<int>(std::lround(kSplashLength * fps));
+    for (int index = 0; index < count; ++index) {
         {
             Gdiplus::Graphics g(&surface);
-            paintSplash(g, t);
+            paintSplash(g, static_cast<float>(index) / fps);
         }
         Image image(kSplashW, kSplashH, 3);
         for (int y = 0; y < kSplashH; ++y)
@@ -2593,6 +2509,56 @@ bool writeSplashFrames(const char* prefix) {
     return true;
 }
 
+// A complete native 30-fps logo loop, plus the intro/ambient hand-off. This
+// renders directly to memory: no window capture or hundreds of app launches.
+bool writeLogoFrames(const char* prefix) {
+    constexpr int size = 256, fps = 30;
+    Gdiplus::Bitmap surface(size, size, PixelFormat32bppARGB);
+    Image image(size, size, 3);
+    Gdiplus::Bitmap sidebar(kSidebarW, 330, PixelFormat32bppARGB);
+    Image sidebarImage(kSidebarW, 330, 3);
+    auto save = [](Gdiplus::Bitmap& bitmap, Image& frame, const char* name) {
+        Gdiplus::BitmapData data = {};
+        Gdiplus::Rect area(0, 0, frame.width, frame.height);
+        if (bitmap.LockBits(&area, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &data) != Gdiplus::Ok) return false;
+        for (int y = 0; y < frame.height; ++y) {
+            const auto* row = static_cast<const BYTE*>(data.Scan0) + static_cast<std::ptrdiff_t>(y) * data.Stride;
+            for (int x = 0; x < frame.width; ++x)
+                for (int c = 0; c < 3; ++c) frame.set(x, y, c, row[x * 4 + 2 - c]);
+        }
+        bitmap.UnlockBits(&data);
+        return frame.savePNG(name);
+    };
+    auto write = [&](const char* name, float time, bool assembling = false) {
+        {
+            Gdiplus::Graphics graphics(&surface);
+            graphics.Clear(gpColor(ColSidebar));
+            g_brandLogo.draw(graphics, size / 2.0f, size / 2.0f, 184, time, 1, assembling);
+        }
+        return save(surface, image, name);
+    };
+    char name[MAX_PATH];
+    const int count = static_cast<int>(BrandLogo::AnimationPeriod * fps);
+    for (int i = 0; i <= count; ++i) {
+        if (std::snprintf(name, sizeof(name), "%s_%04d.png", prefix, i) >= static_cast<int>(sizeof(name))) return false;
+        if (!write(name, static_cast<float>(i) / fps)) return false;
+        // Use the actual sidebar painter/font metrics, not a composited mock-up.
+        g_time = static_cast<double>(i) / fps;
+        {
+            Gdiplus::Graphics graphics(&sidebar);
+            HDC dc = graphics.GetHDC();
+            const RECT client = {0, 0, 1116, 781};
+            paintSidebar(dc, client);
+            graphics.ReleaseHDC(dc);
+        }
+        if (std::snprintf(name, sizeof(name), "%s_sidebar_%04d.png", prefix, i) >= static_cast<int>(sizeof(name))) return false;
+        if (!save(sidebar, sidebarImage, name)) return false;
+    }
+    if (std::snprintf(name, sizeof(name), "%s_intro.png", prefix) >= static_cast<int>(sizeof(name)) || !write(name, kSplashLength, true)) return false;
+    if (std::snprintf(name, sizeof(name), "%s_handoff.png", prefix) >= static_cast<int>(sizeof(name)) || !write(name, kSplashLength)) return false;
+    return true;
+}
+
 } // namespace
 
 int runGuiApplication() {
@@ -2607,6 +2573,7 @@ int runGuiApplication() {
 
     Gdiplus::GdiplusStartupInput gdiplusInput;
     Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusInput, nullptr);
+    g_brandLogo.load(GetModuleHandleW(nullptr));
     ensureTheme();
 
     HINSTANCE instance = GetModuleHandleA(nullptr);
@@ -2624,9 +2591,18 @@ int runGuiApplication() {
     windowClass.lpszClassName = "MotionEnhancerGuiClass";
     RegisterClassExA(&windowClass);
 
+    char logoFrames[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_LOGO_FRAMES", logoFrames, sizeof(logoFrames))) {
+        const bool written = writeLogoFrames(logoFrames);
+        g_brandLogo.reset();
+        Gdiplus::GdiplusShutdown(g_gdiplusToken);
+        return written ? 0 : 1;
+    }
+
     char splashFrames[MAX_PATH] = {};
     if (GetEnvironmentVariableA("MOTION_ENHANCER_SPLASH_FRAMES", splashFrames, sizeof(splashFrames))) {
         const bool written = writeSplashFrames(splashFrames);
+        g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return written ? 0 : 1;
     }
@@ -2649,7 +2625,11 @@ int runGuiApplication() {
         std::max<int>(area.top, (area.top + area.bottom - windowH) / 2), windowW, windowH,
         nullptr, nullptr, instance, nullptr
     );
-    if (!window) return 1;
+    if (!window) {
+        g_brandLogo.reset();
+        Gdiplus::GdiplusShutdown(g_gdiplusToken);
+        return 1;
+    }
     SetLayeredWindowAttributes(window, 0, 0, LWA_ALPHA);
 
     // Dark immersive title bar where supported.
@@ -2718,6 +2698,7 @@ int runGuiApplication() {
         ReleaseDC(window, screen);
         const bool saved = image.savePNG(snapshot);
         DestroyWindow(window);
+        g_brandLogo.reset();
         Gdiplus::GdiplusShutdown(g_gdiplusToken);
         return saved ? 0 : 1;
     }
@@ -2752,6 +2733,7 @@ int runGuiApplication() {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
+    g_brandLogo.reset();
     Gdiplus::GdiplusShutdown(g_gdiplusToken);
     return static_cast<int>(message.wParam);
 }

@@ -4,42 +4,123 @@ Run with Python 3: python tools/make_installer_assets.py
 The generated assets are checked in; normal packaging does not need Python.
 """
 from array import array
+import argparse
 import math
 from pathlib import Path
 import struct
 import sys
 import wave
+import xml.etree.ElementTree as ET
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "packaging" / "assets"
 
 
+def logo_shapes(size=256):
+    """Read the deliberately small SVG subset used by our single master logo."""
+    shapes = []
+    svg = ET.parse(ASSETS / "logo.svg").getroot()
+    if svg.attrib["viewBox"] != "0 0 100 100":
+        raise ValueError("Logo must use its 100-unit viewBox")
+    for element in svg:
+        tag = element.tag.rsplit("}", 1)[-1]
+        if tag == "title" or size < float(element.attrib.get("data-min-size", 0)): continue
+        fill = element.attrib.get("fill", "none")
+        stroke = element.attrib.get("stroke", "none")
+        width = max(float(element.attrib.get("stroke-width", 0)),
+                    float(element.attrib.get("data-min-stroke-px", 0)) * 100 / size)
+        if tag == "circle":
+            x, y, r = (float(element.attrib[k]) for k in ("cx", "cy", "r"))
+            r = max(r, float(element.attrib.get("data-min-radius-px", 0)) * 100 / size)
+            if fill != "none":
+                shapes.append((tag, (x, y, r), tuple(bytes.fromhex(fill[1:])), (x - r, y - r, x + r, y + r)))
+            if stroke != "none":
+                radius = r + width / 2
+                shapes.append(("ring", (x, y, r, width / 2), tuple(bytes.fromhex(stroke[1:])),
+                               (x - radius, y - radius, x + radius, y + radius)))
+        elif tag == "polygon":
+            points = [tuple(map(float, p.split(","))) for p in element.attrib["points"].split()]
+            xs, ys = zip(*points)
+            shapes.append((tag, points, tuple(bytes.fromhex(fill[1:])), (min(xs), min(ys), max(xs), max(ys))))
+        elif tag in ("line", "polyline"):
+            if tag == "line":
+                points = [(float(element.attrib[x]), float(element.attrib[y])) for x, y in (("x1", "y1"), ("x2", "y2"))]
+            else:
+                points = [tuple(map(float, p.split(","))) for p in element.attrib["points"].split()]
+            color, radius = tuple(bytes.fromhex(stroke[1:])), width / 2
+            for (ax, ay), (bx, by) in zip(points, points[1:]):
+                shapes.append(("stroke", (ax, ay, bx, by, radius), color,
+                               (min(ax, bx) - radius, min(ay, by) - radius, max(ax, bx) + radius, max(ay, by) + radius)))
+        else:
+            raise ValueError("Unsupported logo element: " + tag)
+    return shapes
+
+
+def raster_logo(size, shapes):
+    """Straight-alpha RGBA, supersampled without ever baking in a background."""
+    rgba = bytearray()
+    for y in range(size):
+        for x in range(size):
+            red = green = blue = covered = 0
+            for yy in (0.125, 0.375, 0.625, 0.875):
+                for xx in (0.125, 0.375, 0.625, 0.875):
+                    sx, sy = (x + xx) * 100 / size, (y + yy) * 100 / size
+                    ink = None
+                    for tag, data, color, (x0, y0, x1, y1) in shapes:
+                        if not (x0 <= sx <= x1 and y0 <= sy <= y1): continue
+                        if tag == "circle":
+                            cx, cy, r = data
+                            inside = (sx - cx) ** 2 + (sy - cy) ** 2 <= r * r
+                        elif tag == "ring":
+                            cx, cy, r, half_width = data
+                            inside = abs(math.hypot(sx - cx, sy - cy) - r) <= half_width
+                        elif tag == "stroke":
+                            ax, ay, bx, by, radius = data
+                            dx, dy = bx - ax, by - ay
+                            along = max(0, min(1, ((sx - ax) * dx + (sy - ay) * dy) / (dx * dx + dy * dy)))
+                            inside = (sx - ax - along * dx) ** 2 + (sy - ay - along * dy) ** 2 <= radius * radius
+                        else:
+                            inside = False
+                            ax, ay = data[-1]
+                            for bx, by in data:
+                                if (ay > sy) != (by > sy) and sx < (bx - ax) * (sy - ay) / (by - ay) + ax:
+                                    inside = not inside
+                                ax, ay = bx, by
+                        if inside: ink = color
+                    if ink is not None:
+                        covered += 1
+                        red += ink[0]
+                        green += ink[1]
+                        blue += ink[2]
+            rgba.extend((round(red / covered), round(green / covered), round(blue / covered),
+                         round(255 * covered / 16)) if covered else (0, 0, 0, 0))
+    return rgba
+
+
+def write_png(path, size, rgba):
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+    rows = b"".join(b"\0" + rgba[y * size * 4:(y + 1) * size * 4] for y in range(size))
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
+                     + chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b""))
+
+
 def icon():
     images = []
     for size in (16, 24, 32, 48, 64, 128, 256):
+        rgba = raster_logo(size, logo_shapes(size))
+        if size == 256: write_png(ASSETS / "logo.png", size, rgba)
         pixels = bytearray()
-        # Supersampling keeps the orbit/rays readable at small icon sizes.
-        for y in reversed(range(size)):
+        stride = ((size + 31) // 32) * 4
+        mask = bytearray(stride * size)
+        for row, y in enumerate(reversed(range(size))):
             for x in range(size):
-                total = 0.0
-                for yy in (0.125, 0.375, 0.625, 0.875):
-                    for xx in (0.125, 0.375, 0.625, 0.875):
-                        dx, dy = (x + xx) / size - 0.5, (y + yy) / size - 0.5
-                        r = math.hypot(dx, dy)
-                        value = 0.0
-                        if abs(r - 0.31) < 0.009: value = 0.85
-                        if abs(r - 0.39) < 0.005: value = max(value, 0.4)
-                        if math.hypot(dx - 0.065, dy) < 0.065: value = 1.0
-                        for line_y, line_x in ((-0.08, -0.19), (0, -0.23), (0.08, -0.19)):
-                            if line_x < dx < 0.03 and abs(dy - line_y) < 0.008: value = 0.85
-                        for k in range(6):
-                            a = k * math.pi / 3
-                            if math.hypot(dx - 0.43 * math.cos(a), dy - 0.43 * math.sin(a)) < 0.02:
-                                value = 0.9
-                        total += value
-                v = int(12 + 230 * total / 16)
-                pixels.extend((v + 2, v, v, 255))  # BGRA, on the app's near-black surface
-        mask = bytes(((size + 31) // 32) * 4 * size)
+                offset = (y * size + x) * 4
+                r, g, b, a = rgba[offset:offset + 4]
+                pixels.extend((b, g, r, a))
+                # The legacy AND mask agrees with zero alpha, including corners.
+                if not a: mask[row * stride + x // 8] |= 0x80 >> (x % 8)
         header = struct.pack("<IiiHHIIiiII", 40, size, size * 2, 1, 32, 0,
                              len(pixels) + len(mask), 0, 0, 0, 0)
         images.append((size, header + pixels + mask))
@@ -108,7 +189,10 @@ def music():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--icons-only", action="store_true", help="Regenerate logo PNG/ICO without touching the music")
+    args = parser.parse_args()
     ASSETS.mkdir(parents=True, exist_ok=True)
     icon()
-    music()
-    print(f"Generated original installer icon and ambient music in {ASSETS}")
+    if not args.icons_only: music()
+    print(f"Generated shared transparent logo/icon{' and ambient music' if not args.icons_only else ''} in {ASSETS}")

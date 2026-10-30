@@ -108,3 +108,78 @@ code changed in this update.
   No live capture session was started to test the overlay icon. Reinstalling
   the new package updates an existing copy; pinned-icon cache refresh was not
   forced on this machine.
+
+## Logo refinement and transparent icon (2026-10-30)
+
+- Replaced the busy orbit/core/circuit logo with a bold, forward-leaning **M**
+  inside a restrained circular badge. `packaging/assets/logo.svg` is the single
+  master for the ICO and PNG; app, splash, installer and documentation now use
+  the same artwork and a subtle rim highlight instead of the old effects.
+- Fixed the actual square-icon cause: the old generator wrote fully opaque
+  pixels across the entire icon. Every size now has zero-alpha corners,
+  supersampled alpha edges, no hidden matte color, and a matching legacy AND
+  transparency mask. Preview: [light/dark/transparent](../assets/logo-preview.png).
+- The updated icon regression checks embedded PNG/ICO bytes, all seven sizes,
+  transparency and AND masks, shell extraction and real `DrawIconEx` compositing
+  on light/dark surfaces, plus actual off-screen GUI/splash window icons.
+- Logo PNG data is embedded in the executable and installer skin DLL; no loose
+  image is required on target machines. The shared renderer keeps its image
+  stream alive and releases cached images before GDI+ shutdown.
+- Rebuilt installer/portable ZIP passed their checksums and all 68 portable
+  payload hashes. Actual release setup passed preview/music/cancel checks.
+  An isolated namespace build of the same source, plugin and payload passed
+  interactive/silent install/remove, data preservation, D3D12 and AI-mask checks.
+  Existing application registration and executable hash were left unchanged.
+- Refreshed app/setup previews, README banner and sidebar/splash animations;
+  no inference or capture behavior was changed. Windows pinned-icon caches
+  were not purged; re-pin an old shortcut if Windows still displays its old icon.
+
+## Original logo and animation restored (2026-10-30)
+
+- Supersedes the rejected M redesign above. Restored the original orbital
+  identity: two rings, six nodes, a bright moving-frame core and three motion
+  trails. Refined spacing, rounded strokes and small-icon optical weights;
+  retained transparent alpha/AND masks instead of the old opaque square.
+- Restored the full original animation in the shared app/setup renderer:
+  circling spark with a fading tail, orbiting nodes, breathing glow and
+  flickering trails. The splash again draws rings progressively, extends nodes
+  in sequence, sweeps in trails and flashes the core. Windows icons stay static.
+- Actual off-screen frame checks passed for each independently masked logo
+  region: nodes (292 changed pixels), spark (203), trails (14), glow (6313),
+  and staged splash assembly. `docs/tools/check_logo_animation.py` retains the
+  regression and updates actual-app GIFs/screenshots; it never reads the screen.
+- Rebuilt the application and themed installer/portable ZIP. Embedded icon,
+  transparency/compositing and GUI/splash icon tests passed, as did setup
+  preview/navigation/music/cancel checks without changing existing registration.
+- Final portable executable repeated the animation checks successfully. All
+  68 payload hashes and archive checksums matched; D3D12 and model-backed
+  AI-mask self-tests passed. Refreshed sidebar/splash GIFs show the actual
+  restored application animation, not a separate mock-up.
+
+## Orbital polish and smoother animation (2026-10-30)
+
+- Kept the original identity, with finer ring/stem weights, slightly smaller
+  nodes and a better-balanced core/trail layout. Small-icon optical minimums
+  retain legibility; all seven sizes still have transparent corners and AND masks.
+- Replaced stacked glow discs with a soft radial fade and the segmented spark
+  tail with a continuous gradient. Slower, constant-speed orbits and restrained
+  trail flow replace flicker, changing geometry and springy node overshoot.
+- Every ambient component shares a seamless 12-second period. Startup uses
+  smooth easing and a soft core bloom, then carries its animation clock into
+  the sidebar instead of resetting the logo's position or speed.
+- Native off-screen exports passed exact loop-endpoint equality, seam-motion
+  continuity and intro/ambient equality. Masked animation checks passed for
+  nodes (221 changed pixels), spark (140), trails (78) and glow (2020), plus
+  the staged splash. The final portable executable repeated these checks.
+- Updated real-app screenshots, static artwork and 30-fps previews: 360 frames
+  for each 12-second logo/sidebar loop and 78 frames for the 2.6-second splash.
+  GIF checks verify frame count, duration and retained bright artwork; palettes
+  are sampled across the sequence so the splash's blank first frame cannot
+  erase later artwork during quantization.
+- Rebuilt the FidelityFX-enabled application, installer and portable ZIP. All
+  68 portable payload hashes, executable equality and archive checksums passed,
+  along with embedded image/alpha/AND-mask, Windows shell/compositing,
+  GUI/splash icon, D3D12 and model-backed AI-mask tests. Final setup preview,
+  navigation, music controls and cancel passed without changing registration
+  or the existing `C:\MotionEnhancer` executable hash. No installation was
+  replaced, no icon caches were purged, and no commits or pushes were made.

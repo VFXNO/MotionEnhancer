@@ -607,6 +607,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\AiFlowEstimator.cpp" />
     <ResourceCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\app.rc" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\AppResources.h" />
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\BrandLogo.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Image.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Pyramid.h" />
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\MotionVector.h" />

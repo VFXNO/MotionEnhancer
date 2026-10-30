@@ -42,6 +42,14 @@ get_class_name = api(USER, "GetClassNameW", c.c_int, w.HWND, w.LPWSTR, c.c_int)
 get_pid = api(USER, "GetWindowThreadProcessId", w.DWORD, w.HWND, c.POINTER(w.DWORD))
 delete_object = api(GDI, "DeleteObject", w.BOOL, w.HANDLE)
 bitmap_bits = api(GDI, "GetBitmapBits", w.LONG, w.HBITMAP, w.LONG, w.LPVOID)
+create_dc = api(GDI, "CreateCompatibleDC", w.HDC, w.HDC)
+delete_dc = api(GDI, "DeleteDC", w.BOOL, w.HDC)
+select_object = api(GDI, "SelectObject", w.HANDLE, w.HDC, w.HANDLE)
+create_dib = api(GDI, "CreateDIBSection", w.HBITMAP, w.HDC, w.LPVOID, w.UINT,
+                 c.POINTER(c.c_void_p), w.HANDLE, w.DWORD)
+draw_icon = api(USER, "DrawIconEx", w.BOOL, w.HDC, c.c_int, c.c_int, w.HICON,
+                c.c_int, c.c_int, w.UINT, w.HBRUSH, w.UINT)
+gdi_flush = api(GDI, "GdiFlush", w.BOOL)
 
 
 class IconInfo(c.Structure):
@@ -65,6 +73,49 @@ def pixels(icon, size):
         if info.color: delete_object(info.color)
 
 
+def transparent_on_desktop(icon, size):
+    width, height = size
+    dc = create_dc(None)
+    pointer = c.c_void_p()
+    header = c.create_string_buffer(struct.pack("<IiiHHIIiiII", 40, width, -height, 1, 32, 0,
+                                                width * height * 4, 0, 0, 0, 0))
+    bitmap = create_dib(dc, header, 0, c.byref(pointer), None, 0)
+    assert bitmap and pointer.value
+    old = select_object(dc, bitmap)
+    try:
+        for background in (b"\xf4\xf4\xf4\0", b"\x12\x0c\x0c\0"):
+            c.memmove(pointer, background * (width * height), width * height * 4)
+            assert draw_icon(dc, 0, 0, icon, width, height, 0, None, 3)
+            gdi_flush()
+            rendered = c.string_at(pointer, width * height * 4)
+            for x, y in ((0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)):
+                offset = (y * width + x) * 4
+                assert rendered[offset:offset + 3] == background[:3], "Icon draws an opaque square corner"
+    finally:
+        select_object(dc, old)
+        delete_object(bitmap)
+        delete_dc(dc)
+
+
+def verify_alpha(image, size):
+    assert struct.unpack_from("<IiiHH", image) == (40, size, size * 2, 1, 32)
+    alpha = image[43:40 + size * size * 4:4]
+    assert alpha[0] == alpha[size - 1] == alpha[-size] == alpha[-1] == 0
+    # At 16 px the antialiased perimeter occupies a sizeable fraction of pixels.
+    assert alpha.count(0) > size * size * 0.15, "Opaque square background has returned"
+    assert 255 in alpha and any(0 < a < 255 for a in alpha), "Missing solid fill or antialiased edge"
+    stride = ((size + 31) // 32) * 4
+    mask = image[40 + size * size * 4:]
+    assert len(mask) == stride * size
+    for y in range(size):
+        for x in range(size):
+            transparent = alpha[y * size + x] == 0
+            assert bool(mask[y * stride + x // 8] & (0x80 >> (x % 8))) == transparent
+            if transparent:
+                offset = 40 + (y * size + x) * 4
+                assert image[offset:offset + 4] == bytes(4), "Hidden matte color on a transparent pixel"
+
+
 def verify(executable):
     source = (ROOT / "packaging/assets/installer.ico").read_bytes()
     count = struct.unpack_from("<HHH", source)[2]
@@ -76,16 +127,19 @@ def verify(executable):
             assert handle, f"Missing resource type {kind}, ID {number}"
             return c.string_at(lock_resource(load_resource(module, handle)), resource_size(module, handle))
         group = resource(14, 101)  # RT_GROUP_ICON / IDI_MOTION_ENHANCER
+        assert resource(10, 102) == (ROOT / "packaging/assets/logo.png").read_bytes(), "UI logo is stale"
         assert struct.unpack_from("<HHH", group) == (0, 1, count)
         sizes = []
         for index in range(count):
             expected = struct.unpack_from("<BBBBHHII", source, 6 + index * 16)
             actual = struct.unpack_from("<BBBBHHIH", group, 6 + index * 14)
             assert actual[:7] == expected[:7]
-            assert resource(3, actual[7]) == source[expected[7]:expected[7] + expected[6]]
+            image = resource(3, actual[7])
+            assert image == source[expected[7]:expected[7] + expected[6]]
+            verify_alpha(image, expected[0] or 256)
             sizes.append(expected[0] or 256)
         assert sizes == [16, 24, 32, 48, 64, 128, 256]
-        print("Embedded icon: all seven sizes match the app/setup emblem", flush=True)
+        print("Embedded logo and seven icon sizes: matching artwork, transparent corners/AND masks PASS", flush=True)
     finally:
         free_library(module)
 
@@ -100,10 +154,11 @@ def verify(executable):
         try:
             for icon, (_, size, expected) in zip((large, small), expected_icons):
                 assert pixels(icon, size) == expected, "Explorer-extracted icon differs from the emblem"
+                transparent_on_desktop(icon, size)
         finally:
             if large: destroy_icon(large)
             if small: destroy_icon(small)
-        print("Explorer/shortcut large and small icon extraction: PASS", flush=True)
+        print("Explorer/shortcut extraction and real light/dark Windows icon compositing: PASS", flush=True)
 
         env = {k: v for k, v in os.environ.items() if not k.startswith("MOTION_ENHANCER_")}
         env["MOTION_ENHANCER_SPLASH_TEST"] = "1"  # Existing off-screen, automatic-exit hook.

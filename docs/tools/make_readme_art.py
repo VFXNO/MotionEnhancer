@@ -2,9 +2,10 @@
 # The GUI screenshots and GIFs come from the app itself: MOTION_ENHANCER_GUI_SNAPSHOT,
 # MOTION_ENHANCER_GUI_TIME and MOTION_ENHANCER_SPLASH_FRAMES (see README, Graphical Interface).
 # Renders the README's hero banner and section dividers in the app's style:
-# near-black, white light, the emblem (as GuiApp.cpp paintEmblem draws it).
+# near-black, white light, and the shared app/setup orbital emblem.
 # Drawn at 3x and scaled down for smooth edges.
-import math, random, sys
+import random, sys
+from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = sys.argv[1]
@@ -45,68 +46,40 @@ class Over:
 
 
 def emblem(layer, cx, cy, k):
-    """The emblem at scale k (1 = the sidebar's size)."""
-    sc = lambda v: v * k * S
-    # glow
-    glow = Image.new('RGBA', layer.size, (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    r = sc(60)
-    gd.ellipse([cx * S - r, cy * S - r, cx * S + r, cy * S + r], fill=rgba(70))
-    glow = glow.filter(ImageFilter.GaussianBlur(sc(26)))
-    layer.alpha_composite(glow)
-    # rings
-    with Over(layer) as d:
-      for rad, a, w in ((30, 220, 1.7), (38, 90, 1.0)):
-        rr = sc(rad)
-        d.ellipse([cx * S - rr, cy * S - rr, cx * S + rr, cy * S + rr], outline=rgba(a), width=max(1, round(sc(w))))
-    # spark with a fading tail
-    head = -38.0
-    for i in range(18):
-      with Over(layer) as d:
-        f = i / 18
-        a0 = math.radians(head - 4 * (i + 1))
-        a1 = math.radians(head - 4 * i)
-        rr = sc(30)
-        d.line([(cx * S + rr * math.cos(a0), cy * S + rr * math.sin(a0)),
-                (cx * S + rr * math.cos(a1), cy * S + rr * math.sin(a1))],
-               fill=rgba(230 * (1 - f) ** 2), width=max(1, round(sc(2.8 - 1.9 * f))))
-    d = None
-    ax = cx + 30 * k * math.cos(math.radians(head))
-    ay = cy + 30 * k * math.sin(math.radians(head))
-    for rr, a in ((6, 50), (2.6, 255)):
-      with Over(layer) as d:
-        d.ellipse([ax * S - sc(rr), ay * S - sc(rr), ax * S + sc(rr), ay * S + sc(rr)], fill=rgba(a))
-    # nodes and traces
-    with Over(layer) as d:
-     for a0 in (-140, -40, 40, 140, -90, 90):
-        a = math.radians(a0 + 12)
-        x0, y0 = cx + 38 * k * math.cos(a), cy + 38 * k * math.sin(a)
-        x1, y1 = cx + 48 * k * math.cos(a), cy + 48 * k * math.sin(a)
-        d.line([(x0 * S, y0 * S), (x1 * S, y1 * S)], fill=rgba(90), width=max(1, round(sc(1.0))))
-        d.ellipse([x1 * S - sc(2.5), y1 * S - sc(2.5), x1 * S + sc(2.5), y1 * S + sc(2.5)], fill=rgba(235))
-    # trails
-    with Over(layer) as d:
-     for i, (dy, length, w) in enumerate(((-9, 18, 1.6), (0, 26, 2.4), (9, 18, 1.6))):
-        n = 40
-        for j in range(n):
-            f0, f1 = j / n, (j + 1) / n
-            x0 = cx - (length + 4) * k + (length + 6) * k * f0
-            x1 = cx - (length + 4) * k + (length + 6) * k * f1
-            d.line([(x0 * S, (cy + dy * k) * S), (x1 * S, (cy + dy * k) * S)], fill=rgba(220 * f1),
-                   width=max(1, round(sc(w))))
-    # core and halo
-    core = Image.new('RGBA', layer.size, (0, 0, 0, 0))
-    cd = ImageDraw.Draw(core)
-    rr = sc(16)
-    cd.ellipse([(cx + 8 * k) * S - rr, cy * S - rr, (cx + 8 * k) * S + rr, cy * S + rr], fill=rgba(120))
-    core = core.filter(ImageFilter.GaussianBlur(sc(8)))
-    layer.alpha_composite(core)
-    with Over(layer) as d:
-     rr = sc(7)
-     d.ellipse([(cx + 8 * k) * S - rr, cy * S - rr, (cx + 8 * k) * S + rr, cy * S + rr], fill=rgba(255))
-     rr = sc(12)
-     d.ellipse([(cx + 8 * k) * S - rr, cy * S - rr, (cx + 8 * k) * S + rr, cy * S + rr], outline=rgba(150),
-              width=max(1, round(sc(1.2))))
+    """Use the master artwork rather than maintaining another logo drawing."""
+    source = Path(__file__).resolve().parents[2] / 'packaging/assets/logo.png'
+    size = round(104 * k * S)
+    with Image.open(source) as logo:
+        badge = logo.convert('RGBA').resize((size, size), Image.Resampling.LANCZOS)
+    layer.alpha_composite(badge, (round(cx * S - size / 2), round(cy * S - size / 2)))
+
+
+def logo_preview():
+    """Actual ICO frames on light, dark and checkerboard surfaces."""
+    image = Image.new('RGB', (600, 356), (8, 8, 10))
+    d = ImageDraw.Draw(image)
+    f = ImageFont.truetype(f'{FONTS}\\segoeui.ttf', 14)
+    source = Path(__file__).resolve().parents[2] / 'packaging/assets/installer.ico'
+    with Image.open(source) as ico:
+        for panel, (background, label) in enumerate((((12, 12, 14), 'Dark'),
+                ((243, 243, 246), 'Light'), ((38, 38, 44), 'Transparency'))):
+            x = panel * 200
+            d.rectangle((x, 0, x + 199, 225), fill=background)
+            if panel == 2:
+                for y in range(0, 226, 12):
+                    for xx in range(x, x + 200, 12):
+                        if ((xx - x) // 12 + y // 12) % 2:
+                            d.rectangle((xx, y, min(x + 199, xx + 11), min(225, y + 11)), fill=(55, 55, 63))
+            frame = ico.ico.getimage((128, 128)).convert('RGBA')
+            image.paste(frame, (x + 36, 36), frame)
+            d.text((x + 100, 191), label, font=f, fill=(50, 50, 58) if panel == 1 else (225, 225, 232), anchor='mm')
+        d.text((22, 248), 'Native icon sizes: 16 / 24 / 32 / 48 / 64 px', font=f, fill=(175, 175, 186))
+        x = 22
+        for size in (16, 24, 32, 48, 64):
+            frame = ico.ico.getimage((size, size)).convert('RGBA')
+            image.paste(frame, (x, 310 - size // 2), frame)
+            x += size + 30
+    return image
 
 
 def tracked(d, x, y, text, fnt, track, fill):
@@ -196,6 +169,7 @@ if __name__ == '__main__':
     import os
     os.makedirs(OUT, exist_ok=True)
     banner().save(os.path.join(OUT, 'banner.png'))
+    logo_preview().save(os.path.join(OUT, 'logo-preview.png'))
     for name, text in (('highlights', 'Highlights'), ('interface', 'Interface'), ('quick-start', 'Quick start'),
                        ('how-it-works', 'How it works'), ('documentation', 'Technical documentation')):
         divider(text, os.path.join(OUT, f'section-{name}.png'))

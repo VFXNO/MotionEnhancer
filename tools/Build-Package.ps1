@@ -31,7 +31,7 @@ $themeSource = Join-Path $root 'packaging\theme'
 Invoke-Checked cmake @('-S', $themeSource, '-B', $themeBuild, '-A', 'Win32', "-DNSIS_DIR=$nsisDirectory")
 Invoke-Checked cmake @('--build', $themeBuild, '--config', 'Release', '--parallel')
 $themePlugin = Join-Path $themeBuild 'Release'
-foreach ($asset in @('installer.ico', 'setup-music.wav')) {
+foreach ($asset in @('installer.ico', 'logo.png', 'setup-music.wav')) {
     if (-not (Test-Path -LiteralPath (Join-Path $root "packaging\assets\$asset"))) {
         throw "Missing installer asset $asset. Regenerate with: python tools/make_installer_assets.py"
     }
