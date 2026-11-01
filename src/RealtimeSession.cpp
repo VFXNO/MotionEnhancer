@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <cctype>
@@ -373,6 +374,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
         // again (it would only keep the compositor awake for nothing).
         uint64_t lastKeyF0 = 0, lastKeyF1 = 0;
         int lastKeyAlpha = -1;
+        int lastKeyDebugView = -1;
         uint64_t lastPairIndex = 0;
         uint64_t starvedPairIndex = 0;
         uint64_t starvationTicks = 0;
@@ -390,7 +392,9 @@ int runRealtimeSession(const RealtimeOptions& options) {
 
             // Same frames, same blend as what is on screen: nothing to do.
             const int alphaKey = static_cast<int>(sel.alpha * 4096.0f);
-            if (sel.f0.index == lastKeyF0 && sel.f1.index == lastKeyF1 && alphaKey == lastKeyAlpha) {
+            const int viewKey = debugView();
+            if (sel.f0.index == lastKeyF0 && sel.f1.index == lastKeyF1 && alphaKey == lastKeyAlpha &&
+                viewKey == lastKeyDebugView) {
                 ++idleTicks;
                 return true;
             }
@@ -410,6 +414,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
             consecutiveSkips = 0;
 
             RenderJob job;
+            job.uiRegionDebug.maskEnabled = options.flow.uiMask;
+            job.uiRegionDebug.detectorEnabled = options.flow.aiUiRegions;
             const FlowInput in0 = capture.slotInput(sel.f0.slot);
             const FlowInput in1 = capture.slotInput(sel.f1.slot);
             job.frame0 = in0.texture;
@@ -442,6 +448,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.flowBlockSize = entry.blockSize;
                     job.singleFlowField = entry.singleField;
                     job.uiMask = entry.uiMaskInput();
+                    job.uiRegionDebug = entry.uiRegionDebug;
                     job.aiBlendMask = entry.aiBlendMaskInput();
                     job.flowFence = flow.fence();
                     job.flowFenceValue = sel.f1.flowFence;
@@ -471,6 +478,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
             lastKeyF0 = sel.f0.index;
             lastKeyF1 = sel.f1.index;
             lastKeyAlpha = alphaKey;
+            lastKeyDebugView = viewKey;
             capture.noteSlotPresented(sel.f0.slot, presentFence);
             capture.noteSlotPresented(sel.f1.slot, presentFence);
             if (entry.valid) flow.noteEntryPresented(sel.f1.flowEntry, presentFence);
@@ -676,6 +684,7 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
     c.height = c.levelHeight = height;
     setInterpolationConstants(c, entry, t);
     c.neuralControl[1] = offlineDebugView();
+    if (c.neuralControl[1] == 7.0f) setUiRegionDebugConstants(c, entry.uiRegionDebug);
     ComPtr<ID3D12Resource> projection;
     if (!createProjection(device, width, height, projection)) return 1;
     if (!offline.begin()) return 1;
@@ -955,6 +964,7 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         c.height = c.levelHeight = height;
         setInterpolationConstants(c, entry, 0.5f);
         c.neuralControl[1] = offlineDebugView();
+        if (c.neuralControl[1] == 7.0f) setUiRegionDebugConstants(c, entry.uiRegionDebug);
         // AI depth: waited for here so a sequence measures the same thing
         // every run (the live presenter only takes completed depth).
         ID3D12Resource* depth0 = settings.aiDepth ? flow.waitDepth(inputs[i], 5000) : nullptr;
@@ -1835,6 +1845,358 @@ int runAiRefinementSelfTest(GraphicsAdapterPreference adapter) {
     }
     device.dumpInfoQueue("AI refinement self-test");
     std::cout << "AI refinement self-test: PASS\n";
+    return 0;
+}
+
+int runUiDetectTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter,
+                    UiDetector::Choice choice) {
+    const Image image = Image::load(input);
+    if (image.empty()) return 1;
+    GraphicsDevice device;
+    ComputeKernels kernels;
+    OfflineContext offline;
+    if (!device.initialize(adapter) || !kernels.load(device.device()) || !offline.initialize(&device, &kernels)) return 1;
+    SharedTexture texture;
+    uint64_t ready = 0;
+    if (!uploadFrame(device, image, texture, ready)) return 1;
+    SharedTexture alternateTexture;
+    uint64_t alternateReady = 0;
+    wchar_t alternatePath[32768]{};
+    const DWORD alternateLength = GetEnvironmentVariableW(L"MOTION_ENHANCER_UI_TEST_ALTERNATE", alternatePath, 32768);
+    if (alternateLength >= 32768) return 1;
+    if (alternateLength) {
+        const Image alternate = Image::load(std::filesystem::path(alternatePath).u8string());
+        if (alternate.width != image.width || alternate.height != image.height ||
+            !uploadFrame(device, alternate, alternateTexture, alternateReady)) return 1;
+    }
+    UiDetector detector;
+    if (!detector.initialize(&device, &kernels, device.computeDoneFence12(), image.width, image.height, choice)) return 1;
+    std::vector<double> samples;
+    std::vector<double> allSamples;
+    std::vector<uint64_t> checksums;
+    std::vector<UiDetector::Snapshot> history;
+    UiDetector::Snapshot snapshot;
+    int runs = 24;
+    char runCount[16]{};
+    if (GetEnvironmentVariableA("MOTION_ENHANCER_UI_TEST_RUNS", runCount, sizeof(runCount)) > 0)
+        runs = std::clamp(std::atoi(runCount), 4, 500);
+    // Exercise the ACTUAL GPU preprocess/worker/buffer reuse path, not CPU-only
+    // inference. These waits belong to this offline diagnostic, never capture.
+    for (uint64_t i = 1; i <= static_cast<uint64_t>(runs); ++i) {
+        const bool useAlternate = alternateLength && (i % 2 == 0);
+        auto* source = useAlternate ? alternateTexture.texture12.Get() : texture.texture12.Get();
+        const uint64_t sourceReady = useAlternate ? alternateReady : ready;
+        if (!offline.begin() || !detector.record(offline.list(), offline.dispatch(),
+                FlowInput{source, sourceReady, i, 0}, true)) return 1;
+        uint64_t submitted = 0;
+        if (!offline.execute(device.captureReadyFence12(), sourceReady, &submitted)) { detector.discarded(); return 1; }
+        detector.submitted(submitted);
+        if (!detector.waitIdle(10000)) return 1;
+        snapshot = detector.snapshot(i);
+        if (!snapshot.valid || snapshot.frameId != i) return 1;
+        allSamples.push_back(snapshot.milliseconds);
+        checksums.push_back(snapshot.diagnosticChecksum);
+        history.push_back(snapshot); // Offline-only temporal regression evidence.
+        if (i > 3) samples.push_back(snapshot.milliseconds);
+    }
+    printBenchmark("ui_detector_worker_wall", samples);
+    std::ofstream file(output);
+    file << std::setprecision(9) << "{\n  \"width\": " << image.width << ", \"height\": " << image.height
+         << ",\n  \"detector\": \"" << detector.detectorName() << "\",\n  \"cpu_fallback\": false,\n  \"mask\": \"native per-pixel evidence inside regions only\","
+         << "\n  \"backend\": \"" << detector.backendName() << "\","
+         << "\n  \"cooperative_matrix_dispatches\": " << snapshot.matrixDispatches << ","
+         << "\n  \"verified_wmma_dispatches\": " << snapshot.verifiedWmmaDispatches << ","
+         << "\n  \"worker_ms\": [";
+    for (size_t i = 0; i < samples.size(); ++i) file << (i ? "," : "") << samples[i];
+    file << "],\n  \"all_worker_ms_including_cold\": [";
+    for (size_t i = 0; i < allSamples.size(); ++i) file << (i ? "," : "") << allSamples[i];
+    file << "],\n  \"diagnostic_checksums\": [";
+    for (size_t i = 0; i < checksums.size(); ++i) file << (i ? "," : "") << '"' << checksums[i] << '"';
+    auto writeRegions = [&](const std::vector<UiRegion>& regions) {
+        file << "[";
+        for (size_t i = 0; i < regions.size(); ++i) {
+            const UiRegion& r = regions[i];
+            file << (i ? "," : "") << "{\"left\":" << r.left * image.width << ",\"top\":" << r.top * image.height
+                 << ",\"right\":" << r.right * image.width << ",\"bottom\":" << r.bottom * image.height
+                 << ",\"confidence\":" << r.confidence << "}";
+        }
+        file << "]";
+    };
+    file << "],\n  \"region_history\": [";
+    for (size_t i = 0; i < history.size(); ++i) {
+        file << (i ? "," : "") << "\n    {\"frame_id\":" << history[i].frameId << ",\"regions\":";
+        writeRegions(history[i].regions);
+        file << "}";
+    }
+    file << "\n  ],\n  \"regions\": ";
+    writeRegions(snapshot.regions);
+    file << "\n}\n";
+    if (!file.good()) return 1;
+    std::cout << "UI detector: " << snapshot.regions.size() << " regions; saved " << output << "\n";
+    detector.invalidate();
+    if (detector.snapshot(runs).valid) return 1;
+    const std::string profile = detector.finishProfiling();
+    if (!profile.empty()) std::cout << "UI_PROFILE " << profile << "\n";
+    device.dumpInfoQueue("UI detector GPU preprocessing / asynchronous inference / buffer reuse");
+    return 0;
+}
+
+int runUiRegionsSelfTest(GraphicsAdapterPreference adapter) {
+    // CPU: exact inverse letterboxing, invalid values, probability range, NMS,
+    // result cap, padding-only boxes, and monotonic/time-limited snapshots.
+    constexpr size_t n = 6;
+    std::array<float, 5 * n> raw{};
+    auto box = [&](size_t i, float x, float y, float w, float h, float score) {
+        raw[i] = x; raw[n + i] = y; raw[2 * n + i] = w; raw[3 * n + i] = h; raw[4 * n + i] = score;
+    };
+    box(0, 320, 320, 160, 80, 0.9f);
+    box(1, 321, 320, 160, 80, 0.8f); // duplicate
+    box(2, 10, 10, 5, 5, 0.9f); // landscape padding
+    box(3, NAN, 320, 100, 100, 0.9f);
+    box(4, 320, 320, 100, 100, 1.1f);
+    box(5, 320, 320, 640, 640, 0.9f); // whole scene
+    auto regions = decodeUiRegions(raw.data(), n, 1280, 720);
+    if (regions.size() != 1 || std::abs(regions[0].left - 238.0f / 640) > 1e-6f ||
+        std::abs(regions[0].top - 138.0f / 360) > 1e-6f) return 1;
+    raw.fill(0);
+    box(0, 320, 320, 80, 160, 0.9f);
+    regions = decodeUiRegions(raw.data(), n, 320, 640);
+    if (regions.size() != 1 || std::abs(regions[0].left - 118.0f / 320) > 1e-6f) return 1;
+    std::vector<float> many(5 * 64);
+    for (size_t i = 0; i < 64; ++i) {
+        many[i] = 20.0f + (i % 8) * 80; many[64 + i] = 20.0f + (i / 8) * 80;
+        many[128 + i] = many[192 + i] = 10; many[256 + i] = 0.9f;
+    }
+    if (decodeUiRegions(many.data(), 64, 640, 640).size() != kMaxUiRegions ||
+        !uiRegionsFresh(4, 5, 600) || uiRegionsFresh(6, 5, 0) ||
+        uiRegionsFresh(4, 5, 601) || uiRegionsFresh(4, 5, -1)) return 1;
+    std::cout << "UI regions: decoder, letterbox, NMS, cap, invalid values and expiry: PASS\n";
+
+    // Temporal regression: unlike repeated identical frames, these inputs
+    // cross the acquisition threshold and compete for the limited ROI slots.
+    raw.fill(0);
+    box(0, 200, 300, 40, 30, 0.11f);
+    auto priorIcons = decodeUiRegions(raw.data(), n, 640, 640);
+    if (priorIcons.size() != 1) return 1;
+    box(0, 201, 300, 40, 30, 0.085f);
+    box(1, 500, 300, 40, 30, 0.085f); // weak unrelated area must NOT acquire
+    regions = decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons);
+    if (regions.size() != 1 || regions[0].confidence != 0.085f ||
+        std::abs(regions[0].left - 179.0f / 640) > 1e-6f ||
+        !decodeUiRegions(raw.data(), n, 640, 640).empty()) return 1;
+    // Use the current bounds, not the earlier rectangle or a smoothed union.
+    priorIcons = regions;
+    box(0, 201, 300, 40, 30, 0.074f);
+    if (!decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty() ||
+        !decodeUiRegions(nullptr, n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty()) return 1;
+    raw.fill(0);
+    if (!decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty()) return 1;
+    box(0, 201, 300, 40, 30, 0.085f);
+    if (!decodeUiRegions(raw.data(), n, 640, 640).empty()) return 1; // no reacquisition from lost history
+    box(0, 201, 300, 40, 30, 0.10f);
+    if (decodeUiRegions(raw.data(), n, 640, 640).size() != 1 ||
+        !uiRegionsCanContinue(4, 5, 600) || uiRegionsCanContinue(4, 5, 601) ||
+        uiRegionsCanContinue(5, 5, 0) || uiRegionsCanContinue(6, 5, 0) ||
+        uiRegionsCanContinue(4, 5, -1) || uiRegionsCanContinue(4, 5, NAN)) return 1;
+    // Same-pixel support must also fail all the original geometry/value rules.
+    for (float score : {NAN, 1.1f, -0.1f}) {
+        box(0, 201, 300, 40, 30, score);
+        if (!decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty()) return 1;
+    }
+    box(0, 320, 320, 640, 640, 0.9f);
+    if (!decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty()) return 1;
+    // A relocated weak proposal must not borrow the old icon's admission.
+    box(0, 400, 300, 40, 30, 0.085f);
+    if (!decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).empty()) return 1;
+    std::cout << "UI continuity: score dip supported by CURRENT proposal; current bounds, unrelated/missing/invalid rejected, fresh ordered history only: PASS\n";
+
+    // A previous icon cannot branch into two low-confidence candidates even
+    // when both overlap it but do not overlap one another enough for NMS.
+    raw.fill(0);
+    box(0, 300, 300, 100, 100, 0.9f);
+    priorIcons = decodeUiRegions(raw.data(), n, 640, 640);
+    box(0, 277, 300, 100, 100, 0.085f);
+    box(1, 323, 300, 100, 100, 0.08f);
+    if (decodeUiRegions(raw.data(), n, 640, 640, kUiRegionAcquireConfidence, priorIcons).size() != 1) return 1;
+    priorIcons = decodeUiRegions(many.data(), 64, 640, 640);
+    many[256 + 32] = 0.95f; // unrelated higher score used to evict icon #31
+    const auto unstable = decodeUiRegions(many.data(), 64, 640, 640);
+    regions = decodeUiRegions(many.data(), 64, 640, 640, kUiRegionAcquireConfidence, priorIcons);
+    if (regions.size() != kMaxUiRegions || unstable[0].top == priorIcons[0].top) return 1;
+    for (size_t i = 0; i < regions.size(); ++i)
+        if (regions[i].left != priorIcons[i].left || regions[i].top != priorIcons[i].top) return 1;
+    many[256] = 0.0f; // actual disappearance releases the slot immediately
+    regions = decodeUiRegions(many.data(), 64, 640, 640, kUiRegionAcquireConfidence, priorIcons);
+    bool newcomer = false;
+    for (const UiRegion& r : regions) {
+        if (r.left == priorIcons[0].left && r.top == priorIcons[0].top) return 1;
+        if (r.confidence == 0.95f) newcomer = true;
+    }
+    if (!newcomer || regions.size() != kMaxUiRegions) return 1;
+    std::cout << "UI continuity: one-to-one weak matches; stable 32-box capacity; disappeared icon releases slot: PASS\n";
+
+    GraphicsDevice device;
+    ComputeKernels kernels;
+    OfflineContext offline;
+    if (!device.initialize(adapter) || !kernels.load(device.device()) || !offline.initialize(&device, &kernels)) return 1;
+    constexpr UINT w = 64, h = 48;
+    ComPtr<ID3D12Resource> frame, changed, flow, confirmed, empty, output;
+    auto frameRow = [](uint8_t* row, UINT) { std::fill_n(row, 4 * w, uint8_t(100)); };
+    if (!offline.uploadTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, frameRow, frame) ||
+        !offline.uploadTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, [](uint8_t* row, UINT) {
+            std::fill_n(row, 4 * w, uint8_t(200)); }, changed) ||
+        !offline.uploadTexture(w, h, DXGI_FORMAT_R32_FLOAT, [](uint8_t* row, UINT) {
+            std::fill_n(reinterpret_cast<float*>(row), w, 1.0f); }, confirmed) ||
+        !offline.uploadTexture(w, h, DXGI_FORMAT_R32_FLOAT, [](uint8_t* row, UINT) {
+            std::fill_n(reinterpret_cast<float*>(row), w, 0.0f); }, empty) ||
+        !offline.uploadTexture(w / 2, h / 2, DXGI_FORMAT_R32G32_FLOAT, [](uint8_t* row, UINT) {
+            std::fill_n(reinterpret_cast<float*>(row), w, 0.0f); }, flow) ||
+        FAILED(device.createTexture2D(w, h, DXGI_FORMAT_R8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                       D3D12_RESOURCE_STATE_COMMON, output))) return 1;
+    ShaderConstants c{};
+    c.width = c.levelWidth = w; c.height = c.levelHeight = h;
+    c.blockSize = c.parentBlockSize = 2;
+    auto check = [&](ID3D12Resource* prior, bool gated, int count, bool changing, const char* label) {
+        c.neuralControl[0] = gated ? 1.0f : 0.0f; c.neuralControl[2] = float(count);
+        const float bounds[] = {0.25f, 0.25f, 0.75f, 0.75f};
+        std::copy_n(bounds, 4, c.neuralWeights);
+        std::array<ID3D12Resource*, 6> in{frame.Get(), changing ? changed.Get() : frame.Get(), flow.Get(), flow.Get(), prior, nullptr};
+        // Duplicate read inputs are promoted implicitly, not transitioned twice.
+        if (!offline.begin() || !offline.dispatch().dispatch(offline.list(), kernels, Kernel::UiMask, in,
+                output.Get(), c, 4, 3, 0x1f) || !offline.execute(nullptr, 0)) return false;
+        std::vector<uint8_t> bytes;
+        UINT rw = 0, rh = 0, pitch = 0;
+        if (!offline.readback(output.Get(), bytes, pitch, rw, rh)) return false;
+        for (UINT y = 0; y < h; ++y) for (UINT x = 0; x < w; ++x) {
+            const bool inside = !gated || (count && x >= 16 && x < 48 && y >= 12 && y < 36);
+            const bool expected = prior == confirmed.Get() && !changing && inside;
+            if ((bytes[size_t(y) * pitch + x] >= 191) != expected) return false;
+            if (!inside && bytes[size_t(y) * pitch + x] != 0) return false;
+        }
+        std::cout << "UI regions: " << label << ": PASS\n";
+        return true;
+    };
+    if (!check(confirmed.Get(), false, 0, false, "legacy native-only path unchanged") ||
+        !check(confirmed.Get(), true, 1, false, "only pixels inside detected areas survive") ||
+        !check(confirmed.Get(), true, 0, false, "lost/expired/empty detection clears all prior evidence") ||
+        !check(empty.Get(), true, 1, false, "boxes do NOT become solid masks") ||
+        !check(confirmed.Get(), true, 1, true, "changed UI still fails native static tests")) return 1;
+
+    // Debug view 7: deterministic native inputs, no detector/model needed.
+    // Confirmed patch, building evidence, isolated confirmed pixel and empty
+    // box interior must render differently. Snapshot metadata is copied by
+    // value just like a ring entry; a later detection must not change it.
+    constexpr UINT dw = 512, dh = 240;
+    ComPtr<ID3D12Resource> debugFrame, debugMask, debugEmpty, debugOutput;
+    if (!offline.uploadTexture(dw, dh, DXGI_FORMAT_R8G8B8A8_UNORM, [](uint8_t* row, UINT) {
+            std::fill_n(row, 4 * dw, uint8_t(100)); }, debugFrame) ||
+        !offline.uploadTexture(dw, dh, DXGI_FORMAT_R32_FLOAT, [](uint8_t* row, UINT y) {
+            float* values = reinterpret_cast<float*>(row);
+            for (UINT x = 0; x < dw; ++x) {
+                const bool protectedPatch = x >= 160 && x < 184 && y >= 112 && y < 136;
+                const bool buildingPatch = x >= 208 && x < 224 && y >= 112 && y < 128;
+                values[x] = protectedPatch || (x == 248 && y == 120) ? 1.0f : buildingPatch ? 0.25f : 0.0f;
+            } }, debugMask) ||
+        !offline.uploadTexture(dw, dh, DXGI_FORMAT_R32_FLOAT, [](uint8_t* row, UINT) {
+            std::fill_n(reinterpret_cast<float*>(row), dw, 0.0f); }, debugEmpty) ||
+        FAILED(device.createTexture2D(dw, dh, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                       D3D12_RESOURCE_STATE_COMMON, debugOutput))) return 1;
+    UiRegionDebug state;
+    state.maskEnabled = state.detectorEnabled = state.valid = true;
+    state.count = 1;
+    state.regions[0] = {0.25f, 0.25f, 0.75f, 0.75f, 0.9f};
+    FlowEngine::Entry owner;
+    owner.uiRegionDebug = state;
+    const FlowEngine::Entry saved = owner;
+    owner.uiRegionDebug.regions[0].left = 0.5f;
+    if (saved.uiRegionDebug.regions[0].left != 0.25f) return 1;
+    ShaderConstants debug{};
+    debug.width = debug.levelWidth = dw; debug.height = debug.levelHeight = dh;
+    debug.timeT = 0.5f;
+    debug.neuralControl[1] = 7.0f;
+    debug.neuralControl[3] = 0.75f;
+    UiRegionDebug oversized = state;
+    oversized.count = 100;
+    setUiRegionDebugConstants(debug, oversized);
+    if (debug.neuralControl[2] != 32.0f || debug.neuralControl[1] != 7.0f || debug.neuralControl[3] != 0.75f) return 1;
+
+    auto drawDebug = [&](const UiRegionDebug& snapshot, bool paired, ID3D12Resource* mask,
+                         const char* name, std::vector<uint8_t>& bytes, UINT& pitch) {
+        setUiRegionDebugConstants(debug, snapshot);
+        if (!offline.begin()) return false;
+        if (paired) {
+            if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, debug, debugFrame.Get(), debugFrame.Get(),
+                    nullptr, nullptr, mask, nullptr, debugOutput.Get(), 0x13)) return false;
+        } else {
+            debug.neuralControl[3] = 0.0f;
+            std::array<ID3D12Resource*, 6> in{debugFrame.Get(), nullptr, nullptr, nullptr, nullptr, nullptr};
+            if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::UiDebugView, in, debugOutput.Get(), debug,
+                    dw / 16, dh / 16, 0x1)) return false;
+        }
+        if (!offline.execute(nullptr, 0)) return false;
+        UINT rw = 0, rh = 0;
+        if (!offline.readback(debugOutput.Get(), bytes, pitch, rw, rh) || rw != dw || rh != dh) return false;
+        // Optional test-only previews. The caller provides a NEW diagnostic
+        // folder; never overwrite an existing file or touch runtime models.
+        char folder[32768]{};
+        if (GetEnvironmentVariableA("MOTION_ENHANCER_UI_DEBUG_DUMP", folder, sizeof(folder)) > 0) {
+            const std::string path = std::string(folder) + "/" + name + ".png";
+            if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES) return false;
+            Image preview(dw, dh, 3);
+            for (UINT y = 0; y < dh; ++y) for (UINT x = 0; x < dw; ++x)
+                for (int ch = 0; ch < 3; ++ch) preview.set(x, y, ch, float(bytes[size_t(y) * pitch + 4 * x + ch]));
+            preview.savePNG(path);
+        }
+        return true;
+    };
+    auto pixelIs = [](const std::vector<uint8_t>& bytes, UINT pitch, UINT x, UINT y, int r, int g, int b) {
+        const uint8_t* p = bytes.data() + size_t(y) * pitch + 4 * x;
+        return std::abs(int(p[0]) - r) <= 2 && std::abs(int(p[1]) - g) <= 2 && std::abs(int(p[2]) - b) <= 2;
+    };
+    std::vector<uint8_t> debugBytes;
+    UINT debugPitch = 0;
+    if (!drawDebug(saved.uiRegionDebug, true, debugMask.Get(), "regions-and-mask", debugBytes, debugPitch) ||
+        !pixelIs(debugBytes, debugPitch, 128, 120, 0, 217, 255) || // detected boundary
+        !pixelIs(debugBytes, debugPitch, 170, 120, 26, 255, 51) || // supported protection
+        !pixelIs(debugBytes, debugPitch, 214, 120, 209, 171, 18) || // building evidence
+        !pixelIs(debugBytes, debugPitch, 248, 120, 209, 171, 18) || // lone confirmed != protected
+        !pixelIs(debugBytes, debugPitch, 300, 120, 72, 72, 72) || // rectangle is not mask
+        !pixelIs(debugBytes, debugPitch, 430, 120, 72, 72, 72)) return 1;
+    std::cout << "UI debug: pair snapshot, cyan boxes, yellow evidence, supported green mask, empty interior: PASS\n";
+    if (!drawDebug(state, true, debugEmpty.Get(), "boxes-without-mask", debugBytes, debugPitch) ||
+        !pixelIs(debugBytes, debugPitch, 128, 120, 0, 217, 255) ||
+        !pixelIs(debugBytes, debugPitch, 170, 120, 72, 72, 72)) return 1;
+    // Check actual rendered status text differs for unavailable, valid-empty,
+    // disabled and pass-through frames, not just their CPU enum values.
+    std::vector<std::vector<uint8_t>> headers;
+    auto statusCheck = [&](const UiRegionDebug& snapshot, bool paired, const char* name, int expectedState) {
+        if (!drawDebug(snapshot, paired, nullptr, name, debugBytes, debugPitch) ||
+            debug.neuralControl[0] != float(expectedState) || debug.neuralControl[2] != 0.0f ||
+            !pixelIs(debugBytes, debugPitch, 128, 120, 72, 72, 72)) return false;
+        std::vector<uint8_t> header;
+        for (UINT y = 36; y < 52; ++y)
+            header.insert(header.end(), debugBytes.begin() + size_t(y) * debugPitch + 24,
+                          debugBytes.begin() + size_t(y) * debugPitch + 4 * 198);
+        for (const auto& other : headers) if (header == other) return false;
+        headers.push_back(std::move(header));
+        return true;
+    };
+    UiRegionDebug unavailable = state;
+    unavailable.valid = false; // Deliberately keep stale bounds/count: must be ignored.
+    UiRegionDebug noDetections = state;
+    noDetections.count = 0;
+    UiRegionDebug detectorOff = state;
+    detectorOff.detectorEnabled = false;
+    UiRegionDebug maskOff = state;
+    maskOff.maskEnabled = false;
+    if (!statusCheck(unavailable, true, "no-result", 2) ||
+        !statusCheck(noDetections, true, "zero-regions", 3) ||
+        !statusCheck(detectorOff, true, "ai-off", 1) ||
+        !statusCheck(maskOff, true, "mask-off", 0) ||
+        !statusCheck(noDetections, false, "no-pair", 3)) return 1;
+    std::cout << "UI debug: distinct no-result, valid-zero, AI-off, mask-off, no-pair labels; stale boxes suppressed: PASS\n";
+    device.dumpInfoQueue("UI-region native gating");
+    std::cout << "UI regions self-test: PASS\n";
     return 0;
 }
 

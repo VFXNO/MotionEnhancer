@@ -69,6 +69,8 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthDilateCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/AiFlowInputCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/AiFlowToRingCS.cso"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDetectInputCS.cso"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDebugViewCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxFlowConvertCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineInitCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineIterateCS.cso"
@@ -128,6 +130,14 @@ endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" TYPE FILE RENAME "FidelityFX-LICENSE.txt" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/FidelityFX-SDK-v1.1.4/LICENSE.txt")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" TYPE FILE RENAME "UI-Matrix-ncnn.txt" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/LICENSE.txt")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" TYPE FILE RENAME "UI-Matrix-glslang.txt" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang/LICENSE.txt")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)

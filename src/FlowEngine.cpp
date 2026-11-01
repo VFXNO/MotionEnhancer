@@ -66,6 +66,7 @@ FlowEngine::~FlowEngine() {
             WaitForSingleObject(m_fenceEvent, kGpuWaitTimeoutMs);
     }
     m_depth.reset();
+    m_uiDetector.reset();
     releaseAiBuffers();
     m_aiFlow.reset();
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
@@ -161,10 +162,15 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
 }
 
 void FlowEngine::setSettings(const FlowSettings& settings) {
+    const bool uiRegions = m_settings.aiUiRegions;
     const bool engineChanged = settings.preferFfxOpticalFlow != m_settings.preferFfxOpticalFlow ||
                                settings.neuralFlow != m_settings.neuralFlow ||
                                settings.disFlow != m_settings.disFlow;
     m_settings = settings;
+    if (m_width && m_settings.aiUiRegions != uiRegions) {
+        std::cerr << "FlowEngine: restart capture to change AI UI-region detection.\n";
+        m_settings.aiUiRegions = uiRegions;
+    }
     if (aiFlowActive() && m_settings.aiRefinement != m_aiIntegrated) {
         std::cerr << "FlowEngine: restart capture to change AI/DIS refinement; keeping the loaded graph.\n";
         m_settings.aiRefinement = m_aiIntegrated;
@@ -202,6 +208,12 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         for (auto& entry : m_ring) entry = {};
     }
     m_uiChain = {};
+    m_uiDetector.reset();
+    if (m_settings.uiMask && m_settings.aiUiRegions) {
+        m_uiDetector = std::make_unique<UiDetector>();
+        // Explicitly requested detection must never silently become full-screen masking.
+        if (!m_uiDetector->initialize(m_device, m_kernels, m_fence.Get(), width, height, m_settings.uiDetector)) return false;
+    }
 
     int levels = std::clamp(m_settings.pyramidLevels, 1, kMaxLevels);
     while (levels > 1 && (std::min(width, height) >> (levels - 1)) < kMinCoarsestExtent) --levels;
@@ -1053,6 +1065,9 @@ bool FlowEngine::recordFlowMedian(Entry& out) {
 bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& current, int entryIndex,
                               Entry& out) {
     out.hasUiMask = false;
+    out.uiRegionDebug = {};
+    out.uiRegionDebug.maskEnabled = m_settings.uiMask;
+    out.uiRegionDebug.detectorEnabled = m_settings.aiUiRegions;
     if (!m_settings.uiMask || !out.uiMask) return true;
     // The evidence carries over only along an unbroken frame chain - after
     // a cut, a gap or a resize every pixel has to earn it again. Also never
@@ -1069,6 +1084,23 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
     c.width = c.levelWidth = m_width;
     c.height = c.levelHeight = m_height;
     setInterpolationConstants(c, out, 0.5f);
+    if (m_settings.aiUiRegions) {
+        c.neuralControl[0] = 1.0f; // UiMaskCS-specific constant layout, not network weights.
+        if (m_uiDetector) {
+            if (m_uiChain[0].entry >= 0 && previous.id > m_uiChain[0].frameId) m_uiDetector->invalidate();
+            const auto detected = m_uiDetector->snapshot(current.id);
+            out.uiRegionDebug.valid = detected.valid;
+            out.uiRegionDebug.count = static_cast<uint32_t>(std::min(detected.regions.size(), kMaxUiRegions));
+            std::copy_n(detected.regions.begin(), out.uiRegionDebug.count, out.uiRegionDebug.regions.begin());
+            c.neuralControl[2] = static_cast<float>(detected.regions.size());
+            for (size_t i = 0; i < detected.regions.size(); ++i) {
+                const UiRegion& r = detected.regions[i];
+                const float bounds[] = {r.left, r.top, r.right, r.bottom};
+                std::copy_n(bounds, 4, c.neuralWeights + 4 * i);
+            }
+        }
+        // No regions at startup, expiry or failure means all-zero evidence.
+    }
     std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, out.forward.Get(),
                                          out.backward.Get(), prior, nullptr};
     // Inputs 0-1 are the shared capture textures; input 4, the chain entry,
@@ -1202,6 +1234,8 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     // test 0.1-0.3 dB.
     if (ok && m_usingFfx) ok = recordFlowMedian(scratch);
     if (ok) ok = recordUiMask(previous, current, entryIndex, scratch);
+    if (ok && m_settings.uiMask && m_uiDetector)
+        ok = m_uiDetector->record(m_list.Get(), m_dispatch, current);
     // AI depth: both frames' network input, once per frame (DepthService).
     if (ok && m_depth) {
         ok = m_depth->record(m_list.Get(), m_dispatch, previous, m_width, m_height) &&
@@ -1210,14 +1244,17 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     if (!ok) {
         m_list->Close();
         if (m_depth) m_depth->discarded();
+        if (m_uiDetector) m_uiDetector->discarded();
         return result;
     }
     uint64_t fenceValue = 0;
     if (!endList(previous, current, fenceValue)) {
         if (m_depth) m_depth->discarded();
+        if (m_uiDetector) m_uiDetector->discarded();
         return result;
     }
     if (m_depth) m_depth->submitted(fenceValue);
+    if (m_uiDetector) m_uiDetector->submitted(fenceValue);
 
     {
         std::lock_guard<std::mutex> lock(m_ringMutex);
@@ -1225,6 +1262,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         e.blockSize = scratch.blockSize;
         e.singleField = scratch.singleField;
         e.hasUiMask = scratch.hasUiMask;
+        e.uiRegionDebug = scratch.uiRegionDebug;
         e.aiBlendMask = scratch.aiBlendMask;
         e.hasAiBlendMask = scratch.hasAiBlendMask;
         e.aiRefined = scratch.aiRefined;

@@ -35,6 +35,8 @@ enum class Kernel : int {
     DepthDilate,
     AiFlowInput,
     AiFlowToRing,
+    UiDetectInput,
+    UiDebugView,
     Count
 };
 

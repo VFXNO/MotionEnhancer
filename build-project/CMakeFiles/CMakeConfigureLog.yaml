@@ -2117,3 +2117,1082 @@ events:
         - "C:/Program Files/CMake"
         - "C:/Program Files/MotionEnhancer"
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:598 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-o8oejp"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-o8oejp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-o8oejp'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_47952.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:44.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\cmTC_47952.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\Release\\".
+          Creating directory "cmTC_47952.dir\\Release\\cmTC_47952.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_47952.dir\\Release\\cmTC_47952.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_47952.dir\\Release\\cmTC_47952.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_47952.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\Release\\cmTC_47952.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_47952.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\Release\\cmTC_47952.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\Release\\cmTC_47952.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_47952.dir\\Release\\src.obj
+          cmTC_47952.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\Release\\cmTC_47952.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_47952.dir\\Release\\cmTC_47952.tlog\\unsuccessfulbuild".
+          Touching "cmTC_47952.dir\\Release\\cmTC_47952.tlog\\cmTC_47952.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-o8oejp\\cmTC_47952.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:01.23
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:601 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_FMA"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-j5vspk"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-j5vspk"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_FMA"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-j5vspk'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4e980.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:46.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\cmTC_4e980.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\Release\\".
+          Creating directory "cmTC_4e980.dir\\Release\\cmTC_4e980.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_4e980.dir\\Release\\cmTC_4e980.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_4e980.dir\\Release\\cmTC_4e980.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_FMA /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_4e980.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\Release\\cmTC_4e980.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_FMA /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_4e980.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\Release\\cmTC_4e980.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\Release\\cmTC_4e980.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_4e980.dir\\Release\\src.obj
+          cmTC_4e980.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\Release\\cmTC_4e980.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_4e980.dir\\Release\\cmTC_4e980.tlog\\unsuccessfulbuild".
+          Touching "cmTC_4e980.dir\\Release\\cmTC_4e980.tlog\\cmTC_4e980.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-j5vspk\\cmTC_4e980.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.84
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:604 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_FMA4"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivetn2"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivetn2"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_FMA4"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivetn2'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_f0704.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:47.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\cmTC_f0704.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\Release\\".
+          Creating directory "cmTC_f0704.dir\\Release\\cmTC_f0704.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_f0704.dir\\Release\\cmTC_f0704.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_f0704.dir\\Release\\cmTC_f0704.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_FMA4 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_f0704.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\Release\\cmTC_f0704.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_FMA4 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_f0704.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\Release\\cmTC_f0704.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\Release\\cmTC_f0704.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_f0704.dir\\Release\\src.obj
+          cmTC_f0704.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\Release\\cmTC_f0704.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_f0704.dir\\Release\\cmTC_f0704.tlog\\unsuccessfulbuild".
+          Touching "cmTC_f0704.dir\\Release\\cmTC_f0704.tlog\\cmTC_f0704.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivetn2\\cmTC_f0704.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.74
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:607 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_XOP"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-s02clt"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-s02clt"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_XOP"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-s02clt'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_64635.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:48.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\cmTC_64635.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\Release\\".
+          Creating directory "cmTC_64635.dir\\Release\\cmTC_64635.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_64635.dir\\Release\\cmTC_64635.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_64635.dir\\Release\\cmTC_64635.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_XOP /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_64635.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\Release\\cmTC_64635.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_XOP /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_64635.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\Release\\cmTC_64635.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\Release\\cmTC_64635.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_64635.dir\\Release\\src.obj
+          cmTC_64635.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\Release\\cmTC_64635.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_64635.dir\\Release\\cmTC_64635.tlog\\unsuccessfulbuild".
+          Touching "cmTC_64635.dir\\Release\\cmTC_64635.tlog\\cmTC_64635.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-s02clt\\cmTC_64635.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.76
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:610 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_F16C"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-cqi13r"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-cqi13r"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_F16C"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-cqi13r'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_aafc5.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:49.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\cmTC_aafc5.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\Release\\".
+          Creating directory "cmTC_aafc5.dir\\Release\\cmTC_aafc5.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_aafc5.dir\\Release\\cmTC_aafc5.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_aafc5.dir\\Release\\cmTC_aafc5.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_F16C /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_aafc5.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\Release\\cmTC_aafc5.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_F16C /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX /GR /std:c++17 /Fo"cmTC_aafc5.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\Release\\cmTC_aafc5.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\Release\\cmTC_aafc5.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_aafc5.dir\\Release\\src.obj
+          cmTC_aafc5.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\Release\\cmTC_aafc5.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_aafc5.dir\\Release\\cmTC_aafc5.tlog\\unsuccessfulbuild".
+          Touching "cmTC_aafc5.dir\\Release\\cmTC_aafc5.tlog\\cmTC_aafc5.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-cqi13r\\cmTC_aafc5.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.74
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:613 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX2"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-v5xwu6"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-v5xwu6"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX2"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-v5xwu6'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_65856.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:50.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\cmTC_65856.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\Release\\".
+          Creating directory "cmTC_65856.dir\\Release\\cmTC_65856.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_65856.dir\\Release\\cmTC_65856.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_65856.dir\\Release\\cmTC_65856.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX2 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_65856.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\Release\\cmTC_65856.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX2 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_65856.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\Release\\cmTC_65856.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\Release\\cmTC_65856.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_65856.dir\\Release\\src.obj
+          cmTC_65856.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\Release\\cmTC_65856.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_65856.dir\\Release\\cmTC_65856.tlog\\unsuccessfulbuild".
+          Touching "cmTC_65856.dir\\Release\\cmTC_65856.tlog\\cmTC_65856.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-v5xwu6\\cmTC_65856.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.70
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:616 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX512"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-nlpmju"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-nlpmju"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX512"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-nlpmju'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_5370a.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:51.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\cmTC_5370a.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\Release\\".
+          Creating directory "cmTC_5370a.dir\\Release\\cmTC_5370a.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_5370a.dir\\Release\\cmTC_5370a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_5370a.dir\\Release\\cmTC_5370a.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_5370a.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\Release\\cmTC_5370a.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_5370a.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\Release\\cmTC_5370a.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\Release\\cmTC_5370a.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_5370a.dir\\Release\\src.obj
+          cmTC_5370a.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\Release\\cmTC_5370a.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_5370a.dir\\Release\\cmTC_5370a.tlog\\unsuccessfulbuild".
+          Touching "cmTC_5370a.dir\\Release\\cmTC_5370a.tlog\\cmTC_5370a.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-nlpmju\\cmTC_5370a.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.91
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:619 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3q1kr5"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3q1kr5"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX_VNNI"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3q1kr5'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_7d9c4.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:53.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\cmTC_7d9c4.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\Release\\".
+          Creating directory "cmTC_7d9c4.dir\\Release\\cmTC_7d9c4.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_7d9c4.dir\\Release\\cmTC_7d9c4.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_7d9c4.dir\\Release\\cmTC_7d9c4.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_7d9c4.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\Release\\cmTC_7d9c4.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_7d9c4.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\Release\\cmTC_7d9c4.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\Release\\cmTC_7d9c4.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_7d9c4.dir\\Release\\src.obj
+          cmTC_7d9c4.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\Release\\cmTC_7d9c4.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_7d9c4.dir\\Release\\cmTC_7d9c4.tlog\\unsuccessfulbuild".
+          Touching "cmTC_7d9c4.dir\\Release\\cmTC_7d9c4.tlog\\cmTC_7d9c4.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3q1kr5\\cmTC_7d9c4.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:01.18
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:622 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-so4vbv"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-so4vbv"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-so4vbv'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8ec76.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:54.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\cmTC_8ec76.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\Release\\".
+          Creating directory "cmTC_8ec76.dir\\Release\\cmTC_8ec76.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_8ec76.dir\\Release\\cmTC_8ec76.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_8ec76.dir\\Release\\cmTC_8ec76.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_8ec76.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\Release\\cmTC_8ec76.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_8ec76.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\Release\\cmTC_8ec76.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\Release\\cmTC_8ec76.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_8ec76.dir\\Release\\src.obj
+          cmTC_8ec76.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\Release\\cmTC_8ec76.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_8ec76.dir\\Release\\cmTC_8ec76.tlog\\unsuccessfulbuild".
+          Touching "cmTC_8ec76.dir\\Release\\cmTC_8ec76.tlog\\cmTC_8ec76.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-so4vbv\\cmTC_8ec76.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.91
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:625 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-eqe6dt"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-eqe6dt"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-eqe6dt'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_c2206.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:56.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\cmTC_c2206.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\Release\\".
+          Creating directory "cmTC_c2206.dir\\Release\\cmTC_c2206.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_c2206.dir\\Release\\cmTC_c2206.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_c2206.dir\\Release\\cmTC_c2206.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_c2206.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\Release\\cmTC_c2206.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_c2206.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\Release\\cmTC_c2206.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\Release\\cmTC_c2206.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_c2206.dir\\Release\\src.obj
+          cmTC_c2206.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\Release\\cmTC_c2206.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_c2206.dir\\Release\\cmTC_c2206.tlog\\unsuccessfulbuild".
+          Touching "cmTC_c2206.dir\\Release\\cmTC_c2206.tlog\\cmTC_c2206.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-eqe6dt\\cmTC_c2206.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.85
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:628 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivpib8"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivpib8"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-ivpib8'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_1ea1d.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:57.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\cmTC_1ea1d.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\Release\\".
+          Creating directory "cmTC_1ea1d.dir\\Release\\cmTC_1ea1d.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_1ea1d.dir\\Release\\cmTC_1ea1d.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_1ea1d.dir\\Release\\cmTC_1ea1d.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_1ea1d.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\Release\\cmTC_1ea1d.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX2 /GR /std:c++17 /Fo"cmTC_1ea1d.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\Release\\cmTC_1ea1d.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\Release\\cmTC_1ea1d.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_1ea1d.dir\\Release\\src.obj
+          cmTC_1ea1d.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\Release\\cmTC_1ea1d.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_1ea1d.dir\\Release\\cmTC_1ea1d.tlog\\unsuccessfulbuild".
+          Touching "cmTC_1ea1d.dir\\Release\\cmTC_1ea1d.tlog\\cmTC_1ea1d.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-ivpib8\\cmTC_1ea1d.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.81
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:631 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-h3rg8w"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-h3rg8w"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-h3rg8w'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_299be.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:58.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\cmTC_299be.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\Release\\".
+          Creating directory "cmTC_299be.dir\\Release\\cmTC_299be.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_299be.dir\\Release\\cmTC_299be.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_299be.dir\\Release\\cmTC_299be.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_299be.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\Release\\cmTC_299be.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_299be.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\Release\\cmTC_299be.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\Release\\cmTC_299be.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_299be.dir\\Release\\src.obj
+          cmTC_299be.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\Release\\cmTC_299be.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_299be.dir\\Release\\cmTC_299be.tlog\\unsuccessfulbuild".
+          Touching "cmTC_299be.dir\\Release\\cmTC_299be.tlog\\cmTC_299be.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-h3rg8w\\cmTC_299be.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.78
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:634 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX512_BF16"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-abtzlf"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-abtzlf"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX512_BF16"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-abtzlf'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_ff143.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:34:59.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\cmTC_ff143.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\Release\\".
+          Creating directory "cmTC_ff143.dir\\Release\\cmTC_ff143.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_ff143.dir\\Release\\cmTC_ff143.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_ff143.dir\\Release\\cmTC_ff143.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_BF16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_ff143.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\Release\\cmTC_ff143.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_BF16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_ff143.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\Release\\cmTC_ff143.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\Release\\cmTC_ff143.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_ff143.dir\\Release\\src.obj
+          cmTC_ff143.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\Release\\cmTC_ff143.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_ff143.dir\\Release\\cmTC_ff143.tlog\\unsuccessfulbuild".
+          Touching "cmTC_ff143.dir\\Release\\cmTC_ff143.tlog\\cmTC_ff143.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-abtzlf\\cmTC_ff143.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.78
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCXXSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "third_party/ui-matrix/ncnn/CMakeLists.txt:637 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test NCNN_COMPILER_SUPPORT_X86_AVX512_FP16"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-xm4eum"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-xm4eum"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_RELEASE: "/O2 /Ob2 /DNDEBUG"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "NCNN_COMPILER_SUPPORT_X86_AVX512_FP16"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-xm4eum'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3a762.vcxproj /p:Configuration=release /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:00.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\cmTC_3a762.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\Release\\".
+          Creating directory "cmTC_3a762.dir\\Release\\cmTC_3a762.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_3a762.dir\\Release\\cmTC_3a762.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_3a762.dir\\Release\\cmTC_3a762.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_FP16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_3a762.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\Release\\cmTC_3a762.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /W3 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D NDEBUG /D NCNN_COMPILER_SUPPORT_X86_AVX512_FP16 /D _MBCS /D "CMAKE_INTDIR=\\"Release\\"" /EHsc /MD /arch:AVX512 /GR /std:c++17 /Fo"cmTC_3a762.dir\\Release\\\\" /Fd"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\Release\\cmTC_3a762.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\src.cxx"
+          src.cxx
+        Lib:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\Lib.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\Release\\cmTC_3a762.lib" /NOLOGO /MACHINE:X64  /machine:x64 cmTC_3a762.dir\\Release\\src.obj
+          cmTC_3a762.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\Release\\cmTC_3a762.lib
+        FinalizeBuildStatus:
+          Deleting file "cmTC_3a762.dir\\Release\\cmTC_3a762.tlog\\unsuccessfulbuild".
+          Touching "cmTC_3a762.dir\\Release\\cmTC_3a762.tlog\\cmTC_3a762.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-xm4eum\\cmTC_3a762.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.78
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckSourceCompiles.cmake:205 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:479 (check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:538 (_check_cxx_compiler_attribute)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:692 (_test_compiler_has_deprecated)"
+      - "third_party/ui-matrix/ncnn/src/CMakeLists.txt:220 (generate_export_header)"
+    checks:
+      - "Performing Test COMPILER_HAS_DEPRECATED_ATTR"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-30ci80"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-30ci80"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "COMPILER_HAS_DEPRECATED_ATTR"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-30ci80'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_5bc0b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:02.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\Debug\\".
+          Creating directory "cmTC_5bc0b.dir\\Debug\\cmTC_5bc0b.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_5bc0b.dir\\Debug\\cmTC_5bc0b.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_5bc0b.dir\\Debug\\cmTC_5bc0b.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D COMPILER_HAS_DEPRECATED_ATTR /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_5bc0b.dir\\Debug\\\\" /Fd"cmTC_5bc0b.dir\\Debug\\vc145.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D COMPILER_HAS_DEPRECATED_ATTR /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_5bc0b.dir\\Debug\\\\" /Fd"cmTC_5bc0b.dir\\Debug\\vc145.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx"
+          src.cxx
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,16): error C2065: '__deprecated__': undeclared identifier [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,33): error C2062: type 'int' unexpected [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,48): error C2143: syntax error: missing ';' before '{' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,48): error C2447: '{': missing function header (old-style formal list?) [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(2,25): error C3861: 'somefunc': identifier not found [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj" (default targets) -- FAILED.
+        
+        Build FAILED.
+        
+        "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,16): error C2065: '__deprecated__': undeclared identifier [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,33): error C2062: type 'int' unexpected [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,48): error C2143: syntax error: missing ';' before '{' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(1,48): error C2447: '{': missing function header (old-style formal list?) [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\src.cxx(2,25): error C3861: 'somefunc': identifier not found [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-30ci80\\cmTC_5bc0b.vcxproj]
+        
+            0 Warning(s)
+            6 Error(s)
+        
+        Time Elapsed 00:00:00.63
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckSourceCompiles.cmake:205 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:479 (check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:544 (_check_cxx_compiler_attribute)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/GenerateExportHeader.cmake:692 (_test_compiler_has_deprecated)"
+      - "third_party/ui-matrix/ncnn/src/CMakeLists.txt:220 (generate_export_header)"
+    checks:
+      - "Performing Test COMPILER_HAS_DEPRECATED"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3cf7ag"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3cf7ag"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "COMPILER_HAS_DEPRECATED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3cf7ag'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b49b0.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:03.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\cmTC_b49b0.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\Debug\\".
+          Creating directory "cmTC_b49b0.dir\\Debug\\cmTC_b49b0.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_b49b0.dir\\Debug\\cmTC_b49b0.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_b49b0.dir\\Debug\\cmTC_b49b0.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D COMPILER_HAS_DEPRECATED /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_b49b0.dir\\Debug\\\\" /Fd"cmTC_b49b0.dir\\Debug\\vc145.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /D COMPILER_HAS_DEPRECATED /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_b49b0.dir\\Debug\\\\" /Fd"cmTC_b49b0.dir\\Debug\\vc145.pdb" /external:W3 /TP /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\src.cxx"
+          src.cxx
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\src.cxx(2,25): warning C4996: 'somefunc': was declared deprecated [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\cmTC_b49b0.vcxproj]
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\Debug\\cmTC_b49b0.exe" /INCREMENTAL /ILK:"cmTC_b49b0.dir\\Debug\\cmTC_b49b0.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3cf7ag/Debug/cmTC_b49b0.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-3cf7ag/Debug/cmTC_b49b0.lib" /MACHINE:X64  /machine:x64 cmTC_b49b0.dir\\Debug\\src.obj
+          cmTC_b49b0.vcxproj -> C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\Debug\\cmTC_b49b0.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_b49b0.dir\\Debug\\cmTC_b49b0.tlog\\unsuccessfulbuild".
+          Touching "cmTC_b49b0.dir\\Debug\\cmTC_b49b0.tlog\\cmTC_b49b0.lastbuildstate".
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\cmTC_b49b0.vcxproj" (default targets).
+        
+        Build succeeded.
+        
+        "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\cmTC_b49b0.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\src.cxx(2,25): warning C4996: 'somefunc': was declared deprecated [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-3cf7ag\\cmTC_b49b0.vcxproj]
+        
+            1 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.80
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/Internal/CheckSourceCompiles.cmake:81 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckCSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:160 (check_c_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:226 (_threads_check_libc)"
+      - "third_party/ui-matrix/ncnn/src/CMakeLists.txt:278 (find_package)"
+    checks:
+      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-z77lhb"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-z77lhb"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-z77lhb'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_92ad1.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:04.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\cmTC_92ad1.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\Debug\\".
+          Creating directory "cmTC_92ad1.dir\\Debug\\cmTC_92ad1.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_92ad1.dir\\Debug\\cmTC_92ad1.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_92ad1.dir\\Debug\\cmTC_92ad1.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_92ad1.dir\\Debug\\\\" /Fd"cmTC_92ad1.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\src.c"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_92ad1.dir\\Debug\\\\" /Fd"cmTC_92ad1.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\src.c"
+          src.c
+        C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\cmTC_92ad1.vcxproj]
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\cmTC_92ad1.vcxproj" (default targets) -- FAILED.
+        
+        Build FAILED.
+        
+        "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\cmTC_92ad1.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-z77lhb\\cmTC_92ad1.vcxproj]
+        
+            0 Warning(s)
+            1 Error(s)
+        
+        Time Elapsed 00:00:00.62
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckLibraryExists.cmake:142 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:175 (check_library_exists)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:238 (_threads_check_lib)"
+      - "third_party/ui-matrix/ncnn/src/CMakeLists.txt:278 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthreads"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-w5ya5z"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-w5ya5z"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREADS_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-w5ya5z'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_0c6ab.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:05.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\cmTC_0c6ab.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\Debug\\".
+          Creating directory "cmTC_0c6ab.dir\\Debug\\cmTC_0c6ab.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_0c6ab.dir\\Debug\\cmTC_0c6ab.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_0c6ab.dir\\Debug\\cmTC_0c6ab.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_0c6ab.dir\\Debug\\\\" /Fd"cmTC_0c6ab.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\CheckFunctionExists.c"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_0c6ab.dir\\Debug\\\\" /Fd"cmTC_0c6ab.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\CheckFunctionExists.c"
+          CheckFunctionExists.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\Debug\\cmTC_0c6ab.exe" /INCREMENTAL /ILK:"cmTC_0c6ab.dir\\Debug\\cmTC_0c6ab.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-w5ya5z/Debug/cmTC_0c6ab.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-w5ya5z/Debug/cmTC_0c6ab.lib" /MACHINE:X64  /machine:x64 cmTC_0c6ab.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\cmTC_0c6ab.vcxproj]
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\cmTC_0c6ab.vcxproj" (default targets) -- FAILED.
+        
+        Build FAILED.
+        
+        "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\cmTC_0c6ab.vcxproj" (default target) (1) ->
+        (Link target) -> 
+          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-w5ya5z\\cmTC_0c6ab.vcxproj]
+        
+            0 Warning(s)
+            1 Error(s)
+        
+        Time Elapsed 00:00:00.69
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/CheckLibraryExists.cmake:142 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:175 (check_library_exists)"
+      - "C:/Program Files/CMake/share/cmake-4.4/Modules/FindThreads.cmake:239 (_threads_check_lib)"
+      - "third_party/ui-matrix/ncnn/src/CMakeLists.txt:278 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthread"
+    directories:
+      source: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-5n365b"
+      binary: "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-5n365b"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREAD_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-5n365b'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_c599f.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild version 18.10.1-1.26427.6+3cd27c13e for .NET Framework
+        Build started 01/11/2026 00:35:06.
+        
+        Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\cmTC_c599f.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\Debug\\".
+          Creating directory "cmTC_c599f.dir\\Debug\\cmTC_c599f.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_c599f.dir\\Debug\\cmTC_c599f.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_c599f.dir\\Debug\\cmTC_c599f.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_c599f.dir\\Debug\\\\" /Fd"cmTC_c599f.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\CheckFunctionExists.c"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_c599f.dir\\Debug\\\\" /Fd"cmTC_c599f.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\CheckFunctionExists.c"
+          CheckFunctionExists.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\Debug\\cmTC_c599f.exe" /INCREMENTAL /ILK:"cmTC_c599f.dir\\Debug\\cmTC_c599f.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-5n365b/Debug/cmTC_c599f.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/CMakeFiles/CMakeScratch/TryCompile-5n365b/Debug/cmTC_c599f.lib" /MACHINE:X64  /machine:x64 cmTC_c599f.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\cmTC_c599f.vcxproj]
+        Done Building Project "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\cmTC_c599f.vcxproj" (default targets) -- FAILED.
+        
+        Build FAILED.
+        
+        "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\cmTC_c599f.vcxproj" (default target) (1) ->
+        (Link target) -> 
+          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\CMakeFiles\\CMakeScratch\\TryCompile-5n365b\\cmTC_c599f.vcxproj]
+        
+            0 Warning(s)
+            1 Error(s)
+        
+        Time Elapsed 00:00:00.62
+        
+      exitCode: 1
+...

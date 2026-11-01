@@ -241,6 +241,15 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
                        ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
                        ID3D12Resource* depth0, ID3D12Resource* depth1, ID3D12Resource* const* dilated,
                        ID3D12Resource* aiBlendMask) {
+    if (static_cast<int>(c.neuralControl[1]) == 7) {
+        // This diagnostic needs only source frames, pair mask and its saved
+        // allow-list. No projection, new inference or normal synthesis changes.
+        ShaderConstants debug = c;
+        debug.neuralControl[3] = 1.0f; // This view: an actual flow pair exists.
+        std::array<ID3D12Resource*, 6> in{frame0, frame1, nullptr, nullptr, uiMask, nullptr};
+        return dispatch.dispatch(list, kernels, Kernel::UiDebugView, in, output, debug,
+                                 (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs);
+    }
     const bool project = c.flowScale == 0.0f && projection;
     if (project) {
         const uint32_t block = static_cast<uint32_t>(std::max(1, c.blockSize));
@@ -535,7 +544,8 @@ void cycleDebugView() {
         "occlusion (red = frame0 sample distrusted, blue = frame1)",
         "vector arrows (one per 16 px, quarter length, capped at 14 px, coloured by direction)",
         "AI depth (blue far .. red near; grey where there is none: AI depth off or not ready)",
-        "AI blend mask (raw midpoint: white = earlier frame, black = later, grey = neutral; purple checkerboard = inactive/no pair)"};
+        "AI blend mask (raw midpoint: white = earlier frame, black = later, grey = neutral; purple checkerboard = inactive/no pair)",
+        "AI UI regions (cyan = detector boxes, yellow = evidence only, green = protected pixels; status/count at top left)"};
     const int view = (g_debugView.load() + 1) % kDebugViewCount;
     g_debugView.store(view);
     std::cout << "[Overlay] debug view " << view << ": " << names[view] << std::endl;
@@ -560,16 +570,19 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     ShaderConstants c = {};
     c.width = c.levelWidth = m_width;
     c.height = c.levelHeight = m_height;
-    c.neuralControl[1] = static_cast<float>(debugView());
+    const int view = debugView();
+    c.neuralControl[1] = static_cast<float>(view);
+    if (view == 7) setUiRegionDebugConstants(c, job.uiRegionDebug);
     bool ok;
     if (job.single || !job.frame1 || !job.forwardFlow || !job.backwardFlow) {
         ID3D12Resource* source = (job.alpha < 0.5f || !job.frame1) ? job.frame0 : job.frame1;
         // Capture textures are shared (simultaneous-access): no barriers.
         std::array<ID3D12Resource*, 6> in = {source, nullptr, nullptr, nullptr, nullptr, nullptr};
-        ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::PresentFrame, in, m_output.Get(), c,
+        c.neuralControl[3] = 0.0f; // UI debug: no pair/mask, not a valid zero-box result.
+        ok = m_dispatch.dispatch(m_list.Get(), *m_kernels, view == 7 ? Kernel::UiDebugView : Kernel::PresentFrame, in, m_output.Get(), c,
                                  (m_width + 15) / 16, (m_height + 15) / 16, 0x1);
         // Debug view 5: the shown frame's own AI depth.
-        if (ok && debugView() == 5) {
+        if (ok && view == 5) {
             ID3D12Resource* depth = (job.alpha < 0.5f || !job.frame1) ? job.depth0 : job.depth1;
             ok = recordDepthView(m_list.Get(), m_dispatch, *m_kernels, c, depth, depth, m_output.Get());
         }

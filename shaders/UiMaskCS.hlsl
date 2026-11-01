@@ -44,11 +44,34 @@ RWTexture2D<float> Ui : register(u0);
 // a third lets none through and keeps the translucent CS2 HUD.
 static const float kUiChangeRatio = 0.33f;
 
+// This pass alone reuses the otherwise unused neural constants for a detector
+// allow-list: x = enabled, z = box count, weights[0..31] = normalised xyxy.
+// These are NOT the AI flow model's weights or the synthesis blending mask.
+bool InDetectedUiRegion(uint2 pixel)
+{
+    if (NeuralControl.x < 0.5f) return true; // Legacy native-only mode is unchanged.
+    const float2 uv = (float2(pixel) + 0.5f) / float2(Width, Height);
+    const int count = clamp((int)NeuralControl.z, 0, 32);
+    for (int i = 0; i < count; ++i)
+    {
+        const float4 box = NeuralWeights[i];
+        if (all(uv >= box.xy) && all(uv < box.zw)) return true;
+    }
+    return false;
+}
+
 [numthreads(16, 16, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= Width || id.y >= Height) return;
     const int3 texel = int3(id.xy, 0);
+    if (!InDetectedUiRegion(id.xy))
+    {
+        // Clear old evidence too: a lost/shrunk/expired detection cannot leave
+        // a protected pixel behind. Never fill a detector rectangle as UI.
+        Ui[id.xy] = 0.0f;
+        return;
+    }
     const float2 pixel = float2(id.xy);
     const float3 p0 = Frame0.Load(texel).rgb;
     const float3 p1 = Frame1.Load(texel).rgb;

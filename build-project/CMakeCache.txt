@@ -14,8 +14,25 @@
 # EXTERNAL cache entries
 ########################
 
+//Allows to build against installed googletest. This is unsupported
+// if the commit isn't the one in known_good.json
+ALLOW_EXTERNAL_GTEST:BOOL=OFF
+
+//Allows to build against installed SPIRV-Tools-opt. This is unsupported
+// if the commit isn't the one in known_good.json
+ALLOW_EXTERNAL_SPIRV_TOOLS:BOOL=OFF
+
+//Build external dependencies in /External
+BUILD_EXTERNAL:BOOL=OFF
+
+//Enable warnings as errors (default is OFF)
+BUILD_WERROR:BOOL=OFF
+
 //Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/lib.exe
+
+//Choose the type of build
+CMAKE_BUILD_TYPE:STRING=release
 
 //Semicolon separated list of supported configuration types, only
 // supports Debug, Release, MinSizeRel, and RelWithDebInfo, anything
@@ -78,8 +95,56 @@ CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEn
 
 CMAKE_GENERATOR_PLATFORM:STRING=x64
 
+//User executables (bin)
+CMAKE_INSTALL_BINDIR:PATH=bin
+
+//Read-only architecture-independent data (DATAROOTDIR)
+CMAKE_INSTALL_DATADIR:PATH=
+
+//Read-only architecture-independent data root (share)
+CMAKE_INSTALL_DATAROOTDIR:PATH=share
+
+//Documentation root (DATAROOTDIR/doc/PROJECT_NAME)
+CMAKE_INSTALL_DOCDIR:PATH=
+
+//C header files (include)
+CMAKE_INSTALL_INCLUDEDIR:PATH=include
+
+//Info documentation (DATAROOTDIR/info)
+CMAKE_INSTALL_INFODIR:PATH=
+
+//Object code libraries (lib)
+CMAKE_INSTALL_LIBDIR:PATH=lib
+
+//Program executables (libexec)
+CMAKE_INSTALL_LIBEXECDIR:PATH=libexec
+
+//Locale-dependent data (DATAROOTDIR/locale)
+CMAKE_INSTALL_LOCALEDIR:PATH=
+
+//Modifiable single-machine data (var)
+CMAKE_INSTALL_LOCALSTATEDIR:PATH=var
+
+//Man documentation (DATAROOTDIR/man)
+CMAKE_INSTALL_MANDIR:PATH=
+
+//C header files for non-gcc (/usr/include)
+CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
+
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/MotionEnhancer
+
+//Run-time variable data (LOCALSTATEDIR/run)
+CMAKE_INSTALL_RUNSTATEDIR:PATH=
+
+//System admin executables (sbin)
+CMAKE_INSTALL_SBINDIR:PATH=sbin
+
+//Modifiable architecture-independent data (com)
+CMAKE_INSTALL_SHAREDSTATEDIR:PATH=com
+
+//Read-only single-machine data (etc)
+CMAKE_INSTALL_SYSCONFDIR:PATH=etc
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/link.exe
@@ -221,6 +286,33 @@ CPACK_SOURCE_ZIP:BOOL=ON
 //DirectX Shader Compiler
 DXC_EXECUTABLE:FILEPATH=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/FidelityFX-SDK-v1.1.4/tools/ffx_shader_compiler/libs/dxc/bin/x64/dxc.exe
 
+//Enables Exceptions
+ENABLE_EXCEPTIONS:BOOL=OFF
+
+//Builds glslang
+ENABLE_GLSLANG_BINARIES:BOOL=OFF
+
+//If using Emscripten, build glslang.js. Otherwise, builds a sample
+// executable for binary-size testing.
+ENABLE_GLSLANG_JS:BOOL=OFF
+
+//Enables HLSL input support
+ENABLE_HLSL:BOOL=OFF
+
+//Enables spirv-opt capability if present
+ENABLE_OPT:BOOL=OFF
+
+//Enables Precompiled header
+ENABLE_PCH:BOOL=OFF
+
+//Enables RTTI
+ENABLE_RTTI:BOOL=OFF
+
+//Enables SPIRV output support
+ENABLE_SPIRV:BOOL=ON
+
+ENABLE_SPVREMAPPER:BOOL=OFF
+
 FFX_ALL:BOOL=OFF
 
 FFX_API_BACKEND:STRING=DX12_X64
@@ -244,11 +336,25 @@ FidelityFX-SDK_DX12_x64_IS_TOP_LEVEL:STATIC=OFF
 //Value Computed by CMake
 FidelityFX-SDK_DX12_x64_SOURCE_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/FidelityFX-SDK-v1.1.4
 
+//Enable glslang installation
+GLSLANG_ENABLE_INSTALL:BOOL=ON
+
+//Enable glslang testing
+GLSLANG_TESTS:BOOL=OFF
+
 //AI flow ONNX model to stage and install
 MOTION_ENHANCER_AI_FLOW_MODEL:FILEPATH=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow.onnx
 
 //Build the native AMD FidelityFX Optical Flow backend
 MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW:BOOL=ON
+
+//Explicit Vulkan cooperative-matrix UI detector (optional pinned
+// ncnn)
+MOTION_ENHANCER_ENABLE_UI_MATRIX:BOOL=ON
+
+//Explicitly overwrite the build runtime's AI flow model from the
+// packaging source
+MOTION_ENHANCER_STAGE_AI_FLOW_MODEL:BOOL=OFF
 
 //Path to a file.
 MSVC_REDIST_DIR:PATH=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231
@@ -262,11 +368,494 @@ MotionEnhancer_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 MotionEnhancer_SOURCE_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2
 
+//build for address sanitizer
+NCNN_ASAN:BOOL=OFF
+
+//optimize x86 platform with avx extension
+NCNN_AVX:BOOL=OFF
+
+//batch inference support
+NCNN_BATCH:BOOL=ON
+
+//print benchmark information for every layer
+NCNN_BENCHMARK:BOOL=OFF
+
+//bf16 inference
+NCNN_BF16:BOOL=ON
+
+//build benchmark
+NCNN_BUILD_BENCHMARK:BOOL=OFF
+
+//build examples
+NCNN_BUILD_EXAMPLES:BOOL=OFF
+
+//build tests
+NCNN_BUILD_TESTS:BOOL=OFF
+
+//build tools
+NCNN_BUILD_TOOLS:BOOL=OFF
+
+//Enables use of statically linked CRT for statically linked ncnn
+NCNN_BUILD_WITH_STATIC_CRT:BOOL=OFF
+
+//print verbose cmake messages
+NCNN_CMAKE_VERBOSE:BOOL=OFF
+
+//build for coverage
+NCNN_COVERAGE:BOOL=OFF
+
+//build with C api
+NCNN_C_API:BOOL=ON
+
+//disable exception
+NCNN_DISABLE_EXCEPTION:BOOL=OFF
+
+//disable position-independent code
+NCNN_DISABLE_PIC:BOOL=OFF
+
+//disable rtti
+NCNN_DISABLE_RTTI:BOOL=OFF
+
+//enable link-time optimization
+NCNN_ENABLE_LTO:BOOL=OFF
+
+//force inline some function
+NCNN_FORCE_INLINE:BOOL=ON
+
+//install ncnn library and headers
+NCNN_INSTALL_SDK:BOOL=OFF
+
+//int8 inference
+NCNN_INT8:BOOL=OFF
+
+//openmp support
+NCNN_OPENMP:BOOL=OFF
+
+//convert and resize from/to image pixel
+NCNN_PIXEL:BOOL=ON
+
+//warp affine image pixel
+NCNN_PIXEL_AFFINE:BOOL=ON
+
+//draw basic figure and text
+NCNN_PIXEL_DRAWING:BOOL=ON
+
+//rotate image pixel orientation
+NCNN_PIXEL_ROTATE:BOOL=ON
+
+//build with platform api candy
+NCNN_PLATFORM_API:BOOL=ON
+
+//build python api
+NCNN_PYTHON:BOOL=OFF
+
+//runtime dispatch cpu routines
+NCNN_RUNTIME_CPU:BOOL=OFF
+
+//shared library support
+NCNN_SHARED_LIB:BOOL=OFF
+
+//minimal cmath
+NCNN_SIMPLEMATH:BOOL=OFF
+
+//minimal opencv structure emulation
+NCNN_SIMPLEOCV:BOOL=OFF
+
+//minimal openmp runtime emulation
+NCNN_SIMPLEOMP:BOOL=OFF
+
+//minimal cpp stl structure emulation
+NCNN_SIMPLESTL:BOOL=OFF
+
+//minimal in-house vulkan loader
+NCNN_SIMPLEVK:BOOL=ON
+
+//optimize x86 platform with sse2 extension
+NCNN_SSE2:BOOL=OFF
+
+//load model from external file
+NCNN_STDIO:BOOL=ON
+
+//plain and verbose string
+NCNN_STRING:BOOL=ON
+
+//use system glslang library
+NCNN_SYSTEM_GLSLANG:BOOL=OFF
+
+//build with threads
+NCNN_THREADS:BOOL=ON
+
+//validate model and layer parameters
+NCNN_VALIDATION:BOOL=ON
+
+//Pinned UI matrix runtime version
+NCNN_VERSION:STRING=20261020
+
+//vulkan compute support
+NCNN_VULKAN:BOOL=ON
+
+//weight quantized inference
+NCNN_WEIGHT_QUANT:BOOL=ON
+
+//build with windows xp compatibility
+NCNN_WINXP:BOOL=OFF
+
 //CXX compiler flags for OpenMP parallelization
 OpenMP_CXX_FLAGS:STRING=-openmp
 
 //CXX compiler libraries for OpenMP parallelization
 OpenMP_CXX_LIB_NAMES:STRING=
+
+//build with layer absval
+WITH_LAYER_absval:BOOL=ON
+
+//build with layer argmax
+WITH_LAYER_argmax:BOOL=OFF
+
+//build with layer batchnorm
+WITH_LAYER_batchnorm:BOOL=ON
+
+//build with layer bias
+WITH_LAYER_bias:BOOL=ON
+
+//build with layer binaryop
+WITH_LAYER_binaryop:BOOL=ON
+
+//build with layer bnll
+WITH_LAYER_bnll:BOOL=ON
+
+//build with layer cast
+WITH_LAYER_cast:BOOL=ON
+
+//build with layer celu
+WITH_LAYER_celu:BOOL=ON
+
+//build with layer clip
+WITH_LAYER_clip:BOOL=ON
+
+//build with layer concat
+WITH_LAYER_concat:BOOL=ON
+
+//build with layer convolution
+WITH_LAYER_convolution:BOOL=ON
+
+//build with layer convolution1d
+WITH_LAYER_convolution1d:BOOL=ON
+
+//build with layer convolution3d
+WITH_LAYER_convolution3d:BOOL=ON
+
+//build with layer convolutiondepthwise
+WITH_LAYER_convolutiondepthwise:BOOL=ON
+
+//build with layer convolutiondepthwise1d
+WITH_LAYER_convolutiondepthwise1d:BOOL=ON
+
+//build with layer convolutiondepthwise3d
+WITH_LAYER_convolutiondepthwise3d:BOOL=ON
+
+//build with layer copyto
+WITH_LAYER_copyto:BOOL=ON
+
+//build with layer crop
+WITH_LAYER_crop:BOOL=ON
+
+//build with layer cumulativesum
+WITH_LAYER_cumulativesum:BOOL=ON
+
+//build with layer deconvolution
+WITH_LAYER_deconvolution:BOOL=ON
+
+//build with layer deconvolution1d
+WITH_LAYER_deconvolution1d:BOOL=ON
+
+//build with layer deconvolution3d
+WITH_LAYER_deconvolution3d:BOOL=ON
+
+//build with layer deconvolutiondepthwise
+WITH_LAYER_deconvolutiondepthwise:BOOL=ON
+
+//build with layer deconvolutiondepthwise1d
+WITH_LAYER_deconvolutiondepthwise1d:BOOL=ON
+
+//build with layer deconvolutiondepthwise3d
+WITH_LAYER_deconvolutiondepthwise3d:BOOL=ON
+
+//build with layer deepcopy
+WITH_LAYER_deepcopy:BOOL=ON
+
+//build with layer deformableconv2d
+WITH_LAYER_deformableconv2d:BOOL=ON
+
+//build with layer dequantize
+WITH_LAYER_dequantize:BOOL=ON
+
+//build with layer detectionoutput
+WITH_LAYER_detectionoutput:BOOL=ON
+
+//build with layer diag
+WITH_LAYER_diag:BOOL=ON
+
+//build with layer dropout
+WITH_LAYER_dropout:BOOL=ON
+
+//build with layer einsum
+WITH_LAYER_einsum:BOOL=ON
+
+//build with layer eltwise
+WITH_LAYER_eltwise:BOOL=ON
+
+//build with layer elu
+WITH_LAYER_elu:BOOL=ON
+
+//build with layer embed
+WITH_LAYER_embed:BOOL=ON
+
+//build with layer erf
+WITH_LAYER_erf:BOOL=ON
+
+//build with layer exp
+WITH_LAYER_exp:BOOL=ON
+
+//build with layer expanddims
+WITH_LAYER_expanddims:BOOL=ON
+
+//build with layer flatten
+WITH_LAYER_flatten:BOOL=ON
+
+//build with layer flip
+WITH_LAYER_flip:BOOL=ON
+
+//build with layer fold
+WITH_LAYER_fold:BOOL=ON
+
+//build with layer gelu
+WITH_LAYER_gelu:BOOL=ON
+
+//build with layer gemm
+WITH_LAYER_gemm:BOOL=ON
+
+//build with layer glu
+WITH_LAYER_glu:BOOL=ON
+
+//build with layer gridsample
+WITH_LAYER_gridsample:BOOL=ON
+
+//build with layer groupnorm
+WITH_LAYER_groupnorm:BOOL=ON
+
+//build with layer gru
+WITH_LAYER_gru:BOOL=ON
+
+//build with layer hardsigmoid
+WITH_LAYER_hardsigmoid:BOOL=ON
+
+//build with layer hardswish
+WITH_LAYER_hardswish:BOOL=ON
+
+//build with layer innerproduct
+WITH_LAYER_innerproduct:BOOL=ON
+
+//build with layer input
+WITH_LAYER_input:BOOL=ON
+
+//build with layer instancenorm
+WITH_LAYER_instancenorm:BOOL=ON
+
+//build with layer interp
+WITH_LAYER_interp:BOOL=ON
+
+//build with layer inversespectrogram
+WITH_LAYER_inversespectrogram:BOOL=ON
+
+//build with layer layernorm
+WITH_LAYER_layernorm:BOOL=ON
+
+//build with layer log
+WITH_LAYER_log:BOOL=ON
+
+//build with layer lrn
+WITH_LAYER_lrn:BOOL=ON
+
+//build with layer lstm
+WITH_LAYER_lstm:BOOL=ON
+
+//build with layer matmul
+WITH_LAYER_matmul:BOOL=ON
+
+//build with layer memorydata
+WITH_LAYER_memorydata:BOOL=ON
+
+//build with layer mish
+WITH_LAYER_mish:BOOL=ON
+
+//build with layer multiheadattention
+WITH_LAYER_multiheadattention:BOOL=ON
+
+//build with layer mvn
+WITH_LAYER_mvn:BOOL=ON
+
+//build with layer noop
+WITH_LAYER_noop:BOOL=ON
+
+//build with layer normalize
+WITH_LAYER_normalize:BOOL=ON
+
+//build with layer packing
+WITH_LAYER_packing:BOOL=ON
+
+//build with layer padding
+WITH_LAYER_padding:BOOL=ON
+
+//build with layer permute
+WITH_LAYER_permute:BOOL=ON
+
+//build with layer pixelshuffle
+WITH_LAYER_pixelshuffle:BOOL=ON
+
+//build with layer pooling
+WITH_LAYER_pooling:BOOL=ON
+
+//build with layer pooling1d
+WITH_LAYER_pooling1d:BOOL=ON
+
+//build with layer pooling3d
+WITH_LAYER_pooling3d:BOOL=ON
+
+//build with layer power
+WITH_LAYER_power:BOOL=ON
+
+//build with layer prelu
+WITH_LAYER_prelu:BOOL=ON
+
+//build with layer priorbox
+WITH_LAYER_priorbox:BOOL=ON
+
+//build with layer proposal
+WITH_LAYER_proposal:BOOL=ON
+
+//build with layer psroipooling
+WITH_LAYER_psroipooling:BOOL=ON
+
+//build with layer quantize
+WITH_LAYER_quantize:BOOL=ON
+
+//build with layer reduction
+WITH_LAYER_reduction:BOOL=ON
+
+//build with layer relu
+WITH_LAYER_relu:BOOL=ON
+
+//build with layer reorg
+WITH_LAYER_reorg:BOOL=ON
+
+//build with layer requantize
+WITH_LAYER_requantize:BOOL=ON
+
+//build with layer reshape
+WITH_LAYER_reshape:BOOL=ON
+
+//build with layer rmsnorm
+WITH_LAYER_rmsnorm:BOOL=ON
+
+//build with layer rnn
+WITH_LAYER_rnn:BOOL=ON
+
+//build with layer roialign
+WITH_LAYER_roialign:BOOL=ON
+
+//build with layer roipooling
+WITH_LAYER_roipooling:BOOL=ON
+
+//build with layer rotaryembed
+WITH_LAYER_rotaryembed:BOOL=ON
+
+//build with layer scale
+WITH_LAYER_scale:BOOL=ON
+
+//build with layer sdpa
+WITH_LAYER_sdpa:BOOL=ON
+
+//build with layer selu
+WITH_LAYER_selu:BOOL=ON
+
+//build with layer shrink
+WITH_LAYER_shrink:BOOL=ON
+
+//build with layer shufflechannel
+WITH_LAYER_shufflechannel:BOOL=ON
+
+//build with layer sigmoid
+WITH_LAYER_sigmoid:BOOL=ON
+
+//build with layer slice
+WITH_LAYER_slice:BOOL=ON
+
+//build with layer softmax
+WITH_LAYER_softmax:BOOL=ON
+
+//build with layer softplus
+WITH_LAYER_softplus:BOOL=ON
+
+//build with layer spectrogram
+WITH_LAYER_spectrogram:BOOL=ON
+
+//build with layer split
+WITH_LAYER_split:BOOL=ON
+
+//build with layer spp
+WITH_LAYER_spp:BOOL=OFF
+
+//build with layer squeeze
+WITH_LAYER_squeeze:BOOL=ON
+
+//build with layer statisticspooling
+WITH_LAYER_statisticspooling:BOOL=ON
+
+//build with layer swish
+WITH_LAYER_swish:BOOL=ON
+
+//build with layer tanh
+WITH_LAYER_tanh:BOOL=ON
+
+//build with layer threshold
+WITH_LAYER_threshold:BOOL=ON
+
+//build with layer tile
+WITH_LAYER_tile:BOOL=ON
+
+//build with layer unaryop
+WITH_LAYER_unaryop:BOOL=ON
+
+//build with layer unfold
+WITH_LAYER_unfold:BOOL=ON
+
+//build with layer yolodetectionoutput
+WITH_LAYER_yolodetectionoutput:BOOL=ON
+
+//build with layer yolov3detectionoutput
+WITH_LAYER_yolov3detectionoutput:BOOL=ON
+
+//Value Computed by CMake
+glslang_BINARY_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang
+
+//Value Computed by CMake
+glslang_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+glslang_SOURCE_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang
+
+//Value Computed by CMake
+ncnn_BINARY_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix
+
+//Value Computed by CMake
+ncnn_IS_TOP_LEVEL:STATIC=OFF
+
+//Dependencies for the target
+ncnn_LIB_DEPENDS:STATIC=general;glslang;general;SPIRV;
+
+//Value Computed by CMake
+ncnn_SOURCE_DIR:STATIC=C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn
 
 
 ########################
@@ -338,9 +927,47 @@ CMAKE_GENERATOR:INTERNAL=Visual Studio 18 2026
 CMAKE_GENERATOR_INSTANCE:INTERNAL=C:/Program Files/Microsoft Visual Studio/18/Community
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Test CMAKE_HAVE_LIBC_PTHREAD
+CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=
+//Have library pthreads
+CMAKE_HAVE_PTHREADS_CREATE:INTERNAL=
+//Have library pthread
+CMAKE_HAVE_PTHREAD_CREATE:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=C:/Users/bsher/Documents/GitHub/MotionEnhancer2
+//ADVANCED property for variable: CMAKE_INSTALL_BINDIR
+CMAKE_INSTALL_BINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATADIR
+CMAKE_INSTALL_DATADIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATAROOTDIR
+CMAKE_INSTALL_DATAROOTDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DOCDIR
+CMAKE_INSTALL_DOCDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INCLUDEDIR
+CMAKE_INSTALL_INCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INFODIR
+CMAKE_INSTALL_INFODIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBDIR
+CMAKE_INSTALL_LIBDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBEXECDIR
+CMAKE_INSTALL_LIBEXECDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALEDIR
+CMAKE_INSTALL_LOCALEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALSTATEDIR
+CMAKE_INSTALL_LOCALSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_MANDIR
+CMAKE_INSTALL_MANDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_OLDINCLUDEDIR
+CMAKE_INSTALL_OLDINCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_RUNSTATEDIR
+CMAKE_INSTALL_RUNSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SBINDIR
+CMAKE_INSTALL_SBINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SHAREDSTATEDIR
+CMAKE_INSTALL_SHAREDSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SYSCONFDIR
+CMAKE_INSTALL_SYSCONFDIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //Name of CMakeLists files to read
@@ -358,7 +985,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=25
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=31
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //noop for ranlib
@@ -406,6 +1033,10 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Deprecated.  Use -W[no-]deprecated instead.
 CMAKE_WARN_DEPRECATED:INTERNAL=ON
+//Test COMPILER_HAS_DEPRECATED
+COMPILER_HAS_DEPRECATED:INTERNAL=1
+//Test COMPILER_HAS_DEPRECATED_ATTR
+COMPILER_HAS_DEPRECATED_ATTR:INTERNAL=
 //ADVANCED property for variable: CPACK_SOURCE_7Z
 CPACK_SOURCE_7Z-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CPACK_SOURCE_ZIP
@@ -414,8 +1045,38 @@ CPACK_SOURCE_ZIP-ADVANCED:INTERNAL=1
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][ ][v2.0()]
 //Details about finding OpenMP_CXX
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-openmp][v2.0()]
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: MSVC_REDIST_DIR
 MSVC_REDIST_DIR-ADVANCED:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX
+NCNN_COMPILER_SUPPORT_X86_AVX:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX2
+NCNN_COMPILER_SUPPORT_X86_AVX2:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX512
+NCNN_COMPILER_SUPPORT_X86_AVX512:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX512_BF16
+NCNN_COMPILER_SUPPORT_X86_AVX512_BF16:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX512_FP16
+NCNN_COMPILER_SUPPORT_X86_AVX512_FP16:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI
+NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT
+NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI
+NCNN_COMPILER_SUPPORT_X86_AVX_VNNI:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16
+NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8
+NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_F16C
+NCNN_COMPILER_SUPPORT_X86_F16C:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_FMA
+NCNN_COMPILER_SUPPORT_X86_FMA:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_FMA4
+NCNN_COMPILER_SUPPORT_X86_FMA4:INTERNAL=1
+//Test NCNN_COMPILER_SUPPORT_X86_XOP
+NCNN_COMPILER_SUPPORT_X86_XOP:INTERNAL=1
 //Result of TRY_COMPILE
 OpenMP_COMPILE_RESULT_CXX_openmp:INTERNAL=TRUE
 //ADVANCED property for variable: OpenMP_CXX_FLAGS
@@ -426,4 +1087,6 @@ OpenMP_CXX_LIB_NAMES-ADVANCED:INTERNAL=1
 OpenMP_CXX_SPEC_DATE:INTERNAL=200203
 //Result of TRY_COMPILE
 OpenMP_SPECTEST_CXX_:INTERNAL=TRUE
+//CMAKE_INSTALL_PREFIX during last run
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/MotionEnhancer
 

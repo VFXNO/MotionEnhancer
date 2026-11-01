@@ -19,3 +19,5 @@ C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthEstimator.cpp;C:\Users\
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\DepthService.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\motion_enhancer.dir\Release\DepthService.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\OrtRuntime.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\motion_enhancer.dir\Release\OrtRuntime.obj
 C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\AiFlowEstimator.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\motion_enhancer.dir\Release\AiFlowEstimator.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\UiDetector.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\motion_enhancer.dir\Release\UiDetector.obj
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\UiMatrixDetector.cpp;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\motion_enhancer.dir\Release\UiMatrixDetector.obj

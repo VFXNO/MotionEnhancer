@@ -25,7 +25,13 @@
 		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/fidelityfx-sdk/src/components/classifier/cmake_install.cmake",
 		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/fidelityfx-sdk/src/components/breadcrumbs/cmake_install.cmake",
 		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/fidelityfx-sdk/libs/pix/cmake_install.cmake",
-		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/fidelityfx-sdk/src/backends/dx12/cmake_install.cmake"
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/fidelityfx-sdk/src/backends/dx12/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang/SPIRV/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang/glslang/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang/glslang/OSDependent/Windows/cmake_install.cmake",
+		"C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/src/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

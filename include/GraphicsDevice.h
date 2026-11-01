@@ -40,12 +40,14 @@ struct ShaderConstants {
     float    flowScale = 0.0f;
 
     // The convolutional estimator's weights, in NeuralFlowLayout order and
-    // nothing else: one flat array the shaders index with the same constants
+    // one flat array the estimator shaders index with the same constants
     // the C++ and the trainer use. The previous split into netWeights /
     // netBias / netOut / featureWeights / featureControl meant every change
     // to the architecture was a change to five parallel layouts, and a
     // relayout did silently write the temporal weight into a hidden unit.
     // Padded to 240 so the array is a whole number of 16-byte rows.
+    // UiMaskCS / UiDebugViewCS reuse this otherwise-unused space for up to 32 UI
+    // region bounds. Its own constant buffer; no model/estimator math changes.
     float    neuralWeights[240] = {};   // rows 3-62
     float    neuralControl[4] = {};     // row 63: x = model enabled, y = debug view, z = alternate DIS seed, w = AI blend mask
 };

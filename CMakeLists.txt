@@ -53,6 +53,7 @@ set(SOURCES
     src/DepthService.cpp
     src/OrtRuntime.cpp
     src/AiFlowEstimator.cpp
+    src/UiDetector.cpp
     app.rc
 )
 
@@ -81,11 +82,45 @@ set(HEADERS
     include/GuiApp.h
     include/DepthEstimator.h
     include/DepthService.h
+    include/UiDetector.h
+    include/UiRegions.h
     third_party/stb_image.h
     third_party/stb_image_write.h
 )
 
 add_executable(motion_enhancer ${SOURCES} ${HEADERS})
+
+option(MOTION_ENHANCER_ENABLE_UI_MATRIX "Explicit Vulkan cooperative-matrix UI detector (optional pinned ncnn)" OFF)
+if(MOTION_ENHANCER_ENABLE_UI_MATRIX)
+    set(UI_MATRIX_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ui-matrix/ncnn")
+    if(NOT EXISTS "${UI_MATRIX_SOURCE}/CMakeLists.txt")
+        message(FATAL_ERROR "Run tools/ui-detect/setup_matrix.py before enabling the UI matrix backend")
+    endif()
+    set(NCNN_VERSION 20261020 CACHE STRING "Pinned UI matrix runtime version" FORCE)
+    set(NCNN_VULKAN ON CACHE BOOL "" FORCE)
+    set(NCNN_SIMPLEVK ON CACHE BOOL "" FORCE)
+    set(NCNN_SHARED_LIB OFF CACHE BOOL "" FORCE)
+    set(NCNN_OPENMP OFF CACHE BOOL "" FORCE)
+    set(NCNN_RUNTIME_CPU OFF CACHE BOOL "" FORCE)
+    set(NCNN_SSE2 OFF CACHE BOOL "" FORCE)
+    set(NCNN_AVX OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(NCNN_INT8 OFF CACHE BOOL "" FORCE)
+    set(NCNN_INSTALL_SDK OFF CACHE BOOL "" FORCE)
+    add_subdirectory("${UI_MATRIX_SOURCE}" "${CMAKE_CURRENT_BINARY_DIR}/ui-matrix" EXCLUDE_FROM_ALL)
+    target_sources(motion_enhancer PRIVATE src/UiMatrixDetector.cpp include/UiMatrixDetector.h)
+    target_link_libraries(motion_enhancer PRIVATE ncnn)
+    target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_UI_MATRIX=1)
+    add_custom_command(TARGET motion_enhancer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:motion_enhancer>/licenses"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${UI_MATRIX_SOURCE}/LICENSE.txt"
+            "$<TARGET_FILE_DIR:motion_enhancer>/licenses/UI-Matrix-ncnn.txt"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${UI_MATRIX_SOURCE}/glslang/LICENSE.txt"
+            "$<TARGET_FILE_DIR:motion_enhancer>/licenses/UI-Matrix-glslang.txt")
+endif()
 
 # The manifest is embedded manually via app.rc; disable the linker's
 # auto-generated manifest to avoid a duplicate resource.
@@ -175,7 +210,7 @@ if(WIN32)
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
                                       ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
-                                      DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl)
+                                      DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl UiDetectInputCS.hlsl UiDebugViewCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
             list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
                                                 FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl FfxRepairCS.hlsl)

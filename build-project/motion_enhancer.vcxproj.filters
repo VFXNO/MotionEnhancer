@@ -64,12 +64,24 @@
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\AiFlowEstimator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\UiDetector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\UiMatrixDetector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\AppResources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\BrandLogo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\BrandCharacter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\BrandCharacterAtlas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\Image.h">
@@ -129,10 +141,19 @@
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\DepthService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\UiDetector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\UiRegions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\include\UiMatrixDetector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

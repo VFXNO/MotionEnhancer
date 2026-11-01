@@ -20,6 +20,7 @@ cbuffer PipelineConstants : register(b0)
     // The convolutional estimator's weights in NeuralFlowLayout order,
     // indexed through NeuralWeight() below with the same constants the C++
     // uses. 240 floats = 60 rows, of which 238 are the model.
+    // UiMaskCS / UiDebugViewCS: first 32 float4s instead hold UI region bounds.
     float4 NeuralWeights[60];
     float4 NeuralControl;   // x = model enabled, y = debug view, z = alternate DIS seed, w = AI blend mask
 };
@@ -58,7 +59,8 @@ SamplerState PointClamp : register(s1);
 // Live diagnostics for the presented frames, cycled with Ctrl+Alt+F3 in the
 // overlay (Presenter sets NeuralControl.y; MOTION_ENHANCER_DEBUG_VIEW does
 // the same offline): 0 = off, 1 = motion, 2 = static-UI evidence,
-// 3 = occlusion trust, 4 = vector arrows, 5 = AI depth, 6 = raw AI blend mask.
+// 3 = occlusion trust, 4 = vector arrows, 5 = AI depth, 6 = raw AI blend mask,
+// 7 = AI UI regions + native pixel mask (UiDebugViewCS).
 // Views 1..4 grey the picture so the colours read; views 5..6 show maps.
 // Every view marks the top-left corner with what kind of frame this is - green a real
 // frame, magenta a generated one, yellow a frame shown with no

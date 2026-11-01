@@ -25,10 +25,18 @@ endif()
 if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
     install(FILES "${FIDELITYFX_SDK_DIR}/LICENSE.txt" DESTINATION licenses RENAME FidelityFX-LICENSE.txt)
 endif()
+if(MOTION_ENHANCER_ENABLE_UI_MATRIX)
+    install(FILES "${UI_MATRIX_SOURCE}/LICENSE.txt" DESTINATION licenses RENAME UI-Matrix-ncnn.txt)
+    install(FILES "${UI_MATRIX_SOURCE}/glslang/LICENSE.txt" DESTINATION licenses RENAME UI-Matrix-glslang.txt)
+    # UI detector weights remain an optional, separately licensed download.
+    # Do not package matrix or ONNX UI weights implicitly.
+endif()
 install(DIRECTORY packaging/licenses/ DESTINATION licenses)
 
 set(MOTION_ENHANCER_AI_FLOW_MODEL "${CMAKE_SOURCE_DIR}/models/ai_flow.onnx"
     CACHE FILEPATH "AI flow ONNX model to stage and install")
+option(MOTION_ENHANCER_STAGE_AI_FLOW_MODEL
+       "Explicitly overwrite the build runtime's AI flow model from the packaging source" OFF)
 if(EXISTS "${MOTION_ENHANCER_AI_FLOW_MODEL}")
     get_filename_component(_model_dir "${MOTION_ENHANCER_AI_FLOW_MODEL}" DIRECTORY)
     get_filename_component(_model_name "${MOTION_ENHANCER_AI_FLOW_MODEL}" NAME_WE)
@@ -38,12 +46,16 @@ if(EXISTS "${MOTION_ENHANCER_AI_FLOW_MODEL}")
     endif()
     install(FILES "${MOTION_ENHANCER_AI_FLOW_MODEL}" DESTINATION models RENAME ai_flow.onnx)
     install(FILES "${_model_json}" DESTINATION models RENAME ai_flow.json)
-    add_custom_command(TARGET motion_enhancer POST_BUILD
+    # A local trained/activated model is authoritative. An ordinary C++ rebuild
+    # must not replace it with the repository's older packaging model.
+    if(MOTION_ENHANCER_STAGE_AI_FLOW_MODEL)
+      add_custom_command(TARGET motion_enhancer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:motion_enhancer>/models"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MOTION_ENHANCER_AI_FLOW_MODEL}"
             "$<TARGET_FILE_DIR:motion_enhancer>/models/ai_flow.onnx"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_model_json}"
             "$<TARGET_FILE_DIR:motion_enhancer>/models/ai_flow.json")
+    endif()
 endif()
 install(FILES neural_model.bin DESTINATION models)
 install(FILES packaging/Setup-AITrainer.cmd DESTINATION .)

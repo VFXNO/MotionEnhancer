@@ -5,6 +5,7 @@
 #include "DepthService.h"
 #include "GraphicsDevice.h"
 #include "NeuralFlow.h"
+#include "UiDetector.h"
 
 #include <algorithm>
 #include <array>
@@ -95,6 +96,11 @@ struct FlowSettings {
     // Keep screen-fixed UI (HUD, subtitles, logos) out of the warp. Per
     // pixel and confirmed over several pairs; see UiMaskCS.hlsl.
     bool uiMask = true;
+    // Optional detector allow-list: keep UiMaskCS's per-pixel evidence tests,
+    // but never protect pixels outside a fresh detected UI region. Separate
+    // from AI flow, refinement and the learned blend mask. Choose before capture.
+    bool aiUiRegions = false;
+    UiDetector::Choice uiDetector = UiDetector::Choice::Automatic;
     // DIS: give the blocks beside a moving object that neither field
     // confirms one consistent vector - the visible surface's where the
     // picture says so, the background's where the block is hidden in the
@@ -179,6 +185,7 @@ public:
         // hasUiMask says whether this pair actually wrote it.
         ComPtr<ID3D12Resource> uiMask;
         bool hasUiMask = false;
+        UiRegionDebug uiRegionDebug;
         // What InterpolateCS binds at t4: null reads as "no UI anywhere",
         // which is exactly the plain warp.
         ID3D12Resource* uiMaskInput() const { return hasUiMask ? uiMask.Get() : nullptr; }
@@ -340,6 +347,7 @@ private:
     // vectors are carried into the search.
     std::array<Pyramid, kMaxSlots> m_pyramids;
     std::unique_ptr<DepthService> m_depth;   // FlowSettings::aiDepth
+    std::unique_ptr<UiDetector> m_uiDetector; // FlowSettings::aiUiRegions
     std::unique_ptr<AiFlowEstimator> m_aiFlow;   // FlowSettings::aiFlow
     bool m_aiIntegrated = false;   // Selected graph; immutable for this initialized session.
     ComPtr<ID3D12Resource> m_aiPlanar;    // network input, planar, W x 6H R32 (AiFlowInputCS)

@@ -2,6 +2,7 @@
 
 #include "ComputeKernels.h"
 #include "GraphicsDevice.h"
+#include "UiRegions.h"
 
 #include <array>
 #include <atomic>
@@ -14,10 +15,25 @@
 // Common.hlsli): 0 = off, 1 = motion, 2 = static-UI evidence, 3 = occlusion
 // trust, 4 = vector arrows, 5 = AI depth (DepthViewCS), 6 = raw AI blend mask
 // (white = frame0, black = frame1, purple checkerboard = inactive/no pair).
+// 7 = AI UI regions (cyan boxes, yellow evidence, green protected pixels).
 // Ctrl+Alt+F3 in the overlay cycles it; read on every frame.
-constexpr int kDebugViewCount = 7;
+constexpr int kDebugViewCount = 8;
 void cycleDebugView();
 int debugView();
+
+// Used only for debug view 7. Reuses otherwise-unused synthesis constants,
+// not model weights, and leaves debug-view/blending controls untouched.
+inline void setUiRegionDebugConstants(ShaderConstants& c, const UiRegionDebug& state) {
+    c.neuralControl[0] = !state.maskEnabled ? 0.0f : !state.detectorEnabled ? 1.0f : !state.valid ? 2.0f : 3.0f;
+    const uint32_t count = state.maskEnabled && state.detectorEnabled && state.valid
+        ? std::min(state.count, static_cast<uint32_t>(kMaxUiRegions)) : 0;
+    c.neuralControl[2] = static_cast<float>(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        const UiRegion& r = state.regions[i];
+        const float bounds[] = {r.left, r.top, r.right, r.bottom};
+        std::copy_n(bounds, 4, c.neuralWeights + 4 * i);
+    }
+}
 // Ctrl+Alt+F2 in the overlay: saves, into captures\<date-time>\ next to the
 // executable, the last kReplayShown presented frames (shown_###_..._t<t>.png,
 // exactly what was on screen, generated frames included) and the last
@@ -69,6 +85,7 @@ struct RenderJob {
     uint32_t flowBlockSize = 32;
     bool singleFlowField = false;      // FlowEngine::Entry::singleField
     ID3D12Resource* uiMask = nullptr;  // FlowEngine::Entry::uiMaskInput(); null = no UI
+    UiRegionDebug uiRegionDebug;       // Same pair's allow-list/status, not latest detections.
     ID3D12Resource* aiBlendMask = nullptr;  // pair-owned network blend mask; null = disabled
     ID3D12Fence* flowFence = nullptr;   // GPU-side wait before the interpolate pass
     uint64_t flowFenceValue = 0;

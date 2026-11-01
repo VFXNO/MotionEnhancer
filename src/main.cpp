@@ -57,6 +57,10 @@ static void printUsage(const char* progName) {
               << "  --ai-refinement          Integrated AI refinement instead of DIS (paired refined export required)\n"
               << "  --no-ai-refinement       Backbone-only AI + DIS refinement (default; independent of blending mask)\n"
               << "  --no-ui-mask             Interpolate static UI too (default: HUD/subtitles kept sharp)\n"
+              << "  --ai-ui-regions          Native UI mask only inside AI-detected regions (optional ui_detect.onnx)\n"
+              << "  --ui-detector <type>     auto|icons|matrix; icon detection only, not flow\n"
+              << "  --ui-detect-test <in.png> <out.json>  Test UI boxes and worker latency; no capture\n"
+              << "  --ui-regions-self-test   Verify native ROI gating, decoder and expiry rules\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
@@ -248,6 +252,8 @@ int main(int argc, char** argv) {
     bool projectionSelfTest = false;
     bool aiBlendMaskSelfTest = false;
     bool aiRefinementSelfTest = false;
+    bool uiRegionsSelfTest = false;
+    std::string uiDetectInput, uiDetectOutput;
     std::string neuralModelPath;
     int neuralEpochs = 24;
     bool neuralGradientCheck = false;
@@ -274,6 +280,11 @@ int main(int argc, char** argv) {
             aiBlendMaskSelfTest = true;
         } else if (arg == "--ai-refinement-self-test") {
             aiRefinementSelfTest = true;
+        } else if (arg == "--ui-regions-self-test") {
+            uiRegionsSelfTest = true;
+        } else if (arg == "--ui-detect-test" && i + 2 < argc) {
+            uiDetectInput = argv[++i];
+            uiDetectOutput = argv[++i];
         } else if (arg == "--gpu-offline-sequence" && i + 1 < argc) {
             sequencePrefix = argv[++i];
         } else if (arg == "--ai-flow-test" && i + 1 < argc) {
@@ -330,6 +341,14 @@ int main(int argc, char** argv) {
             gpuSettings.refineSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
         } else if (arg == "--no-ui-mask") {
             gpuSettings.uiMask = false;
+        } else if (arg == "--ai-ui-regions") {
+            gpuSettings.aiUiRegions = true;
+        } else if (arg == "--ui-detector" && i + 1 < argc) {
+            const std::string type = argv[++i];
+            if (type == "auto") gpuSettings.uiDetector = UiDetector::Choice::Automatic;
+            else if (type == "icons") gpuSettings.uiDetector = UiDetector::Choice::DirectMLIcons;
+            else if (type == "matrix") gpuSettings.uiDetector = UiDetector::Choice::MatrixIcons;
+            else { std::cerr << "UI detector must be auto, icons or matrix. Text/HUD detection has been removed.\n"; return 1; }
         } else if (arg == "--ai-blend-mask") {
             gpuSettings.aiBlendMask = true;
         } else if (arg == "--ai-refinement") {
@@ -478,6 +497,8 @@ int main(int argc, char** argv) {
     if (projectionSelfTest) return runProjectionSelfTest(adapterPreference);
     if (aiBlendMaskSelfTest) return runAiBlendMaskSelfTest(adapterPreference);
     if (aiRefinementSelfTest) return runAiRefinementSelfTest(adapterPreference);
+    if (uiRegionsSelfTest) return runUiRegionsSelfTest(adapterPreference);
+    if (!uiDetectInput.empty()) return runUiDetectTest(uiDetectInput, uiDetectOutput, adapterPreference, gpuSettings.uiDetector);
 
     if (!aiFlowTestModel.empty()) return runAiFlowTest(aiFlowTestModel, adapterPreference);
     if (!depthTestInput.empty()) {

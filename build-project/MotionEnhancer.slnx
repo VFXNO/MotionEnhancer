@@ -8,11 +8,14 @@
 		<Platform Name="x64"/>
 	</Configurations>
 	<Project Path="motion_enhancer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="377a7773-1d77-386b-8fd7-3e0f032a4dea">
+		<BuildDependency Project="ui-matrix/glslang/SPIRV/SPIRV.vcxproj"/>
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj"/>
 		<BuildDependency Project="fidelityfx-sdk/src/backends/dx12/ffx_backend_dx12_x64.vcxproj"/>
 		<BuildDependency Project="fidelityfx-sdk/src/components/opticalflow/ffx_opticalflow_x64.vcxproj"/>
+		<BuildDependency Project="ui-matrix/glslang/glslang/glslang.vcxproj"/>
 		<BuildDependency Project="motion_enhancer_shaders.vcxproj"/>
+		<BuildDependency Project="ui-matrix/src/ncnn.vcxproj"/>
 	</Project>
 	<Project Path="motion_enhancer_shaders.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9b22c403-8c78-324b-9cf0-11047adaa46c">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
@@ -27,7 +30,17 @@
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		</Project>
 	</Folder>
-	<Folder Name="/CMakePredefinedTargets/">
+	<Folder Name="/Components/">
+		<Project Path="fidelityfx-sdk/src/components/opticalflow/ffx_opticalflow_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d877d0ad-428f-3ac3-a732-bcd9d0dcbf72">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/CopyTargets/">
+		<Project Path="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4eb7e424-bf7a-3fda-bbcf-fd23d43bcf3d">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/cmake/">
 		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c3d50c37-30c6-33f5-a828-e76e5cca5995" DefaultStartup="true">
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 			<BuildDependency Project="motion_enhancer.vcxproj"/>
@@ -51,13 +64,22 @@
 		</Project>
 		<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="adad4a0d-cd56-3c66-9fa8-94eac708ec2a"/>
 	</Folder>
-	<Folder Name="/Components/">
-		<Project Path="fidelityfx-sdk/src/components/opticalflow/ffx_opticalflow_x64.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d877d0ad-428f-3ac3-a732-bcd9d0dcbf72">
+	<Folder Name="/glslang/">
+		<Project Path="ui-matrix/glslang/SPIRV/SPIRV.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="269770e4-05ab-3214-ab94-5774e7db0d05">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="ui-matrix/glslang/glslang/glslang.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2fcb9dc6-d2a7-3bd7-acc6-acbfea901367">
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		</Project>
 	</Folder>
-	<Folder Name="/CopyTargets/">
-		<Project Path="fidelityfx-sdk/libs/pix/copied_winpixevent_bin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4eb7e424-bf7a-3fda-bbcf-fd23d43bcf3d">
+	<Folder Name="/libncnn/">
+		<Project Path="ui-matrix/src/ncnn.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="97376320-9a1a-3939-92cb-ba85ca46104a">
+			<BuildDependency Project="ui-matrix/glslang/SPIRV/SPIRV.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="ui-matrix/glslang/glslang/glslang.vcxproj"/>
+			<BuildDependency Project="ui-matrix/src/ncnn-generate-spirv.vcxproj"/>
+		</Project>
+		<Project Path="ui-matrix/src/ncnn-generate-spirv.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0e01d021-b889-382d-8245-0e3dc0eb3a25">
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		</Project>
 	</Folder>

@@ -68,3 +68,19 @@ and FFmpeg/FFprobe. Their upstream licenses and GPU/driver requirements apply.
 FFmpeg builds are obtained from https://www.gyan.dev/ffmpeg/builds/ and retain
 their upstream license files. Qt/PySide6 and FFmpeg are not statically linked
 into the Motion Enhancer executable.
+
+## Optional UI cooperative-matrix runtime
+
+When built with `MOTION_ENHANCER_ENABLE_UI_MATRIX=ON`, the executable links
+ncnn 20261020 (Tencent, BSD-3-Clause) and its bundled glslang compiler.
+Their original notices are retained as `licenses/UI-Matrix-ncnn.txt` and
+`licenses/UI-Matrix-glslang.txt`. Source is obtained by the hash-pinned
+`tools/ui-detect/setup_matrix.py`, not by modifying the existing graphics SDK.
+Vulkan and the AMD driver remain system prerequisites, not bundled DLLs.
+Source: https://github.com/Tencent/ncnn/tree/20261020
+
+The separately downloaded OmniParser V1 icon/UI detector weights (including
+their matrix-backend conversion) use **AGPL-3.0**, not this project's MIT or
+ncnn's BSD licence. Their licence and provenance remain alongside the optional
+model. Model files are not implicitly added to packages; redistribution
+obligations still require review before shipping.

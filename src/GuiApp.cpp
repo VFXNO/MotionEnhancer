@@ -24,6 +24,7 @@ using std::min;
 #include <cstdio>
 #include <cstddef>
 #include <fstream>
+#include <filesystem>
 #include <regex>
 #include <sstream>
 #include <cstring>
@@ -54,6 +55,9 @@ constexpr int IDC_USE_AI_ENGINE = 117;
 constexpr int IDC_AI_REFRESH = 118;
 constexpr int IDC_AI_STATUS = 119;
 constexpr int IDC_AI_REFINEMENT = 120;
+constexpr int IDC_AI_UI_REGIONS = 121;
+constexpr int IDC_UI_MASK = 122;
+constexpr int IDC_UI_DETECTOR = 123;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -142,6 +146,8 @@ struct GuiState {
     HWND gpuRefineRadius = nullptr;
     HWND gpuSmoothness = nullptr;
     HWND uiMask = nullptr;
+    HWND aiUiRegions = nullptr;
+    HWND uiDetector = nullptr;
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
     HWND ffxOcclusion = nullptr;
@@ -1174,6 +1180,20 @@ void startCapture() {
         "--adapter", adapterArg
     };
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
+    else if (SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+        const LRESULT selection = SendMessageA(g_state.uiDetector, CB_GETCURSEL, 0, 0);
+        const auto choice = selection == 1 ? UiDetector::Choice::MatrixIcons : UiDetector::Choice::DirectMLIcons;
+        const auto path = std::filesystem::path(UiDetector::defaultModelPath(choice));
+        if (!std::filesystem::is_regular_file(path) ||
+            (selection == 1 && !std::filesystem::is_regular_file(std::filesystem::path(path).replace_extension(L".bin")))) {
+            CloseHandle(stopEvent);
+            SetWindowTextA(g_state.liveStatus, "Selected UI detector missing: see tools/ui-detect/README.md. No fallback.");
+            return;
+        }
+        captureArgs.push_back("--ai-ui-regions");
+        captureArgs.push_back("--ui-detector");
+        captureArgs.push_back(selection == 1 ? "matrix" : "icons");
+    }
     // Engine-specific, ignored by the others: the occlusion fill is DIS's,
     // the refinement and its occlusion handling FFX's (occlusion handling
     // is part of the refinement, so it needs the refinement on).
@@ -1342,6 +1362,11 @@ std::string aiModelSummary() {
 
 void updateAiRefinementControl() {
     if (!g_state.aiRefinement) return;
+    EnableWindow(g_state.aiUiRegions, !g_state.captureStopEvent &&
+        SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    EnableWindow(g_state.uiDetector, !g_state.captureStopEvent &&
+        SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED &&
+        SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED);
     const bool ai = SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0) == 4;
     std::wstring selected;
     std::string reason;
@@ -1352,7 +1377,8 @@ void updateAiRefinementControl() {
                      : !ai ? "Select AI pyramid to choose its refiner."
                      : !available ? "AI refiner unavailable: export a refined model pair."
                      : "Checked: AI only. Unchecked: DIS. Choose before capture.";
-    SetWindowTextA(g_state.aiRefinementHelp, help);
+    const std::string hint = std::string(help) + "   |   Ctrl+Alt+F3: UI debug view 7";
+    SetWindowTextA(g_state.aiRefinementHelp, hint.c_str());
     InvalidateRect(g_state.aiRefinement, nullptr, FALSE);
 }
 
@@ -1511,6 +1537,7 @@ void createControls() {
     // Static UI (HUD, subtitles, logos) is shown where it is instead of
     // being dragged along by the motion underneath it. See UiMaskCS.hlsl.
     g_state.uiMask = makeCheckbox("Keep static UI sharp (HUD, subtitles, logos)", 56, 318, 420, true);
+    SetWindowLongPtrA(g_state.uiMask, GWLP_ID, IDC_UI_MASK);
     // DIS: one consistent motion for the band beside a moving object
     // (FlowSettings::occlusionFill, OcclusionFillCS.hlsl).
     g_state.occlusionFill = makeCheckbox("Fill occlusion bands (DIS)", 490, 318, 300, true);
@@ -1527,7 +1554,13 @@ void createControls() {
     g_state.aiBlendMask = makeCheckbox("AI: blending mask", 238, 396, 184, false);
     g_state.aiRefinement = makeCheckbox("AI flow refinement (off: DIS)", 36, 434, 310, false);
     SetWindowLongPtrA(g_state.aiRefinement, GWLP_ID, IDC_AI_REFINEMENT);
-    g_state.aiRefinementHelp = makeLabel("Select AI pyramid to choose its refiner.", 360, 436, 470);
+    g_state.aiUiRegions = makeCheckbox("AI: UI regions (exp.)", 360, 434, 200, false);
+    SetWindowLongPtrA(g_state.aiUiRegions, GWLP_ID, IDC_AI_UI_REGIONS);
+    g_state.uiDetector = makeCombo(570, 430, 260, IDC_UI_DETECTOR);
+    for (const char* option : {"DirectML: icons (default)", "Matrix: icons (WMMA)"})
+        SendMessageA(g_state.uiDetector, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.uiDetector, CB_SETCURSEL, 0, 0);
+    g_state.aiRefinementHelp = makeLabel("Select AI pyramid to choose its refiner.", 36, 466, 794);
     SetWindowSubclass(g_state.aiRefinementHelp, changingStaticProc, 3, 0);
     // How often the AI depth network runs (FlowSettings::aiDepthStride):
     // every frame, or every n-th with the frames between borrowing a
@@ -1537,11 +1570,6 @@ void createControls() {
     for (const char* rate : {"Every frame", "Every 2nd frame", "Every 3rd frame", "Every 4th frame"})
         SendMessageA(g_state.aiDepthRate, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(rate));
     SendMessageA(g_state.aiDepthRate, CB_SETCURSEL, 0, 0);
-    HWND liveHelp = addControl(
-        "STATIC",
-        "Settings apply on capture start. Stop Capture to exit. Ctrl+Alt+F1: overlay; Ctrl+Alt+F3: debug views.",
-        SS_LEFT, 36, 466, 794, 20, 0);
-    setControlFont(liveHelp, g_fontLabel);
     g_state.liveStatus = addControl("STATIC", "", SS_LEFTNOWORDWRAP | SS_ENDELLIPSIS,
                                      36, 490, 794, 20, IDC_LIVE_STATUS);
     setControlFont(g_state.liveStatus, g_fontBody);
@@ -1570,7 +1598,7 @@ void createControls() {
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
         g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
-        g_state.aiRefinement, g_state.aiRefinementHelp, g_state.captureButton, liveHelp, g_state.liveStatus,
+        g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
@@ -2174,6 +2202,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 HWND box = reinterpret_cast<HWND>(lParam);
                 const bool checked = SendMessageA(box, BM_GETCHECK, 0, 0) == BST_CHECKED;
                 SendMessageA(box, BM_SETCHECK, checked ? BST_UNCHECKED : BST_CHECKED, 0);
+                if (box == g_state.uiMask || box == g_state.aiUiRegions) updateAiRefinementControl();
                 return 0;
             }
             switch (LOWORD(wParam)) {

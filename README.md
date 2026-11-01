@@ -107,13 +107,25 @@ For the restored **AI flow refinement (off: DIS)** checkbox, select **AI pyramid
 (trained model)** under **Flow Engine**. Checked uses integrated AI refinement;
 unchecked uses DIS refinement. Stop/restart capture to change modes.
 
+Optional **AI: UI regions (exp.)** uses a separate
+pretrained detector to restrict the existing native per-pixel UI mask to its
+detected regions. Boxes are not solid masks. Requires a separately downloaded
+UI detector; defaults off and does not change the motion model or refiner.
+The adjacent selector offers only **DirectML: icons (default)** and
+**Matrix: icons (WMMA)**, using the same icon detector. Matrix is explicit
+opt-in, not automatically enabled by that checkbox. The experimental Text/HUD
+option has been removed. Icon continuity keeps current, matching proposals
+through small confidence dips and gives existing supported icons priority at
+the 32-box limit. Missing proposals still disappear; boxes are never held stale.
+See [UI detector setup, limitations and licence](tools/ui-detect/README.md).
+
 **3. In the overlay:**
 
 | Keys | Action |
 |---|---|
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F1</kbd> | Show or hide the overlay |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F2</kbd> | Save the moment you just saw (the frames shown and the game frames they came from) |
-| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd> | Cycle the debug views: motion, static UI, occlusion, vector arrows, AI depth, AI blend mask |
+| <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd> | Cycle the debug views: motion, static UI, occlusion, vector arrows, AI depth, AI blend mask, AI UI regions |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Esc</kbd> | Stop capture |
 
 From a terminal, `motion_enhancer.exe --list-windows` lists the capturable windows and `--capture-window "<title>"` starts directly. All options are listed under [Usage](#usage).
@@ -591,8 +603,9 @@ Diagnostics: `MOTION_ENHANCER_PACING=1` logs every presented frame (mode, predic
   4. **Vector arrows**: the estimated motion (earlier → later frame) as one arrow per 16 px, drawn at a quarter of its length and capped at 14 px so arrows never overlap (a capped one keeps its direction), coloured by direction as in view 1; a white dot is a cell moving less than 2 px.
   5. **AI depth**: the AI depth of what is on screen (needs "AI depth" on, and DIS or FFX occlusion handling for it to be used), from dark blue (far) through cyan, green and yellow to red (near); a generated frame shows its two frames' depth blended at its time. Grey where there is no depth: AI depth off, or that frame's depth not finished yet.
   6. **AI blend mask**: the pair's raw learned midpoint mask, enlarged to the capture size: white prefers the earlier frame, black the later frame, and mid-grey is neutral. Requires **AI pyramid (trained model)** plus **AI: blending mask** enabled before starting capture. A **purple checkerboard** means the mask is inactive or unavailable (disabled, another engine, AI falling back to DIS, or a pass-through frame with no pair). This is the model's preference, not final blend weights: temporal transport, time weighting, visibility and static-UI protection still affect synthesis. The raw map stays the same across timestamps of the same pair.
+  7. **AI UI regions / mask**: cyan outlines show the detector's allowed areas; yellow shows native evidence that is not yet protecting a pixel; green shows supported, protected native-mask pixels. The dim source-image backdrop is not a motion/quality comparison. The top-left legend reports `MASK OFF`, `AI OFF`, `NO PAIR`, `NO RESULT` (waiting, expired or failed), or `REGIONS: 00`–`32` (a valid result, possibly empty). Boxes/status belong to the same pair as the displayed mask, not a newer detector result. Enable **Keep static UI sharp** and **AI: mask only detected UI areas** before capture to see detections; with AI off, native-mask evidence is still visible. Does not trigger additional inference. Cycle once more to return to normal output. The capture hotkey also saves this view.
 
-  `MOTION_ENHANCER_DEBUG_VIEW=<1..6>` renders the same views in `--gpu-offline` and `--gpu-offline-sequence`.
+  `MOTION_ENHANCER_DEBUG_VIEW=<1..7>` renders the same views in `--gpu-offline` and `--gpu-offline-sequence`. A first offline pair may legitimately show `NO RESULT`, since UI detection is asynchronous.
 - `[Ctrl+Alt+Esc]`: Exit overlay and stop capture
 
 ### Quick Start for Real-Time Capture

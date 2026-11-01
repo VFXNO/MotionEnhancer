@@ -14,6 +14,9 @@
       <FullPath>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\x64\Release\motion_enhancer_shaders</FullPath>
     </ProjectOutput>
     <ProjectOutput>
+      <FullPath>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\x64\Release\ncnn-generate-spirv</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
       <FullPath>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\Release\motion_enhancer.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>

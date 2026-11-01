@@ -334,6 +334,30 @@ endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\UIDEBUGVIEWCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDebugViewCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiDebugViewCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\UIDETECTINPUTCS.CSO.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\tools\ffx_shader_compiler\libs\dxc\bin\x64\dxc.exe -E CSMain -T cs_5_0 -O3 -I C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders -Fo C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDetectInputCS.cso C:/Users/bsher/Documents/GitHub/MotionEnhancer2/shaders/UiDetectInputCS.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
 ^C:\USERS\BSHER\DOCUMENTS\GITHUB\MOTIONENHANCER2\BUILD-PROJECT\CMAKEFILES\F8D35534FD89923CD61D6A880789FF95\UIMASKCS.CSO.RULE
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders

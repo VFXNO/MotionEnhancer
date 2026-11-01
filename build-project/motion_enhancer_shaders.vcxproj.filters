@@ -85,6 +85,12 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\PyramidCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\UiDebugViewCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\UiDetectInputCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\UiMaskCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>

@@ -27,3 +27,13 @@ tools/ai-train/runs/
 tools/ai-train/python/
 tools/ai-train/ffmpeg/
 tools/ai-train/setup-*.log
+
+# Preservation archive made before the optional UI-detector build.
+/backup/2026-10-31_ui-regions-before-*/
+/backup/2026-10-31_ui-debug-before-*/
+/backup/2026-11-01_ui-int8-before-*/
+/backup/2026-11-01_ui-matrix-before-*/
+/backup/2026-11-01_ui-improve-before-*/
+/backup/2026-11-01_ui-icons-only-before-*/
+/backup/2026-11-01_ui-continuity-before-*/
+/third_party/ui-matrix/
