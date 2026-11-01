@@ -1,5 +1,5 @@
 {
- "page": 1,
+ "page": 2,
  "videos": [
   "C:/Users/bsher/Downloads/Video/Wait-THIS-GAME-SnapYT.App.mp4",
   "C:/Users/bsher/Downloads/Video/BLACKBIRD-GAMEPLAY-GOES-SnapYT.App.mp4",
@@ -31,7 +31,7 @@
  "lr": 0.0007,
  "crop": 480,
  "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2",
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2\\best_ui.pt",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/ui2/last_ui.pt",
  "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow_ui.onnx",
  "ui_mode": "frozen",
  "ui_labels": "C:\\Users\\bsher\\Downloads\\New folder\\frames\\labels.json",
