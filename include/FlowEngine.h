@@ -70,6 +70,9 @@ struct FlowSettings {
     // AI pyramid only: use the network's learned midpoint blend mask during
     // synthesis. Experimental, off by default; transported in time by motion.
     bool aiBlendMask = false;
+    // Separate trained flow+UI bundle. Candidate admission only: native
+    // per-pixel static/damage evidence remains mandatory.
+    bool aiTemporalUi = false;
     // AI pyramid only: integrated neural correction INSTEAD OF DIS. Off
     // selects the paired backbone-only ONNX + DIS. Choose before capture;
     // switching requires a new session so in-flight tensor bindings stay valid.
@@ -195,6 +198,7 @@ public:
         ComPtr<ID3D12Resource> aiBlendMask;
         bool hasAiBlendMask = false;
         bool aiRefined = false;
+        bool aiUiHistoryValid = false;
         int aiDisPatchPasses = 0;   // Per-pair diagnostics; zero in integrated mode.
         ID3D12Resource* aiBlendMaskInput() const { return hasAiBlendMask ? aiBlendMask.Get() : nullptr; }
         uint64_t flowFence = 0;            // flow-queue value completing this entry
@@ -243,6 +247,8 @@ public:
     bool usingDis() const { return m_usingDis; }
     bool usingAi() const { return m_usingAi; }
     bool usingAiRefinement() const { return m_usingAi && m_aiIntegrated; }
+    // Flow-queue diagnostics only; presenter consumes the native uiMask, never this probability map.
+    ID3D12Resource* temporalUiCandidates() const { return m_aiUiAllowTex.Get(); }
     bool ffxAvailable() const { return m_ffxReady; }
     uint32_t width() const { return m_width; }
     uint32_t height() const { return m_height; }
@@ -361,6 +367,13 @@ private:
     void* m_aiInputHandle = nullptr;
     void* m_aiFlowHandle = nullptr;
     void* m_aiMaskHandle = nullptr;
+    ComPtr<ID3D12Resource> m_aiUiAllow, m_aiUiAllowTex, m_aiHistoryValid, m_aiUiControl;
+    std::array<ComPtr<ID3D12Resource>, 2> m_aiUiState;
+    void* m_aiUiAllowHandle = nullptr;
+    void* m_aiHistoryHandle = nullptr;
+    std::array<void*, 2> m_aiUiStateHandle = {};
+    uint64_t m_aiUiFrameId = UINT64_MAX;
+    int m_aiUiStateIndex = 0;
     int m_slotCount = 0;
     std::array<std::array<ComPtr<ID3D12Resource>, kMaxLevels>, 2> m_estimatedFlow; // [dir][level]
     // Raw matcher output, before FillFlowCS writes the filled field into

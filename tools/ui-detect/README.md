@@ -163,6 +163,52 @@ worker wall-time samples after three warmups (excluding session creation and
 input preprocessing), plus per-inference `region_history` for offline temporal
 regressions; it does not measure end-to-end live pacing.
 
+## Offline-only text alternatives
+
+The saved Arabic quest-text miss is diagnosed in
+[`ai-ui-text-miss-2026-11-01.md`](../../docs/validation/ai-ui-text-miss-2026-11-01.md).
+Separately authorized PP-OCRv6 tiny/small and CRAFT experiments are documented in
+[`ai-ui-text-alternatives-2026-11-01.md`](../../docs/validation/ai-ui-text-alternatives-2026-11-01.md).
+**None was activated or accepted as a reliable <=4 ms solution.** This does not
+restore the removed Text/HUD dropdown/runtime path.
+
+Optional diagnostic tools, not linked into the application:
+
+- `prepare_text_probe.py --source <local.onnx> --sha256 <pinned-hash> --kind
+  db|craft --size 640 [--height 640] --out <new-folder>` creates static FP32/FP16
+  copies with source-specific normalization. Requires `onnx`, `numpy` and the
+  existing isolated ORT FP16 converter; do not change the trainer environment.
+  This is conversion, not training/calibration or model installation.
+- `offline_text_probe.cpp` runs one-input/one-output float32-I/O static models
+  using existing DirectML/ORT DLLs and GPU-bound input/output resources. CPU EP
+  fallback is explicitly disabled. Build its standalone `offline-probe/` CMake
+  project into a **new temporary diagnostic directory**, not an application
+  build. It does not modify `build-project/Release` or capture the screen.
+- Probe arguments: `<existing-runtime-dir> <static-model.onnx>
+  <input-manifest.txt> <NEW-out-dir> <4..500-runs> <profile:0|1>`. The manifest
+  lists absolute paths to contiguous NCHW RGB float32 `[0,1]` tensors, prepared
+  with center-aligned bilinear letterboxing and `114/255` padding. Save model
+  provenance/input geometry with each experiment. Use separate profiled placement
+  runs and unprofiled cost runs. The probe checks repeated same-input maps and
+  first-input restoration after buffer reuse.
+- `inspect_text_probe.py --run-dir <probe-output> --images <originals-folder>
+  --kind db|craft --size <width> [--height <height>]
+  [--references <manual-rectangles.json>] --out <new-folder>` writes annotated
+  copies and box-reference coverage. This is an explicitly approximate
+  axis-aligned contour/component decoder, not exact upstream rotated-polygon
+  decoding, OCR recognition, semantic HUD detection or native masking.
+- `test_text_probe.py` covers empty maps, score admission, geometry, reference
+  unions, source/output preservation and conversion order. Opt-in GPU fixtures
+  use `MOTION_ENHANCER_TEST_TEXT_PROBE=<standalone-probe.exe>` plus
+  `MOTION_ENHANCER_TEST_RUNTIME=<existing-runtime-dir>` to check source-specific
+  BGR normalization/readback and rejection of a CPU-only model.
+
+Probe worker time includes GPU-bound Run, normalization and output readback,
+wait and copy. It excludes resize/input preparation/upload, session creation,
+component decoding, concurrent icon detection, native masking, flow and
+presentation. CPU Python decode is measured separately. Warm probe averages
+and asynchronous scheduling do not establish a gaming-load deadline.
+
 ## INT8 / matrix-acceleration investigation
 
 **FP16 remains selected.** On the RX 9070 XT, the tested static INT8 versions

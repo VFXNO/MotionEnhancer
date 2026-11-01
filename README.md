@@ -107,6 +107,13 @@ For the restored **AI flow refinement (off: DIS)** checkbox, select **AI pyramid
 (trained model)** under **Flow Engine**. Checked uses integrated AI refinement;
 unchecked uses DIS refinement. Stop/restart capture to change modes.
 
+**Trained temporal UI (exp.)** runs your separately exported `best_ui.pt` /
+`last_ui.pt` model. Select **AI pyramid**, keep **Keep static UI sharp** enabled,
+then check this new default-off option before capture. It loads
+`models/ai_flow_ui.onnx` plus matching JSON/optional DIS companion; it does not
+replace `ai_flow.onnx`. The learned candidates still need native pixel evidence
+to protect anything. See [UI export and runtime guide](tools/ai-train/UI_TRAINING.md#export-and-run-the-trained-ui-model).
+
 Optional **AI: UI regions (exp.)** uses a separate
 pretrained detector to restrict the existing native per-pixel UI mask to its
 detected regions. Boxes are not solid masks. Requires a separately downloaded

@@ -1,5 +1,5 @@
 {
- "page": 1,
+ "page": 3,
  "videos": [
   "C:/Users/bsher/Downloads/Video/Wait-THIS-GAME-SnapYT.App.mp4",
   "C:/Users/bsher/Downloads/Video/BLACKBIRD-GAMEPLAY-GOES-SnapYT.App.mp4",
@@ -24,15 +24,23 @@
   1,
   2
  ],
- "train_datasets": [
-  "C:/Users/bsher/Downloads/Video"
- ],
- "preset": "large",
- "epochs": 6,
+ "train_datasets": [],
+ "preset": "medium",
+ "epochs": 1000,
  "batch": 16,
  "lr": 0.0007,
  "crop": 480,
- "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\run1",
- "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/run1/last.pt",
- "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow.onnx"
+ "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2",
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2\\best_ui.pt",
+ "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow_ui.onnx",
+ "ui_mode": "frozen",
+ "ui_labels": "C:\\Users\\bsher\\Downloads\\Video\\lol\\labels.json",
+ "ui_init_sha": "b3df20ef016a4af8d6a1165952eb01447537a535d9a6807735d20b71f3002583",
+ "ui_batch": 16,
+ "ui_crop": 464,
+ "ui_lr": 0.0003,
+ "ui_max_steps": 2000,
+ "ui_max_minutes": 50.0,
+ "init_from": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\last.pt",
+ "refiner": true
 }

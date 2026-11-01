@@ -1615,7 +1615,9 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     if (!device.initialize(adapter)) return 1;
     AiFlowEstimator ai;
     const std::wstring path(model.begin(), model.end());
-    if (!ai.initialize(device.device(), device.flowQueue(), path)) return 1;
+    std::string reason;
+    const bool temporal = AiFlowEstimator::temporalModelAvailable(path, reason);
+    if (!ai.initialize(device.device(), device.flowQueue(), path, temporal)) return 1;
     ComPtr<ID3D12Resource> input, flow, mask;
     if (FAILED(device.createBuffer(ai.inputBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
                                    D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, input)) ||
@@ -1626,6 +1628,18 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     void* hi = ai.registerBuffer(input.Get());
     void* hf = ai.registerBuffer(flow.Get());
     void* hm = ai.registerBuffer(mask.Get());
+    ComPtr<ID3D12Resource> previousState, nextState, history, allow;
+    void* hp = nullptr; void* hn = nullptr; void* hv = nullptr; void* ha = nullptr;
+    if (temporal) {
+        auto make = [&](size_t bytes, ComPtr<ID3D12Resource>& resource, void*& handle) {
+            if (FAILED(device.createBuffer(bytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                           D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, resource))) return false;
+            handle = ai.registerBuffer(resource.Get());
+            return handle != nullptr;
+        };
+        if (!make(ai.stateBytes(), previousState, hp) || !make(ai.stateBytes(), nextState, hn) ||
+            !make(sizeof(float), history, hv) || !make(ai.maskBytes(), allow, ha)) return 1;
+    }
     ComPtr<ID3D12Fence> fence;
     if (!hi || !hf || !hm || FAILED(device.device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) return 1;
     HANDLE event = CreateEventW(nullptr, FALSE, FALSE, nullptr);
@@ -1648,7 +1662,8 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     ComPtr<ID3D12Resource> upload;
     ComPtr<ID3D12CommandAllocator> allocator;
     ComPtr<ID3D12GraphicsCommandList> commands;
-    if (FAILED(device.createBuffer(ai.inputBytes(), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
+    const size_t uploadBytes = ai.inputBytes() + (temporal ? ai.stateBytes() + sizeof(float) : 0);
+    if (FAILED(device.createBuffer(uploadBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
                                    D3D12_RESOURCE_FLAG_NONE, upload)) ||
         FAILED(device.device()->CreateCommandAllocator(device.flowQueue()->GetDesc().Type, IID_PPV_ARGS(&allocator))) ||
         FAILED(device.device()->CreateCommandList(0, device.flowQueue()->GetDesc().Type, allocator.Get(), nullptr,
@@ -1656,13 +1671,24 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     void* mapped = nullptr;
     if (FAILED(upload->Map(0, nullptr, &mapped))) return 1;
     std::memcpy(mapped, frames.data(), ai.inputBytes());
+    if (temporal) {
+        // Fixed nonzero state tests consumption without conflating timing with
+        // state ownership. The pipeline self-test below exercises live feedback.
+        float* state = reinterpret_cast<float*>(static_cast<uint8_t*>(mapped) + ai.inputBytes());
+        std::fill_n(state, ai.stateBytes() / sizeof(float), 0.25f);
+        state[ai.stateBytes() / sizeof(float)] = 1.0f;
+    }
     upload->Unmap(0, nullptr);
     commands->CopyBufferRegion(input.Get(), 0, upload.Get(), 0, ai.inputBytes());
+    if (temporal) {
+        commands->CopyBufferRegion(previousState.Get(), 0, upload.Get(), ai.inputBytes(), ai.stateBytes());
+        commands->CopyBufferRegion(history.Get(), 0, upload.Get(), ai.inputBytes() + ai.stateBytes(), sizeof(float));
+    }
     if (FAILED(commands->Close())) return 1;
     ID3D12CommandList* lists[] = {commands.Get()};
     device.flowQueue()->ExecuteCommandLists(1, lists);
     auto once = [&]() {
-        if (!ai.run(hi, hf, hm)) return false;
+        if (!ai.run(hi, hf, hm, hp, hv, ha, hn)) return false;
         if (FAILED(device.flowQueue()->Signal(fence.Get(), ++value)) ||
             FAILED(fence->SetEventOnCompletion(value, event))) return false;
         return WaitForSingleObject(event, 5000) == WAIT_OBJECT_0;
@@ -1686,12 +1712,16 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
                  "--flow-engine ai with MOTION_ENHANCER_BENCH_ITERS=40 --gpu-offline a.png b.png out.png\n";
     printBenchmark("network_fence_wall", samples);
     ComPtr<ID3D12Resource> readback;
-    const size_t totalBytes = ai.flowBytes() + ai.maskBytes();
+    const size_t totalBytes = ai.flowBytes() + ai.maskBytes() + (temporal ? ai.maskBytes() + ai.stateBytes() : 0);
     if (FAILED(device.createBuffer(totalBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
                                    D3D12_RESOURCE_FLAG_NONE, readback)) ||
         FAILED(allocator->Reset()) || FAILED(commands->Reset(allocator.Get(), nullptr))) return 1;
     commands->CopyBufferRegion(readback.Get(), 0, flow.Get(), 0, ai.flowBytes());
     commands->CopyBufferRegion(readback.Get(), ai.flowBytes(), mask.Get(), 0, ai.maskBytes());
+    if (temporal) {
+        commands->CopyBufferRegion(readback.Get(), ai.flowBytes() + ai.maskBytes(), allow.Get(), 0, ai.maskBytes());
+        commands->CopyBufferRegion(readback.Get(), ai.flowBytes() + 2 * ai.maskBytes(), nextState.Get(), 0, ai.stateBytes());
+    }
     if (FAILED(commands->Close())) return 1;
     device.flowQueue()->ExecuteCommandLists(1, lists);
     if (FAILED(device.flowQueue()->Signal(fence.Get(), ++value)) ||
@@ -1701,7 +1731,8 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
     bool valid = true;
     const size_t flowFloats = ai.flowBytes() / sizeof(float);
     for (size_t i = 0; i < totalBytes / sizeof(float); ++i) {
-        if (!std::isfinite(output[i]) || (i >= flowFloats && (output[i] < 0.0f || output[i] > 1.0f))) valid = false;
+        const bool probability = i >= flowFloats && i < flowFloats + (temporal ? 2 : 1) * ai.maskBytes() / sizeof(float);
+        if (!std::isfinite(output[i]) || (probability && (output[i] < 0.0f || output[i] > 1.0f))) valid = false;
     }
     char outputPrefix[MAX_PATH] = {};
     if (GetEnvironmentVariableA("MOTION_ENHANCER_AI_TEST_OUTPUT", outputPrefix, MAX_PATH) > 0) {
@@ -1710,11 +1741,19 @@ int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter) {
         flowFile.write(reinterpret_cast<const char*>(output), static_cast<std::streamsize>(ai.flowBytes()));
         maskFile.write(reinterpret_cast<const char*>(output + flowFloats), static_cast<std::streamsize>(ai.maskBytes()));
         valid = valid && flowFile.good() && maskFile.good();
+        if (temporal) {
+            std::ofstream allowFile(std::string(outputPrefix) + ".ui_allow.f32", std::ios::binary);
+            std::ofstream stateFile(std::string(outputPrefix) + ".next_state.f32", std::ios::binary);
+            allowFile.write(reinterpret_cast<const char*>(output) + ai.flowBytes() + ai.maskBytes(), ai.maskBytes());
+            stateFile.write(reinterpret_cast<const char*>(output) + ai.flowBytes() + 2 * ai.maskBytes(), ai.stateBytes());
+            valid = valid && allowFile.good() && stateFile.good();
+        }
     }
     readback->Unmap(0, nullptr);
     ai.releaseBuffer(hi);
     ai.releaseBuffer(hf);
     ai.releaseBuffer(hm);
+    for (void* handle : {hp, hn, hv, ha}) ai.releaseBuffer(handle);
     CloseHandle(event);
     std::cout << "AI flow output finite and mask range: " << (valid ? "PASS" : "FAIL") << "\n";
     return valid ? 0 : 1;
@@ -1845,6 +1884,74 @@ int runAiRefinementSelfTest(GraphicsAdapterPreference adapter) {
     }
     device.dumpInfoQueue("AI refinement self-test");
     std::cout << "AI refinement self-test: PASS\n";
+    return 0;
+}
+
+int runTemporalUiSelfTest(GraphicsAdapterPreference adapter) {
+    std::string reason;
+    const auto model = AiFlowEstimator::defaultModelPath(true);
+    if (!AiFlowEstimator::temporalModelAvailable(model, reason)) {
+        std::cerr << reason << "\n";
+        return 1;
+    }
+    std::wstring selected;
+    const bool refined = AiFlowEstimator::selectRefinementModel(model, true, selected, reason);
+    GraphicsDevice device;
+    ComputeKernels kernels;
+    OfflineContext offline;
+    if (!device.initialize(adapter) || !kernels.load(device.device()) || !offline.initialize(&device, &kernels)) return 1;
+    constexpr UINT width = 320, height = 192;
+    SharedTexture textures[2];
+    uint64_t ready[2] = {};
+    // A flat, unchanged scene cannot earn native evidence, even if a trained
+    // head predicts UI everywhere. This must never become a freeze mask.
+    for (int i = 0; i < 2; ++i) {
+        Image image(width, height, 3);
+        std::fill(image.data.begin(), image.data.end(), 127.0f);
+        if (!uploadFrame(device, image, textures[i], ready[i])) return 1;
+    }
+    int tested = 0;
+    for (const bool integrated : {false, true}) {
+        if (integrated && !refined) continue;
+        FlowSettings settings;
+        settings.aiFlow = settings.aiTemporalUi = settings.uiMask = true;
+        settings.aiRefinement = integrated;
+        FlowEngine flow;
+        if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, 2)) return 1;
+        uint64_t last = UINT64_MAX;
+        for (int i = 0; i < FlowEngine::kRingSize + 8; ++i) {
+            if (i == 16) {
+                if (!flow.resize(width, height, 3)) return 1;
+                last = UINT64_MAX;
+            }
+            uint64_t previous = i + (i >= 6 ? 2 : 0);
+            if (i == 10) previous = 11; // Replayed/replacement pair: must reset.
+            const uint64_t current = previous + 1;
+            const bool expected = last != UINT64_MAX && last == previous;
+            const int a = i % 2, b = 1 - a;
+            const auto result = flow.submitPair({textures[a].texture12.Get(), ready[a], previous, a},
+                                                {textures[b].texture12.Get(), ready[b], current, b});
+            if (result.entry < 0 || !flow.waitFence(result.fence) || !flow.usingAi()) return 1;
+            const auto entry = flow.entry(result.entry);
+            if (!entry.valid || entry.aiUiHistoryValid != expected || entry.aiRefined != integrated) return 1;
+            last = current;
+            std::vector<uint8_t> bytes;
+            UINT w = 0, h = 0, pitch = 0;
+            if (!offline.readback(entry.uiMaskInput(), bytes, pitch, w, h)) return 1;
+            for (UINT y = 0; y < h; ++y)
+                for (UINT x = 0; x < w; ++x)
+                    if (bytes[static_cast<size_t>(y) * pitch + x] != 0) return 1;
+            if (!offline.readback(flow.temporalUiCandidates(), bytes, pitch, w, h)) return 1;
+            for (UINT y = 0; y < h; ++y) {
+                const float* row = reinterpret_cast<const float*>(bytes.data() + static_cast<size_t>(y) * pitch);
+                for (UINT x = 0; x < w; ++x)
+                    if (!std::isfinite(row[x]) || row[x] < 0 || row[x] > 1 || (!expected && row[x] != 0)) return 1;
+            }
+            ++tested;
+        }
+    }
+    device.dumpInfoQueue("Temporal UI self-test");
+    std::cout << "Temporal UI self-test: " << tested << " pairs, startup/gap/replay/resize/ring reuse, native evidence: PASS\n";
     return 0;
 }
 

@@ -164,6 +164,8 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/tools/ai-train" TYPE FILE FILES
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/app.py"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/README.md"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/UI_TRAINING.md"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/UI_LABELING.md"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/requirements.txt"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/Setup-AITrainer.ps1"
     )

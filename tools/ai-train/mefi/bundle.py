@@ -47,7 +47,8 @@ def copy_export(source, destination):
                 or primary['bundle_id'] != secondary.get('bundle_id')
                 or secondary.get('integrated_refiner') is not False
                 or secondary.get('arch') != 'pyramid-v2'
-                or any(primary.get(key) != secondary.get(key) for key in ('width', 'height', 'preset'))):
+                 or any(primary.get(key) != secondary.get(key) for key in
+                        ('format', 'width', 'height', 'preset', 'head_arch', 'state_channels'))):
             raise ValueError('AI/DIS export pair is missing or mismatched; export it again')
     destination.parent.mkdir(parents=True, exist_ok=True)
     if paired:

@@ -1,4 +1,4 @@
-"""Motion Enhancer AI Trainer: dataset, training and export in one window.
+"""Motion Enhancer AI Trainer: datasets, UI labeling, training and export.
 
     tools\\ai-train\\.venv\\Scripts\\python.exe tools\\ai-train\\app.py
 
@@ -22,8 +22,11 @@ from PySide6.QtGui import (QBrush, QColor, QFont, QIcon, QImage, QLinearGradient
                            QPen, QPixmap, QRadialGradient)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QFrame,
                                QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QMainWindow,
-                               QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy, QSpinBox,
+                                QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSpinBox,
                                QStackedWidget, QVBoxLayout, QWidget)
+
+from mefi.checkpoint_hash import file_identity
+from mefi.ui_label_gui import LabelPage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -629,6 +632,8 @@ class TrainPage(Page):
         grid.setHorizontalSpacing(12)
         grid.setVerticalSpacing(8)
         self.preset = QComboBox()
+        self.preset.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.preset.setMinimumContentsLength(16)
         for k, t in PRESET_TEXT.items():
             self.preset.addItem(t, k)
         self.preset.setCurrentIndex(list(PRESET_TEXT).index(s.get('preset', 'medium')))
@@ -659,6 +664,58 @@ class TrainPage(Page):
         ml.addWidget(self.refiner)
         ml.addWidget(label('Initial weights (optional; same size, NEW run only)', 'dim'))
         ml.addLayout(path_row(self.init_from, 'Browse', self.pick_initial))
+        self.ui_mode = QComboBox()
+        for text, key in (('Off — original flow training', 'off'),
+                          ('Flow + UI — supports training from scratch', 'joint'),
+                          ('UI only — freeze a pinned flow checkpoint', 'frozen')):
+            self.ui_mode.addItem(text, key)
+        self.ui_mode.setCurrentIndex(max(0, self.ui_mode.findData(s.get('ui_mode', 'off'))))
+        ml.addWidget(label('Temporal UI candidate training (experimental)', 'dim'))
+        ml.addWidget(self.ui_mode)
+        self.ui_options = QWidget()
+        ul = QVBoxLayout(self.ui_options)
+        ul.setContentsMargins(0, 0, 0, 0)
+        note = label('Requires separate dense UI labels and consecutive frames. No automatic labels. '
+                     'UI checkpoints are not runtime models; this does not activate HUD detection.', 'dim')
+        note.setWordWrap(True)
+        ul.addWidget(note)
+        self.ui_labels = QLineEdit(s.get('ui_labels', ''))
+        ul.addWidget(label('Dense label manifest (me-ui-labels-1 JSON)', 'dim'))
+        ul.addLayout(path_row(self.ui_labels, 'Browse', self.pick_ui_labels))
+        make_labels = QPushButton('Create / edit UI labels…')
+        make_labels.clicked.connect(lambda: self.app.show_page(self.app.pages.indexOf(self.app.label_ui)))
+        ul.addWidget(make_labels)
+        self.ui_init_sha = QLineEdit(s.get('ui_init_sha', ''))
+        self.ui_init_sha.setReadOnly(True)
+        self.ui_init_sha.setPlaceholderText('Calculated automatically when you choose Initial weights')
+        self.ui_init_sha.setToolTip('Read-only fingerprint of the selected file. The trainer verifies it again before loading. '
+                                   'A fingerprint identifies bytes; it does not establish that a checkpoint is trusted.')
+        ul.addWidget(label('Initial flow checkpoint SHA256 (automatic; not needed from scratch)', 'dim'))
+        hash_row = QHBoxLayout()
+        hash_row.addWidget(self.ui_init_sha, 1)
+        self.recalculate_sha = QPushButton('Recalculate')
+        self.recalculate_sha.setToolTip('Re-read this file and accept its current fingerprint. Use deliberately if a saved checkpoint changed.')
+        hash_row.addWidget(self.recalculate_sha)
+        ul.addLayout(hash_row)
+        self.hash_status = label('Not needed when training from scratch.', 'dim')
+        self.hash_status.setWordWrap(True)
+        ul.addWidget(self.hash_status)
+        ug = QGridLayout()
+        self.ui_batch = spin(s.get('ui_batch', 4), 1, 64)
+        self.ui_crop = spin(s.get('ui_crop', 256), 64, 1024, 16)
+        self.ui_lr = spin(s.get('ui_lr', .0003), .00001, .01, .0001, 5)
+        self.ui_max_steps = spin(s.get('ui_max_steps', 2000), 1, 10000000, 100)
+        self.ui_max_minutes = spin(s.get('ui_max_minutes', 30.), .1, 100000., 5., 1)
+        for r, (name, widget) in enumerate((('UI batch', self.ui_batch), ('UI crop height (no resizing)', self.ui_crop),
+                                            ('UI learning rate', self.ui_lr), ('Cumulative step cap', self.ui_max_steps),
+                                            ('Cumulative job cap (minutes)', self.ui_max_minutes))):
+            ug.addWidget(label(name), r, 0)
+            ug.addWidget(widget, r, 1)
+        ul.addLayout(ug)
+        ul.addWidget(label('Continue restores saved settings/caps. No automatic budget extension.', 'dim'))
+        ml.addWidget(self.ui_options)
+        self.ui_options.setVisible(self.ui_mode.currentData() != 'off')
+        self.ui_mode.currentIndexChanged.connect(lambda: self.ui_options.setVisible(self.ui_mode.currentData() != 'off'))
         ml.addWidget(label('Run folder (use a new folder for a new quality experiment)', 'dim'))
         ml.addLayout(path_row(self.run, 'Browse', self.pick_run))
         ml.addWidget(self.resume)
@@ -680,7 +737,19 @@ class TrainPage(Page):
         ml.addWidget(self.status)
         left.addWidget(model)
         left.addStretch(1)
-        body.addLayout(left, 2)
+        train_controls = QWidget()
+        train_controls.setObjectName('trainControls')
+        train_controls.setStyleSheet(f'QWidget#trainControls {{ background: {BG}; }}')
+        train_controls.setLayout(left)
+        # Keep the extra opt-in controls reachable at ordinary window sizes;
+        # long hints should wrap rather than force a horizontal-only form.
+        for text in train_controls.findChildren(QLabel):
+            text.setWordWrap(True)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setWidget(train_controls)
+        body.addWidget(scroll, 2)
 
         right = QVBoxLayout()
         metrics, mtl = card()
@@ -689,7 +758,8 @@ class TrainPage(Page):
         self.m_gain = label('–', 'metric')
         self.m_eta = label('–', 'metric')
         self.m_quality_caption = label('Best quality on moving clips (dB)', 'dim')
-        for caption, w in ((self.m_quality_caption, self.m_psnr), (label('Over a plain blend', 'dim'), self.m_gain),
+        self.m_gain_caption = label('Over a plain blend', 'dim')
+        for caption, w in ((self.m_quality_caption, self.m_psnr), (self.m_gain_caption, self.m_gain),
                            (label('Time left', 'dim'), self.m_eta)):
             col = QVBoxLayout()
             col.addWidget(w)
@@ -711,6 +781,7 @@ class TrainPage(Page):
                         'its error ×3.   Row 3: forward motion, backward motion, occlusion (white = from frame 0, '
                         'black = from frame 2, red = hidden in the other frame). A different moving clip each epoch.', 'dim')
         caption.setWordWrap(True)
+        self.preview_caption, self.flow_preview_caption = caption, caption.text()
         pvl.addWidget(caption)
         self.preview = QLabel()
         self.preview.setAlignment(Qt.AlignCenter)
@@ -720,6 +791,20 @@ class TrainPage(Page):
         body.addLayout(right, 3)
         self.root.addLayout(body, 1)
         self.job = Job(self, self.on_job, self.finished)
+        self.hash_job = Job(self, self.on_initial_hash, self.initial_hash_finished)
+        self.hash_job.proc.errorOccurred.connect(self.initial_hash_process_error)
+        self.initial_hash_timer = QTimer(self)
+        self.initial_hash_timer.setSingleShot(True)
+        self.initial_hash_timer.timeout.connect(self.begin_initial_hash)
+        self._initial_hash_request = None
+        self._initial_hash_active = None
+        self._initial_hash_pending = False
+        self._initial_hash_valid = None
+        self._initial_hash_error = ''
+        self.init_from.textChanged.connect(lambda _text: self.initial_checkpoint_changed())
+        self.resume.toggled.connect(lambda _checked: self.initial_checkpoint_changed(preserve_pin=True))
+        self.recalculate_sha.clicked.connect(lambda: self.initial_checkpoint_changed())
+        self.initial_checkpoint_changed(preserve_pin=True)
 
     def add_dataset(self, d):
         if d and not any(self.datasets.item(i).text() == d for i in range(self.datasets.count())):
@@ -736,14 +821,202 @@ class TrainPage(Page):
             self.run.setText(d)
 
     def pick_initial(self):
+        if not self.init_from.isEnabled():
+            return
         path, _ = QFileDialog.getOpenFileName(self, 'Initial checkpoint', HERE, 'PyTorch checkpoint (*.pt)')
         if path:
-            self.init_from.setText(path)
+            if path == self.init_from.text():
+                self.initial_checkpoint_changed()  # An explicit same-file selection accepts a new fingerprint.
+            else:
+                self.init_from.setText(path)
+
+    def cancel_initial_hash(self):
+        self.initial_hash_timer.stop()
+        self._initial_hash_request = uuid.uuid4().hex
+        self._initial_hash_pending = False
+        self._initial_hash_valid = None
+        self._initial_hash_error = ''
+        self.hash_job.kill()
+
+    def initial_checkpoint_changed(self, preserve_pin=False):
+        self.cancel_initial_hash()
+        if not preserve_pin:
+            self.ui_init_sha.clear()
+        initial = self.init_from.text().strip()
+        self.recalculate_sha.setEnabled(bool(initial) and not self.resume.isChecked())
+        if not initial:
+            self.ui_init_sha.clear()
+            self.hash_status.setText('Not needed when training from scratch.')
+        elif self.resume.isChecked():
+            self.hash_status.setText('Continue uses the saved run; initial weights and their SHA256 are not needed.')
+        elif not os.path.isfile(initial):
+            self._initial_hash_error = 'Choose an existing Initial weights checkpoint file.'
+            self.hash_status.setText(self._initial_hash_error)
+        else:
+            self._initial_hash_pending = True
+            self.hash_status.setText('Calculating SHA256 in the background…')
+            # Also covers pasted/typed paths without hashing every keystroke.
+            self.initial_hash_timer.start(200)
+
+    def begin_initial_hash(self):
+        if not self._initial_hash_pending or self.hash_job.running():
+            return  # The previous process's finished handler starts the latest pending request.
+        self._initial_hash_pending = False
+        self._initial_hash_active = self._initial_hash_request
+        self.hash_job.start('mefi.checkpoint_hash', ['--path', os.path.abspath(self.init_from.text().strip()),
+                                                   '--request', self._initial_hash_request])
+
+    def on_initial_hash(self, event):
+        if event.get('request') != self._initial_hash_request:
+            return  # Ignore results from an old selection, including the same path selected again.
+        if event.get('event') == 'checkpoint_hash_error':
+            self._initial_hash_error = f"Cannot calculate checkpoint SHA256: {event['message']}"
+            self.hash_status.setText(self._initial_hash_error)
+        elif event.get('event') == 'checkpoint_hash':
+            expected = self.ui_init_sha.text().strip().lower()
+            if expected and expected != event['sha256']:
+                self._initial_hash_error = ('Checkpoint does not match its saved SHA256. Select the original file, '
+                                            'or use Recalculate only if you intend to accept changed weights.')
+                self.hash_status.setText(self._initial_hash_error)
+                return
+            self.ui_init_sha.setText(event['sha256'])
+            self._initial_hash_valid = event
+            self.hash_status.setText('SHA256 calculated automatically. Training checks this fingerprint again before loading.')
+
+    def initial_hash_finished(self, code):
+        self.hash_job.read()  # Drain the final JSON line before evaluating success/failure.
+        if self._initial_hash_pending:
+            self.initial_hash_timer.start(0)
+        elif self._initial_hash_active == self._initial_hash_request and not self._initial_hash_valid and not self._initial_hash_error:
+            detail = self.hash_job.failure() if code else 'no fingerprint was returned.'
+            self._initial_hash_error = f'Could not calculate checkpoint SHA256: {detail}'
+            self.hash_status.setText(self._initial_hash_error)
+
+    def initial_hash_process_error(self, error):
+        if error == QProcess.FailedToStart and self._initial_hash_active == self._initial_hash_request:
+            self._initial_hash_error = f'Could not start SHA256 calculation: {self.hash_job.proc.errorString()}'
+            self.hash_status.setText(self._initial_hash_error)
+
+    def initial_hash_ready(self, initial):
+        current = self._initial_hash_valid
+        if current and current['path'] == os.path.abspath(initial) and current['sha256'] == self.ui_init_sha.text():
+            try:
+                if file_identity(initial) == current['identity']:
+                    return True
+            except OSError:
+                pass
+            self.initial_checkpoint_changed(preserve_pin=True)
+        elif not self._initial_hash_error and not self._initial_hash_pending and self._initial_hash_active != self._initial_hash_request:
+            self.initial_checkpoint_changed(preserve_pin=True)
+        self.status.setText(self._initial_hash_error or 'Calculating checkpoint SHA256; wait for it to finish, then press START TRAINING again.')
+        return False
+
+    def restore_initial_checkpoint(self, path, digest):
+        # Backend configuration/resume events restore a saved pin, not a new file
+        # selection. Never replace it or re-read old source weights during Continue.
+        self.cancel_initial_hash()
+        blocked = self.init_from.blockSignals(True)
+        try:
+            self.init_from.setText(path or '')
+        finally:
+            self.init_from.blockSignals(blocked)
+        self.ui_init_sha.setText(digest or '')
+        self.hash_status.setText('Fingerprint restored from saved training settings; checked again before a new run.'
+                                if path else 'Not needed when training from scratch.')
+
+    def pick_ui_labels(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Dense UI label manifest', HERE, 'UI labels (*.json)')
+        if path:
+            self.ui_labels.setText(path)
+
+    def ui_controls_enabled(self, enabled):
+        self.ui_mode.setEnabled(enabled)
+        self.ui_options.setEnabled(enabled)
+
+    def start_ui(self):
+        resume = self.resume.isChecked()
+        mode = self.ui_mode.currentData()
+        if mode == 'off':
+            mode = 'joint'  # Only reached for automatic routing of last_ui.pt on Continue.
+        sets = [self.datasets.item(i).text() for i in range(self.datasets.count())]
+        sets = [d for d in sets if os.path.isfile(os.path.join(d, 'index.json'))]
+        initial, digest = self.init_from.text().strip(), self.ui_init_sha.text().strip()
+        if not resume:
+            if not os.path.isfile(self.ui_labels.text().strip()):
+                self.status.setText('Choose an explicit dense UI label manifest; flow triplets are not UI ground truth.')
+                return
+            if mode == 'joint' and not sets:
+                self.status.setText('Flow + UI also needs the original flow dataset(s).')
+                return
+            if mode == 'frozen' and not initial:
+                self.status.setText('UI-only training needs a pinned Initial weights checkpoint.')
+                return
+            if initial and not self.initial_hash_ready(initial):
+                return
+            if initial:
+                initial = os.path.abspath(initial)
+            else:
+                self.ui_init_sha.clear()
+                digest = ''
+        self.active_run = os.path.abspath(self.run.text().strip())
+        self.stop_token, self.active_ui = uuid.uuid4().hex, True
+        args = ['--run', self.active_run, '--stop-token', self.stop_token]
+        if resume:
+            args += ['--resume']
+        else:
+            args += ['--mode', mode, '--labels', self.ui_labels.text().strip(), '--preset', self.preset.currentData(),
+                     '--epochs', str(self.epochs.value()), '--batch', str(self.batch.value()), '--lr', str(self.lr.value()),
+                     '--crop', str(self.crop.value()), '--ui-batch', str(self.ui_batch.value()),
+                     '--ui-crop', str(self.ui_crop.value()), '--ui-lr', str(self.ui_lr.value()),
+                     '--max-steps', str(self.ui_max_steps.value()), '--max-minutes', str(self.ui_max_minutes.value())]
+            if mode == 'joint':
+                args += ['--data'] + sets
+            if self.refiner.isChecked():
+                args += ['--refiner']
+            if initial:
+                args += ['--init-from', initial, '--init-sha256', digest]
+        self.app.store({'run': self.active_run, 'ui_mode': mode, 'ui_labels': self.ui_labels.text().strip(),
+                        'ui_init_sha': digest, 'ui_batch': self.ui_batch.value(), 'ui_crop': self.ui_crop.value(),
+                        'ui_lr': self.ui_lr.value(), 'ui_max_steps': self.ui_max_steps.value(),
+                        'ui_max_minutes': self.ui_max_minutes.value(), 'init_from': initial,
+                        'train_datasets': sets, 'preset': self.preset.currentData(), 'refiner': self.refiner.isChecked(),
+                        'epochs': self.epochs.value(), 'batch': self.batch.value(), 'crop': self.crop.value(), 'lr': self.lr.value()})
+        self.loss_chart.clear()
+        self.psnr_chart.series, self.psnr_chart.styles = {}, {}
+        self.psnr_chart.title = 'UI validation loss (lower is better)'
+        self.psnr_chart.set_series('UI validation', '#ffffff')
+        self.m_quality_caption.setText('Best UI validation loss')
+        self.m_gain_caption.setText('UI IoU (validation threshold 0.5)')
+        self.preview.clear()
+        self.preview_caption.setText('UI candidate training uses separate dense labels. Per-source validation metrics '
+                                     'are saved in ui_validation.json. This view does not display or enable native protection.')
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        for widget in (self.run, self.refiner, self.init_from):
+            widget.setEnabled(False)
+        self.ui_controls_enabled(False)
+        self.bar.setRange(0, 1)
+        self.bar.setValue(0)
+        self.status.setText('Validating UI inputs/settings. No labels will be generated and no model will be activated.')
+        self.app.set_busy('Training UI candidates')
+        self.job.start('mefi.train_ui', args)
 
     def start(self):
         if not self.run.text().strip():
             self.status.setText('Choose a run folder first.')
             return
+        if self.ui_mode.currentData() != 'off' or (self.resume.isChecked() and os.path.isfile(os.path.join(self.run.text().strip(), 'last_ui.pt'))):
+            self.start_ui()
+            return
+        self.active_ui = False
+        self.psnr_chart.title = 'Validation quality (dB)'
+        if 'UI validation' in self.psnr_chart.series:
+            self.psnr_chart.series, self.psnr_chart.styles = {}, {}
+            self.psnr_chart.set_series('model', '#ffffff')
+            self.psnr_chart.set_series('blend', '#6e6e78', dashed=True)
+        self.m_gain_caption.setText('Over a plain blend')
+        self.m_quality_caption.setText('Best quality on moving clips (dB)')
+        self.preview_caption.setText(self.flow_preview_caption)
         sets = [self.datasets.item(i).text() for i in range(self.datasets.count())]
         sets = [d for d in sets if os.path.exists(os.path.join(d, 'index.json'))]
         if not sets and not self.resume.isChecked():
@@ -753,7 +1026,8 @@ class TrainPage(Page):
         self.stop_token = uuid.uuid4().hex
         v = {'train_datasets': sets, 'preset': self.preset.currentData(), 'epochs': self.epochs.value(),
              'batch': self.batch.value(), 'lr': self.lr.value(), 'crop': self.crop.value(), 'run': self.active_run,
-             'refiner': self.refiner.isChecked(), 'init_from': self.init_from.text().strip()}
+             'refiner': self.refiner.isChecked(), 'init_from': self.init_from.text().strip(),
+             'ui_init_sha': self.ui_init_sha.text().strip()}
         self.app.store(v)
         args = ['--run', v['run'], '--preset', v['preset'], '--epochs', str(v['epochs']),
                 '--batch', str(v['batch']), '--lr', str(v['lr']), '--crop', str(v['crop']),
@@ -774,6 +1048,7 @@ class TrainPage(Page):
         self.run.setEnabled(False)
         self.refiner.setEnabled(False)
         self.init_from.setEnabled(False)
+        self.ui_controls_enabled(False)
         self.bar.setRange(0, 1)
         self.bar.setValue(0)
         self.status.setText('Starting…')
@@ -790,6 +1065,9 @@ class TrainPage(Page):
 
     def on_job(self, e):
         kind = e.get('event')
+        if kind and kind.startswith('ui_'):
+            self.on_ui_job(e)
+            return
         if kind == 'device':
             self.app.set_device(e['name'])
         elif kind == 'resumed':
@@ -806,7 +1084,7 @@ class TrainPage(Page):
                 self.add_dataset(folder)
             self.app.store({'train_datasets': config['data'], 'preset': config['preset'],
                             'batch': config['batch'], 'crop': config['crop'], 'lr': config['lr'],
-                            'refiner': config.get('refiner', False), 'init_from': ''})
+                            'refiner': config.get('refiner', False), 'init_from': '', 'ui_init_sha': ''})
             self.bar.setRange(0, e['steps'])
             self.bar.setValue(e['step'])
             self.m_psnr.setText(f"{e['best']:.2f}" if e['best'] >= 0 else '–')
@@ -870,12 +1148,65 @@ class TrainPage(Page):
         elif kind == 'log' and ('Error' in e['text'] or 'error' in e['text']):
             self.status.setText(e['text'][-300:])
 
+    def on_ui_job(self, e):
+        kind = e['event']
+        if kind in ('ui_config', 'ui_resumed'):
+            config = e['config']
+            self.ui_mode.setCurrentIndex(self.ui_mode.findData(config['mode']))
+            self.ui_labels.setText(config['labels'])
+            self.restore_initial_checkpoint(config.get('init_from'), config.get('init_sha256'))
+            self.preset.setCurrentIndex(list(PRESET_TEXT).index(config['preset']))
+            self.refiner.setChecked(config['refiner'])
+            for name in ('epochs', 'batch', 'crop', 'lr'):
+                widget = getattr(self, name)
+                widget.setMinimum(min(widget.minimum(), config[name]))
+                widget.setValue(config[name])
+            for name in ('ui_batch', 'ui_crop', 'ui_lr'):
+                getattr(self, name).setValue(config[name])
+            self.ui_max_steps.setValue(config['max_steps'])
+            self.ui_max_minutes.setValue(config['max_minutes'])
+            self.datasets.clear()
+            for path in config['data']:
+                self.add_dataset(path)
+            self.app.store({'ui_mode': config['mode'], 'ui_labels': config['labels'],
+                            'ui_init_sha': config.get('init_sha256') or '', 'init_from': config.get('init_from') or '',
+                            'ui_batch': config['ui_batch'], 'ui_crop': config['ui_crop'], 'ui_lr': config['ui_lr'],
+                            'ui_max_steps': config['max_steps'], 'ui_max_minutes': config['max_minutes'],
+                            'preset': config['preset'], 'refiner': config['refiner'], 'train_datasets': config['data']})
+            self.bar.setRange(0, e['steps'])
+            self.bar.setValue(e['step'])
+            self.status.setText('Continuing saved UI run/settings.' if kind == 'ui_resumed' else
+                                'UI training configured. UI loss cannot update flow/refinement/blend gradients.')
+        elif kind == 'ui_step':
+            self.bar.setRange(0, e['steps'])
+            self.bar.setValue(e['step'])
+            self.loss_chart.add('loss', e['step'], e['loss'])
+            self.status.setText(f"Step {e['step']} / {e['steps']}: UI loss {e['ui_loss']:.4f}, "
+                                f"flow loss {e['flow_loss']:.4f}. No runtime activation.")
+        elif kind == 'ui_epoch':
+            metrics = e['validation']
+            self.psnr_chart.add('UI validation', e['epoch'] + 1, metrics['loss'])
+            self.m_psnr.setText(f"{e['best']:.4f}")
+            iou = metrics['total']['iou']
+            self.m_gain.setText(f'{iou:.3f}' if iou is not None else '–')
+            self.status.setText(f"UI epoch {e['epoch'] + 1}: validation loss {metrics['loss']:.4f}; "
+                                'per-source metrics are saved in ui_validation.json. No accuracy/latency guarantee.')
+        elif kind == 'ui_done':
+            self.bar.setRange(0, e['steps'])
+            self.bar.setValue(e['step'])
+            self.status.setText(e.get('message') or
+                                f"UI run {'paused' if e.get('stopped') else 'finished'} at step {e['step']}. "
+                                f"Saved {os.path.basename(e['checkpoint'])}; ready on the Export page (separate temporal UI bundle).")
+            self.app.export.set_checkpoint(e['checkpoint'])
+            self.m_eta.setText('–')
+
     def finished(self, code):
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.run.setEnabled(True)
         self.refiner.setEnabled(True)
         self.init_from.setEnabled(True)
+        self.ui_controls_enabled(True)
         self.app.set_busy(None)
         if code != 0 and not self.status.text().startswith(('Finished', 'Error')):
             self.status.setText(f'Failed: {self.job.failure()}')
@@ -922,13 +1253,15 @@ def resolution_choices():
 class ExportPage(Page):
     def __init__(self, app):
         super().__init__('Export', 'Write the trained model as the ONNX file Motion Enhancer loads '
-                                   '(models\\ai_flow.onnx next to the program), then measure its speed there.')
+                                   '(flow: ai_flow.onnx; trained temporal UI: ai_flow_ui.onnx), then enable it in Motion Enhancer.')
         self.app = app
         s = app.settings
         c, l = card('Model')
         self.checkpoint = QLineEdit(s.get('checkpoint', os.path.join(HERE, 'runs', 'run1', 'best.pt')))
         l.addWidget(label('Checkpoint', 'dim'))
         l.addLayout(path_row(self.checkpoint, 'Browse', self.pick_checkpoint))
+        l.addWidget(label('Flow and UI training checkpoints are detected automatically. UI exports stay separate; '
+                          'they never replace the installed flow-only model.', 'dim'))
         self.resolution = QComboBox()
         for text, w, h in resolution_choices():
             self.resolution.addItem(text, (w, h))
@@ -964,9 +1297,19 @@ class ExportPage(Page):
         self.root.addWidget(r, 1)
         self.job = Job(self, self.on_job, self.finished)
         self.bench_proc = None
+        self.checkpoint.textChanged.connect(self.checkpoint_changed)
+        self.checkpoint_changed()
 
     def set_checkpoint(self, path):
         self.checkpoint.setText(path)
+
+    def checkpoint_changed(self, _text=None):
+        name = os.path.basename(self.checkpoint.text()).lower()
+        if name in ('best_ui.pt', 'last_ui.pt'):
+            if os.path.basename(self.out.text()).lower() == 'ai_flow.onnx':
+                self.out.setText(os.path.join(os.path.dirname(self.out.text()), 'ai_flow_ui.onnx'))
+        elif name in ('best.pt', 'last.pt') and os.path.basename(self.out.text()).lower() == 'ai_flow_ui.onnx':
+            self.out.setText(os.path.join(os.path.dirname(self.out.text()), 'ai_flow.onnx'))
 
     def pick_checkpoint(self):
         f, _ = QFileDialog.getOpenFileName(self, 'Checkpoint', os.path.join(HERE, 'runs'), 'Checkpoints (*.pt)')
@@ -985,21 +1328,33 @@ class ExportPage(Page):
         w, h = self.resolution.currentData()
         self.app.store({'checkpoint': self.checkpoint.text(), 'export': self.out.text()})
         self.export_button.setEnabled(False)
+        self.warning = None
         self.status.setText('Exporting…')
         self.job.start('mefi.export', [self.checkpoint.text(), '--out', self.out.text(), '--width', str(w), '--height', str(h)])
 
     def on_job(self, e):
         if e.get('event') == 'done':
+            temporal = e.get('format') == 'mefi-pyramid-ui-1'
+            self.out.setText(e['out'])
+            self.app.store({'export': e['out']})
             # The validation score is optional (a checkpoint without one); the
             # resolution line is not.
             score = f", validation {e['psnr']:.2f} dB" if e.get('psnr') else ''
             lines = [f"Written: {e['out']}", f"Resolution {e['width']}×{e['height']}, preset {e['preset']}{score}"]
+            if temporal:
+                metrics = (e.get('validation') or {}).get('total', {})
+                recall, iou = metrics.get('recall'), metrics.get('iou')
+                lines.append(f"UI training updates: {e.get('ui_updates', 'unknown')}")
+                if recall is not None and iou is not None:
+                    lines.append(f'UI validation: recall {recall:.1%}, IoU {iou:.3f} (not a runtime protection score)')
+                if recall == 0:
+                    lines.append('WARNING: zero validation recall. Export succeeded, but this head has not demonstrated useful UI detection.')
             if e.get('dis_out'):
                 lines.append(f"DIS-bypass companion: {e['dis_out']} (keep both ONNX and both JSON files together)")
             if self.copy_all.isChecked():
                 src = e['out']
                 for build in program_builds():
-                    dst = os.path.join(build, 'models', 'ai_flow.onnx')
+                    dst = os.path.join(build, 'models', e.get('runtime_name', 'ai_flow.onnx'))
                     if os.path.abspath(dst) == os.path.abspath(src):
                         continue
                     # One build failing (Motion Enhancer running from it holds
@@ -1018,6 +1373,8 @@ class ExportPage(Page):
                 self.warning = None
             self.result.setPlainText('\n'.join(l for l in lines if l))
             self.status.setText('Exported. Select "AI pyramid" in Motion Enhancer. '
+                                + ('Enable "Trained temporal UI (exp.)" and keep static UI sharp; Refresh if needed. '
+                                   if temporal else '')
                                 + ('AI flow refinement: checked = AI, unchecked = DIS.' if e.get('dis_out') else 'This model uses DIS refinement.'))
         elif e.get('event') == 'warning':
             self.warning = e.get('message')
@@ -1072,8 +1429,12 @@ class Trainer(QMainWindow):
         self.dataset = DatasetPage(self)
         self.train = TrainPage(self)
         self.export = ExportPage(self)
+        self.label_ui = LabelPage(self, Job)
         self.nav = []
-        for i, (text, page) in enumerate((('▤   Dataset', self.dataset), ('◈   Train', self.train), ('⇪   Export', self.export))):
+        # Append the editor so saved Dataset/Train/Export page indices keep
+        # their existing meanings.
+        for i, (text, page) in enumerate((('▤   Dataset', self.dataset), ('◈   Train', self.train),
+                                         ('⇪   Export', self.export), ('✎   Label UI', self.label_ui))):
             self.pages.addWidget(page)
             b = QPushButton(text)
             b.setObjectName('nav')
@@ -1122,6 +1483,12 @@ class Trainer(QMainWindow):
             self.set_device(f'PyTorch unavailable: {e}')
 
     def closeEvent(self, e):
+        if not self.label_ui.prepare_close():
+            e.ignore()
+            return
+        self.train.cancel_initial_hash()
+        if self.train.hash_job.running():
+            self.train.hash_job.proc.waitForFinished(1000)
         for job in (self.dataset.job, self.train.job, self.export.job):
             job.kill()
         self.store(self.dataset.values())
@@ -1150,7 +1517,7 @@ def main():
         # Offline check: render each page to PNGs and exit (no screen read).
         out = sys.argv[sys.argv.index('--snapshot') + 1]
         w.show()
-        for k in range(3):
+        for k in range(w.pages.count()):
             w.show_page(k)
             app.processEvents()
             w.grab().save(f'{out}_{k}.png')

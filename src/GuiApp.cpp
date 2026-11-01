@@ -58,6 +58,7 @@ constexpr int IDC_AI_REFINEMENT = 120;
 constexpr int IDC_AI_UI_REGIONS = 121;
 constexpr int IDC_UI_MASK = 122;
 constexpr int IDC_UI_DETECTOR = 123;
+constexpr int IDC_AI_TEMPORAL_UI = 124;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -147,6 +148,7 @@ struct GuiState {
     HWND gpuSmoothness = nullptr;
     HWND uiMask = nullptr;
     HWND aiUiRegions = nullptr;
+    HWND aiTemporalUi = nullptr;
     HWND uiDetector = nullptr;
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
@@ -1202,10 +1204,22 @@ void startCapture() {
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
     if (flowSelection == 4 && SendMessageA(g_state.aiBlendMask, BM_GETCHECK, 0, 0) == BST_CHECKED)
         captureArgs.push_back("--ai-blend-mask");
+    const bool temporalUi = flowSelection == 4 && SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED &&
+                            SendMessageA(g_state.aiTemporalUi, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    if (temporalUi) {
+        std::string reason;
+        if (!AiFlowEstimator::temporalModelAvailable(AiFlowEstimator::defaultModelPath(true), reason)) {
+            CloseHandle(stopEvent);
+            SetWindowTextA(g_state.liveStatus, reason.c_str());
+            updateAiRefinementControl();
+            return;
+        }
+        captureArgs.push_back("--ai-temporal-ui");
+    }
     if (flowSelection == 4 && SendMessageA(g_state.aiRefinement, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         std::wstring selected;
         std::string reason;
-        if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), true, selected, reason)) {
+        if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(temporalUi), true, selected, reason)) {
             CloseHandle(stopEvent);
             SetWindowTextA(g_state.liveStatus, reason.c_str());
             updateAiRefinementControl();
@@ -1332,7 +1346,8 @@ std::wstring trainerFolder() {
 
 // What models\ai_flow.onnx (and its .json from the trainer's export) says.
 std::string aiModelSummary() {
-    const std::wstring model = AiFlowEstimator::defaultModelPath();
+    const bool temporalUi = g_state.aiTemporalUi && SendMessageA(g_state.aiTemporalUi, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    const std::wstring model = AiFlowEstimator::defaultModelPath(temporalUi);
     WIN32_FILE_ATTRIBUTE_DATA info = {};
     if (!GetFileAttributesExW(model.c_str(), GetFileExInfoStandard, &info))
         return "No AI model yet: open the trainer, build a dataset from your videos, train and export.";
@@ -1354,7 +1369,8 @@ std::string aiModelSummary() {
     std::string psnr = field("psnr");
     if (psnr.size() > 5) psnr = psnr.substr(0, 5);
     const std::string score = psnr == "null" || psnr == "?" ? std::string() : ", " + psnr + " dB on held-out clips";
-    std::snprintf(line, sizeof(line), "Installed: models\\ai_flow.onnx - %sx%s, %s model%s, exported %04d-%02d-%02d %02d:%02d",
+    std::snprintf(line, sizeof(line), "Installed: models\\%s - %sx%s, %s model%s, exported %04d-%02d-%02d %02d:%02d",
+                  temporalUi ? "ai_flow_ui.onnx (temporal UI)" : "ai_flow.onnx",
                   field("width").c_str(), field("height").c_str(), field("preset").c_str(), score.c_str(),
                   local.wYear, local.wMonth, local.wDay, local.wHour, local.wMinute);
     return line;
@@ -1368,18 +1384,26 @@ void updateAiRefinementControl() {
         SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED &&
         SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED);
     const bool ai = SendMessageA(g_state.liveFlowEngine, CB_GETCURSEL, 0, 0) == 4;
+    const bool ui = SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED;
     std::wstring selected;
     std::string reason;
-    const bool available = AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), true, selected, reason);
+    const bool temporalAvailable = AiFlowEstimator::temporalModelAvailable(AiFlowEstimator::defaultModelPath(true), reason);
+    if (!temporalAvailable || !ui) SendMessageA(g_state.aiTemporalUi, BM_SETCHECK, BST_UNCHECKED, 0);
+    EnableWindow(g_state.aiTemporalUi, ai && ui && temporalAvailable && !g_state.captureStopEvent);
+    const bool temporal = ai && ui && SendMessageA(g_state.aiTemporalUi, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    const bool available = AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(temporal), true, selected, reason);
     if (!available) SendMessageA(g_state.aiRefinement, BM_SETCHECK, BST_UNCHECKED, 0);
     EnableWindow(g_state.aiRefinement, ai && available && !g_state.captureStopEvent);
     const char* help = g_state.captureStopEvent ? "Stop capture to change refinement."
                      : !ai ? "Select AI pyramid to choose its refiner."
                      : !available ? "AI refiner unavailable: export a refined model pair."
                      : "Checked: AI only. Unchecked: DIS. Choose before capture.";
-    const std::string hint = std::string(help) + "   |   Ctrl+Alt+F3: UI debug view 7";
+    const std::string hint = temporal ? "Temporal UI: trained bundle, native pixel checks still required."
+                           : !temporalAvailable && ai ? "Temporal UI: export best_ui.pt, then Refresh on AI Model page."
+                           : std::string(help);
     SetWindowTextA(g_state.aiRefinementHelp, hint.c_str());
     InvalidateRect(g_state.aiRefinement, nullptr, FALSE);
+    InvalidateRect(g_state.aiTemporalUi, nullptr, FALSE);
 }
 
 void refreshAiStatus() {
@@ -1560,7 +1584,9 @@ void createControls() {
     for (const char* option : {"DirectML: icons (default)", "Matrix: icons (WMMA)"})
         SendMessageA(g_state.uiDetector, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
     SendMessageA(g_state.uiDetector, CB_SETCURSEL, 0, 0);
-    g_state.aiRefinementHelp = makeLabel("Select AI pyramid to choose its refiner.", 36, 466, 794);
+    g_state.aiTemporalUi = makeCheckbox("Trained temporal UI (exp.)", 36, 462, 280, false);
+    SetWindowLongPtrA(g_state.aiTemporalUi, GWLP_ID, IDC_AI_TEMPORAL_UI);
+    g_state.aiRefinementHelp = makeLabel("Select AI pyramid to choose its refiner.", 326, 466, 504);
     SetWindowSubclass(g_state.aiRefinementHelp, changingStaticProc, 3, 0);
     // How often the AI depth network runs (FlowSettings::aiDepthStride):
     // every frame, or every n-th with the frames between borrowing a
@@ -1598,7 +1624,7 @@ void createControls() {
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
         g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
-        g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
+        g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiTemporalUi, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,
         g_state.useTrainedModel, g_state.trainingStatus
@@ -2202,7 +2228,7 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 HWND box = reinterpret_cast<HWND>(lParam);
                 const bool checked = SendMessageA(box, BM_GETCHECK, 0, 0) == BST_CHECKED;
                 SendMessageA(box, BM_SETCHECK, checked ? BST_UNCHECKED : BST_CHECKED, 0);
-                if (box == g_state.uiMask || box == g_state.aiUiRegions) updateAiRefinementControl();
+                if (box == g_state.uiMask || box == g_state.aiUiRegions || box == g_state.aiTemporalUi) refreshAiStatus();
                 return 0;
             }
             switch (LOWORD(wParam)) {

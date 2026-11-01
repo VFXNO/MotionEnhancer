@@ -36,6 +36,7 @@ Texture2D<float4> Frame1 : register(t1);
 Texture2D<float4> ForwardFlow : register(t2);
 Texture2D<float4> BackwardFlow : register(t3);
 Texture2D<float> PreviousUi : register(t4);
+Texture2D<float> TemporalUiAllow : register(t5);
 RWTexture2D<float> Ui : register(u0);
 
 // The pixel's own change must be below this fraction of the damage. A half
@@ -49,8 +50,14 @@ static const float kUiChangeRatio = 0.33f;
 // These are NOT the AI flow model's weights or the synthesis blending mask.
 bool InDetectedUiRegion(uint2 pixel)
 {
-    if (NeuralControl.x < 0.5f) return true; // Legacy native-only mode is unchanged.
+    if (NeuralControl.x < 0.5f && NeuralControl.y < 0.5f) return true; // Legacy native-only mode is unchanged.
     const float2 uv = (float2(pixel) + 0.5f) / float2(Width, Height);
+    if (NeuralControl.y >= 0.5f && NeuralControl.w >= 0.5f)
+    {
+        const float candidate = TemporalUiAllow.SampleLevel(LinearClamp, uv, 0);
+        if (isfinite(candidate) && candidate >= 0.5f && candidate <= 1.0f) return true;
+    }
+    if (NeuralControl.x < 0.5f) return false;
     const int count = clamp((int)NeuralControl.z, 0, 32);
     for (int i = 0; i < count; ++i)
     {

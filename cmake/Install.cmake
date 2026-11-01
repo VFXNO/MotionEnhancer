@@ -59,7 +59,8 @@ if(EXISTS "${MOTION_ENHANCER_AI_FLOW_MODEL}")
 endif()
 install(FILES neural_model.bin DESTINATION models)
 install(FILES packaging/Setup-AITrainer.cmd DESTINATION .)
-install(FILES tools/ai-train/app.py tools/ai-train/README.md tools/ai-train/requirements.txt
+install(FILES tools/ai-train/app.py tools/ai-train/README.md tools/ai-train/UI_TRAINING.md
+    tools/ai-train/UI_LABELING.md tools/ai-train/requirements.txt
     tools/ai-train/Setup-AITrainer.ps1 DESTINATION tools/ai-train)
 install(DIRECTORY tools/ai-train/mefi DESTINATION tools/ai-train
     FILES_MATCHING PATTERN "*.py" PATTERN "__pycache__" EXCLUDE)

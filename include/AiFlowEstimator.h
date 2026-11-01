@@ -30,20 +30,27 @@ public:
 
     // False (reason on stderr) when the build has no ONNX Runtime, the
     // model or its .json is missing or does not match.
-    bool initialize(ID3D12Device* device, ID3D12CommandQueue* queue, const std::wstring& modelPath);
+    bool initialize(ID3D12Device* device, ID3D12CommandQueue* queue, const std::wstring& modelPath,
+                    bool temporalUi = false);
     bool ready() const;
     int width() const;
     int height() const;
+    bool temporalUi() const;
+    int stateChannels() const;
     size_t inputBytes() const { return sizeof(float) * 6 * width() * height(); }
     size_t flowBytes() const { return sizeof(float) * 4 * width() * height(); }
     size_t maskBytes() const { return sizeof(float) * width() * height(); }
+    size_t stateBytes() const { return sizeof(float) * stateChannels() * (width() / 2) * (height() / 2); }
 
     void* registerBuffer(ID3D12Resource* buffer);
     void releaseBuffer(void* handle);
-    bool run(void* input, void* flow, void* mask);
+    bool run(void* input, void* flow, void* mask, void* previousState = nullptr, void* historyValid = nullptr,
+             void* uiAllow = nullptr, void* nextState = nullptr);
 
     // models\ai_flow.onnx next to the executable, or MOTION_ENHANCER_AI_FLOW_MODEL.
-    static std::wstring defaultModelPath();
+    static std::wstring defaultModelPath(bool temporalUi = false);
+    // Cheap GUI/CLI routing only; initialize still validates every graph tensor.
+    static bool temporalModelAvailable(const std::wstring& modelPath, std::string& reason);
 
     // Select a paired export without loading DirectML. Unchecked loads the
     // backbone-only .dis.onnx; checked loads the integrated graph. Legacy

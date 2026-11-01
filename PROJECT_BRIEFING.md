@@ -4,7 +4,7 @@ Generated from a full read of the repo at commit `c8424ca` (branch `main`). Wher
 
 ## 1. What it is
 
-A **Windows-only, C++17 real-time frame interpolator** (think "AFMF / Lossless Scaling, but our own"). It captures a window with Windows Graphics Capture (WGC), estimates block motion on the GPU, and presents an interpolated stream at the display refresh rate in a click-through overlay. There is also an offline mode (two images in, one interpolated image out), a native Win32 GUI, and a small trainable "neural" flow estimator.
+A **Windows-only, C++17 real-time frame interpolator** with GPU motion estimation and intermediate-frame synthesis. It captures a window with Windows Graphics Capture (WGC), estimates block motion on the GPU, and presents an interpolated stream at the display refresh rate in a click-through overlay. There is also an offline mode (two images in, one interpolated image out), a native Win32 GUI, and a small trainable "neural" flow estimator.
 
 - Executable: `motion_enhancer.exe` (CMake target `motion_enhancer`, VS 2022 x64, MSVC `/O2 /fp:fast /await`).
 - Owner's GPU for benchmarks: RTX 3050 Ti laptop (timings are power-limit sensitive, see README).

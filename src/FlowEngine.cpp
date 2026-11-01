@@ -80,8 +80,17 @@ void FlowEngine::releaseAiBuffers() {
         m_aiFlow->releaseBuffer(m_aiInputHandle);
         m_aiFlow->releaseBuffer(m_aiFlowHandle);
         m_aiFlow->releaseBuffer(m_aiMaskHandle);
+        m_aiFlow->releaseBuffer(m_aiUiAllowHandle);
+        m_aiFlow->releaseBuffer(m_aiHistoryHandle);
+        for (void* handle : m_aiUiStateHandle) m_aiFlow->releaseBuffer(handle);
     }
     m_aiInputHandle = m_aiFlowHandle = m_aiMaskHandle = nullptr;
+    m_aiUiAllowHandle = m_aiHistoryHandle = nullptr;
+    m_aiUiStateHandle = {};
+    for (auto& state : m_aiUiState) state.Reset();
+    m_aiUiAllow.Reset(); m_aiUiAllowTex.Reset(); m_aiHistoryValid.Reset(); m_aiUiControl.Reset();
+    m_aiUiFrameId = UINT64_MAX;
+    m_aiUiStateIndex = 0;
 }
 
 bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernels,
@@ -90,6 +99,10 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
     m_kernels = kernels;
     m_presentFence = presentFence;
     m_settings = settings;
+    if (settings.aiTemporalUi && (!settings.aiFlow || !settings.uiMask)) {
+        std::cerr << "Trained temporal UI requires AI pyramid flow and Keep static UI sharp.\n";
+        return false;
+    }
     m_neuralModelLoaded = false;
     if (settings.neuralFlow && settings.allowTrainedModel) {
         char modelPath[MAX_PATH] = {};
@@ -110,14 +123,15 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
     if (settings.aiFlow) {
         std::wstring selected;
         std::string reason;
-        if (!AiFlowEstimator::selectRefinementModel(AiFlowEstimator::defaultModelPath(), settings.aiRefinement,
+        const auto modelPath = AiFlowEstimator::defaultModelPath(settings.aiTemporalUi);
+        if (!AiFlowEstimator::selectRefinementModel(modelPath, settings.aiRefinement,
                                                    selected, reason)) {
             std::cerr << "FlowEngine: cannot select AI refinement: " << reason << "\n";
             return false;
         }
         m_aiFlow = std::make_unique<AiFlowEstimator>();
-        if (!m_aiFlow->initialize(d3d, device->flowQueue(), selected)) {
-            if (settings.aiRefinement) return false; // Never claim AI refinement while silently running DIS.
+        if (!m_aiFlow->initialize(d3d, device->flowQueue(), selected, settings.aiTemporalUi)) {
+            if (settings.aiRefinement || settings.aiTemporalUi) return false; // No silent fallback for explicit options.
             std::cerr << "FlowEngine: AI pyramid flow unavailable; using DIS.\n";
             m_aiFlow.reset();
         } else {
@@ -163,10 +177,15 @@ bool FlowEngine::initialize(GraphicsDevice* device, const ComputeKernels* kernel
 
 void FlowEngine::setSettings(const FlowSettings& settings) {
     const bool uiRegions = m_settings.aiUiRegions;
+    const bool temporalUi = m_settings.aiTemporalUi;
     const bool engineChanged = settings.preferFfxOpticalFlow != m_settings.preferFfxOpticalFlow ||
                                settings.neuralFlow != m_settings.neuralFlow ||
                                settings.disFlow != m_settings.disFlow;
     m_settings = settings;
+    if (m_settings.aiTemporalUi != temporalUi) {
+        std::cerr << "FlowEngine: restart capture to change the trained temporal UI model.\n";
+        m_settings.aiTemporalUi = temporalUi;
+    }
     if (m_width && m_settings.aiUiRegions != uiRegions) {
         std::cerr << "FlowEngine: restart capture to change AI UI-region detection.\n";
         m_settings.aiUiRegions = uiRegions;
@@ -354,6 +373,32 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         m_aiFlowHandle = m_aiFlow->registerBuffer(m_aiFlowOut.Get());
         m_aiMaskHandle = m_aiFlow->registerBuffer(m_aiMaskOut.Get());
         if (!m_aiInputHandle || !m_aiFlowHandle || !m_aiMaskHandle) return false;
+        if (m_aiFlow->temporalUi()) {
+            if (FAILED(m_device->createBuffer(m_aiFlow->maskBytes(), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_aiUiAllow)) ||
+                FAILED(m_device->createBuffer(sizeof(float), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_aiHistoryValid)) ||
+                FAILED(m_device->createTexture2D(aw, ah, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_FLAG_NONE,
+                                                 D3D12_RESOURCE_STATE_COMMON, m_aiUiAllowTex, L"TemporalUiAllow")) ||
+                FAILED(m_device->createBuffer(m_aiFlow->stateBytes() + 2 * sizeof(float), D3D12_HEAP_TYPE_UPLOAD,
+                                              D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_FLAG_NONE, m_aiUiControl))) return false;
+            // Immutable zeros + {0,1}; no CPU writes can race in-flight GPU work.
+            void* mapped = nullptr;
+            if (FAILED(m_aiUiControl->Map(0, nullptr, &mapped))) return false;
+            std::memset(mapped, 0, m_aiFlow->stateBytes() + 2 * sizeof(float));
+            static_cast<float*>(mapped)[m_aiFlow->stateBytes() / sizeof(float) + 1] = 1.0f;
+            m_aiUiControl->Unmap(0, nullptr);
+            for (int i = 0; i < 2; ++i) {
+                if (FAILED(m_device->createBuffer(m_aiFlow->stateBytes(), D3D12_HEAP_TYPE_DEFAULT,
+                                                  D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                  m_aiUiState[i]))) return false;
+                m_aiUiStateHandle[i] = m_aiFlow->registerBuffer(m_aiUiState[i].Get());
+                if (!m_aiUiStateHandle[i]) return false;
+            }
+            m_aiUiAllowHandle = m_aiFlow->registerBuffer(m_aiUiAllow.Get());
+            m_aiHistoryHandle = m_aiFlow->registerBuffer(m_aiHistoryValid.Get());
+            if (!m_aiUiAllowHandle || !m_aiHistoryHandle) return false;
+        }
     }
 
     m_depth.reset();
@@ -645,8 +690,19 @@ bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& curren
     list->CopyTextureRegion(&buffer, 0, 0, 0, &texture, nullptr);
     DispatchContext::transition(list, m_aiPlanar.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
 
+    const bool temporal = m_aiFlow->temporalUi();
+    out.aiUiHistoryValid = temporal && m_aiUiFrameId != UINT64_MAX && m_aiUiFrameId == previous.id &&
+                          current.id == previous.id + 1;
+    if (temporal) {
+        list->CopyBufferRegion(m_aiHistoryValid.Get(), 0, m_aiUiControl.Get(),
+                              m_aiFlow->stateBytes() + (out.aiUiHistoryValid ? sizeof(float) : 0), sizeof(float));
+        if (!out.aiUiHistoryValid)
+            list->CopyBufferRegion(m_aiUiState[m_aiUiStateIndex].Get(), 0, m_aiUiControl.Get(), 0, m_aiFlow->stateBytes());
+    }
     if (!splitList(previous, current)) return false;
-    if (!m_aiFlow->run(m_aiInputHandle, m_aiFlowHandle, m_aiMaskHandle)) return false;
+    if (!m_aiFlow->run(m_aiInputHandle, m_aiFlowHandle, m_aiMaskHandle,
+                      temporal ? m_aiUiStateHandle[m_aiUiStateIndex] : nullptr, m_aiHistoryHandle,
+                      m_aiUiAllowHandle, temporal ? m_aiUiStateHandle[1 - m_aiUiStateIndex] : nullptr)) return false;
     list = m_list.Get();
 
     buffer.pResource = m_aiFlowOut.Get();
@@ -655,6 +711,14 @@ bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& curren
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
     list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
     DispatchContext::transition(list, m_aiFlowTex.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+    if (temporal) {
+        buffer.pResource = m_aiUiAllow.Get();
+        buffer.PlacedFootprint.Footprint = {DXGI_FORMAT_R32_FLOAT, aw, ah, 1, aw * 4};
+        texture.pResource = m_aiUiAllowTex.Get();
+        DispatchContext::transition(list, m_aiUiAllowTex.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyTextureRegion(&texture, 0, 0, 0, &buffer, nullptr);
+        DispatchContext::transition(list, m_aiUiAllowTex.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+    }
     if (m_settings.aiBlendMask) {
         // Also support enabling the setting after resize; normal GUI capture
         // allocates all these textures up front. Publish only after submission.
@@ -1084,6 +1148,10 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
     c.width = c.levelWidth = m_width;
     c.height = c.levelHeight = m_height;
     setInterpolationConstants(c, out, 0.5f);
+    if (m_settings.aiTemporalUi) {
+        c.neuralControl[1] = 1.0f;
+        c.neuralControl[3] = out.aiUiHistoryValid ? 1.0f : 0.0f;
+    }
     if (m_settings.aiUiRegions) {
         c.neuralControl[0] = 1.0f; // UiMaskCS-specific constant layout, not network weights.
         if (m_uiDetector) {
@@ -1102,7 +1170,7 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
         // No regions at startup, expiry or failure means all-zero evidence.
     }
     std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, out.forward.Get(),
-                                         out.backward.Get(), prior, nullptr};
+                                         out.backward.Get(), prior, m_settings.aiTemporalUi ? m_aiUiAllowTex.Get() : nullptr};
     // Inputs 0-1 are the shared capture textures; input 4, the chain entry,
     // may be read by the present queue at this moment, so it is promoted
     // implicitly too instead of being transitioned from two queues at once.
@@ -1190,6 +1258,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     if (aiFlowActive()) {
         ok = recordAiFlow(previous, current, scratch);
         if (!ok) {
+            m_aiUiFrameId = UINT64_MAX;
             m_list->Close();
             return result;
         }
@@ -1245,16 +1314,22 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         m_list->Close();
         if (m_depth) m_depth->discarded();
         if (m_uiDetector) m_uiDetector->discarded();
+        m_aiUiFrameId = UINT64_MAX;
         return result;
     }
     uint64_t fenceValue = 0;
     if (!endList(previous, current, fenceValue)) {
+        m_aiUiFrameId = UINT64_MAX;
         if (m_depth) m_depth->discarded();
         if (m_uiDetector) m_uiDetector->discarded();
         return result;
     }
     if (m_depth) m_depth->submitted(fenceValue);
     if (m_uiDetector) m_uiDetector->submitted(fenceValue);
+    if (m_usingAi && m_settings.aiTemporalUi) {
+        m_aiUiFrameId = current.id;
+        m_aiUiStateIndex = 1 - m_aiUiStateIndex;
+    }
 
     {
         std::lock_guard<std::mutex> lock(m_ringMutex);
@@ -1266,6 +1341,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         e.aiBlendMask = scratch.aiBlendMask;
         e.hasAiBlendMask = scratch.hasAiBlendMask;
         e.aiRefined = scratch.aiRefined;
+        e.aiUiHistoryValid = scratch.aiUiHistoryValid;
         e.aiDisPatchPasses = scratch.aiDisPatchPasses;
         e.flowFence = fenceValue;
         e.valid = true;

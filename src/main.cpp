@@ -55,6 +55,8 @@ static void printUsage(const char* progName) {
               << "                             ai = the trained model in models\\ai_flow.onnx)\n"
               << "  --ai-blend-mask          Use AI's learned blending mask (AI only, experimental; default: off)\n"
               << "  --ai-refinement          Integrated AI refinement instead of DIS (paired refined export required)\n"
+              << "  --ai-temporal-ui         Trained temporal UI candidates (AI pyramid + UI mask; separate ai_flow_ui.onnx)\n"
+              << "  --ai-temporal-ui-self-test  Verify temporal state chaining and reset on DirectML\n"
               << "  --no-ai-refinement       Backbone-only AI + DIS refinement (default; independent of blending mask)\n"
               << "  --no-ui-mask             Interpolate static UI too (default: HUD/subtitles kept sharp)\n"
               << "  --ai-ui-regions          Native UI mask only inside AI-detected regions (optional ui_detect.onnx)\n"
@@ -252,6 +254,7 @@ int main(int argc, char** argv) {
     bool projectionSelfTest = false;
     bool aiBlendMaskSelfTest = false;
     bool aiRefinementSelfTest = false;
+    bool aiTemporalUiSelfTest = false;
     bool uiRegionsSelfTest = false;
     std::string uiDetectInput, uiDetectOutput;
     std::string neuralModelPath;
@@ -280,6 +283,8 @@ int main(int argc, char** argv) {
             aiBlendMaskSelfTest = true;
         } else if (arg == "--ai-refinement-self-test") {
             aiRefinementSelfTest = true;
+        } else if (arg == "--ai-temporal-ui-self-test") {
+            aiTemporalUiSelfTest = true;
         } else if (arg == "--ui-regions-self-test") {
             uiRegionsSelfTest = true;
         } else if (arg == "--ui-detect-test" && i + 2 < argc) {
@@ -353,6 +358,8 @@ int main(int argc, char** argv) {
             gpuSettings.aiBlendMask = true;
         } else if (arg == "--ai-refinement") {
             gpuSettings.aiRefinement = true;
+        } else if (arg == "--ai-temporal-ui") {
+            gpuSettings.aiTemporalUi = true;
         } else if (arg == "--no-ai-refinement") {
             gpuSettings.aiRefinement = false;
         } else if (arg == "--no-occlusion-fill") {
@@ -497,6 +504,7 @@ int main(int argc, char** argv) {
     if (projectionSelfTest) return runProjectionSelfTest(adapterPreference);
     if (aiBlendMaskSelfTest) return runAiBlendMaskSelfTest(adapterPreference);
     if (aiRefinementSelfTest) return runAiRefinementSelfTest(adapterPreference);
+    if (aiTemporalUiSelfTest) return runTemporalUiSelfTest(adapterPreference);
     if (uiRegionsSelfTest) return runUiRegionsSelfTest(adapterPreference);
     if (!uiDetectInput.empty()) return runUiDetectTest(uiDetectInput, uiDetectOutput, adapterPreference, gpuSettings.uiDetector);
 

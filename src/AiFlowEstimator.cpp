@@ -26,6 +26,8 @@ struct AiFlowEstimator::Impl {
     int width = 0;
     int height = 0;
     bool ready = false;
+    bool temporalUi = false;
+    int stateChannels = 0;
 };
 
 AiFlowEstimator::AiFlowEstimator() : m_impl(std::make_unique<Impl>()) {}
@@ -34,15 +36,18 @@ AiFlowEstimator::~AiFlowEstimator() = default;
 bool AiFlowEstimator::ready() const { return m_impl->ready; }
 int AiFlowEstimator::width() const { return m_impl->width; }
 int AiFlowEstimator::height() const { return m_impl->height; }
+bool AiFlowEstimator::temporalUi() const { return m_impl->temporalUi; }
+int AiFlowEstimator::stateChannels() const { return m_impl->stateChannels; }
 
-std::wstring AiFlowEstimator::defaultModelPath() {
+std::wstring AiFlowEstimator::defaultModelPath(bool temporalUi) {
     wchar_t buffer[MAX_PATH] = {};
-    if (GetEnvironmentVariableW(L"MOTION_ENHANCER_AI_FLOW_MODEL", buffer, MAX_PATH) > 0) return buffer;
+    if (GetEnvironmentVariableW(temporalUi ? L"MOTION_ENHANCER_AI_UI_MODEL" : L"MOTION_ENHANCER_AI_FLOW_MODEL",
+                                buffer, MAX_PATH) > 0) return buffer;
     GetModuleFileNameW(nullptr, buffer, MAX_PATH);
     std::wstring directory(buffer);
     const size_t slash = directory.find_last_of(L"\\/");
     directory = slash == std::wstring::npos ? std::wstring(L".") : directory.substr(0, slash);
-    return directory + L"\\models\\ai_flow.onnx";
+    return directory + (temporalUi ? L"\\models\\ai_flow_ui.onnx" : L"\\models\\ai_flow.onnx");
 }
 
 namespace {
@@ -71,6 +76,12 @@ bool boolField(const std::string& text, const char* name, bool fallback) {
         ? match[1] == "true" : fallback;
 }
 
+int intField(const std::string& text, const char* name) {
+    std::smatch match;
+    if (!std::regex_search(text, match, std::regex(std::string("\"") + name + "\"\\s*:\\s*(\\d+)"))) return 0;
+    try { return std::stoi(match[1]); } catch (const std::exception&) { return 0; }
+}
+
 // The network resolution from mefi.export's <model>.json.
 bool readResolution(const std::wstring& modelPath, int& width, int& height) {
     std::wstring json = modelPath;
@@ -93,6 +104,24 @@ bool readResolution(const std::wstring& modelPath, int& width, int& height) {
     return width > 0 && height > 0;
 }
 }  // namespace
+
+bool AiFlowEstimator::temporalModelAvailable(const std::wstring& modelPath, std::string& reason) {
+    const std::string text = metadataText(modelPath);
+    int w = 0, h = 0;
+    std::error_code error;
+    const int channels = intField(text, "state_channels");
+    if (!std::filesystem::is_regular_file(modelPath, error) ||
+        stringField(text, "format") != "mefi-pyramid-ui-1" ||
+        stringField(text, "head_format") != "me-ui-pair-temporal-1" ||
+        stringField(text, "head_arch") != "pair-ui-dw-v1" || channels < 1 || channels > 32 ||
+        !readResolution(modelPath, w, h) || w % 64 || h % 16 || w > 8192 || h > 8192 ||
+        intField(text, "state_width") != w / 2 || intField(text, "state_height") != h / 2) {
+        reason = "Trained temporal UI unavailable: export best_ui.pt or last_ui.pt as models\\ai_flow_ui.onnx and its JSON first.";
+        return false;
+    }
+    reason.clear();
+    return true;
+}
 
 bool AiFlowEstimator::selectRefinementModel(const std::wstring& modelPath, bool integrated,
                                            std::wstring& selected, std::string& reason) {
@@ -118,6 +147,9 @@ bool AiFlowEstimator::selectRefinementModel(const std::wstring& modelPath, bool 
         stringField(primary, "arch") != "pyramid-refine-v1" ||
         stringField(bypass, "arch") != "pyramid-v2" || boolField(bypass, "integrated_refiner", true) ||
         stringField(primary, "preset") != stringField(bypass, "preset") ||
+        stringField(primary, "format") != stringField(bypass, "format") ||
+        stringField(primary, "head_arch") != stringField(bypass, "head_arch") ||
+        intField(primary, "state_channels") != intField(bypass, "state_channels") ||
         !readResolution(modelPath, width, height) || !readResolution(companion.wstring(), bypassWidth, bypassHeight) ||
         width != bypassWidth || height != bypassHeight) {
         reason = "The AI/DIS export pair is missing or mismatched. Re-export and copy both ONNX files and both JSON files.";
@@ -127,16 +159,31 @@ bool AiFlowEstimator::selectRefinementModel(const std::wstring& modelPath, bool 
     return true;
 }
 
-bool AiFlowEstimator::initialize(ID3D12Device* device, ID3D12CommandQueue* queue, const std::wstring& modelPath) {
+bool AiFlowEstimator::initialize(ID3D12Device* device, ID3D12CommandQueue* queue, const std::wstring& modelPath,
+                                 bool temporalUi) {
 #ifndef MOTION_ENHANCER_AI_DEPTH
     (void)device;
     (void)queue;
     (void)modelPath;
+    (void)temporalUi;
     std::cerr << "AI flow: not part of this build (needs ONNX Runtime).\n";
     return false;
 #else
     Impl& m = *m_impl;
     m.ready = false;
+    m.temporalUi = temporalUi;
+    m.stateChannels = 0;
+    std::string reason;
+    if (temporalUi) {
+        if (!temporalModelAvailable(modelPath, reason)) {
+            std::cerr << "AI flow: " << reason << "\n";
+            return false;
+        }
+        m.stateChannels = intField(metadataText(modelPath), "state_channels");
+    } else if (stringField(metadataText(modelPath), "format") == "mefi-pyramid-ui-1") {
+        std::cerr << "AI flow: temporal UI models require --ai-temporal-ui; flow-only loading is unchanged.\n";
+        return false;
+    }
     if (GetFileAttributesW(modelPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
         std::cerr << "AI flow: no model at models\\ai_flow.onnx (train and export one with tools\\ai-train).\n";
         return false;
@@ -162,6 +209,7 @@ bool AiFlowEstimator::initialize(ID3D12Device* device, ID3D12CommandQueue* queue
         options.DisableMemPattern();
         options.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
         options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+        if (temporalUi) options.AddConfigEntry("session.disable_cpu_ep_fallback", "1");
         Ort::ThrowOnError(Ort::GetApi().GetExecutionProviderApi("DML", ORT_API_VERSION,
                                                                reinterpret_cast<const void**>(&m.dmlApi)));
         // The flow queue itself: the network then runs between the list that
@@ -169,26 +217,43 @@ bool AiFlowEstimator::initialize(ID3D12Device* device, ID3D12CommandQueue* queue
         Ort::ThrowOnError(m.dmlApi->SessionOptionsAppendExecutionProvider_DML1(options, m.dml.Get(), queue));
         m.session = std::make_unique<Ort::Session>(ortruntime::env(), modelPath.c_str(), options);
         Ort::AllocatorWithDefaultOptions allocator;
-        if (m.session->GetInputCount() != 1 || m.session->GetOutputCount() != 2) {
-            std::cerr << "AI flow: expected one input and two outputs (flow, mask).\n";
+        if (m.session->GetInputCount() != (temporalUi ? 3 : 1) || m.session->GetOutputCount() != (temporalUi ? 4 : 2)) {
+            std::cerr << "AI flow: unexpected input/output count for the selected model format.\n";
             return false;
         }
-        m.inputName = m.session->GetInputNameAllocated(0, allocator).get();
-        for (size_t i = 0; i < 2; ++i) {
-            const std::string name = m.session->GetOutputNameAllocated(i, allocator).get();
-            (name == "mask" ? m.maskName : m.flowName) = name;
-        }
-        const auto in = m.session->GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
-        if (in.size() != 4 || in[1] != 6 || in[2] != m.height || in[3] != m.width) {
-            std::cerr << "AI flow: the model's input is not [1, 6, " << m.height << ", " << m.width << "].\n";
-            return false;
+        auto validate = [&](bool input, const char* name, const std::vector<int64_t>& shape) {
+            const size_t count = input ? m.session->GetInputCount() : m.session->GetOutputCount();
+            for (size_t i = 0; i < count; ++i) {
+                const auto actual = input ? m.session->GetInputNameAllocated(i, allocator) : m.session->GetOutputNameAllocated(i, allocator);
+                if (std::string(actual.get()) != name) continue;
+                const auto type = input ? m.session->GetInputTypeInfo(i) : m.session->GetOutputTypeInfo(i);
+                const auto tensor = type.GetTensorTypeAndShapeInfo();
+                if (tensor.GetElementType() == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT && tensor.GetShape() == shape) return;
+                break;
+            }
+            throw std::runtime_error(std::string("Invalid AI tensor name/type/shape: ") + name);
+        };
+        validate(true, "frames", {1, 6, m.height, m.width});
+        validate(false, "flow", {1, 4, m.height, m.width});
+        validate(false, "mask", {1, 1, m.height, m.width});
+        m.inputName = "frames"; m.flowName = "flow"; m.maskName = "mask";
+        if (temporalUi) {
+            const std::vector<int64_t> state = {1, m.stateChannels, m.height / 2, m.width / 2};
+            validate(true, "previous_state", state);
+            validate(true, "history_valid", {1, 1, 1, 1});
+            validate(false, "next_state", state);
+            validate(false, "ui_allow", {1, 1, m.height, m.width});
         }
     } catch (const Ort::Exception& e) {
+        std::cerr << "AI flow: " << e.what() << "\n";
+        return false;
+    } catch (const std::exception& e) {
         std::cerr << "AI flow: " << e.what() << "\n";
         return false;
     }
     m.ready = true;
     std::cout << "AI flow: pyramid model on DirectML at " << m.width << "x" << m.height << "\n";
+    if (temporalUi) std::cout << "Trained temporal UI: enabled (experimental, native pixel evidence required)\n";
     return true;
 #endif
 }
@@ -219,10 +284,12 @@ void AiFlowEstimator::releaseBuffer(void* handle) {
 #endif
 }
 
-bool AiFlowEstimator::run(void* input, void* flow, void* mask) {
+bool AiFlowEstimator::run(void* input, void* flow, void* mask, void* previousState, void* historyValid,
+                           void* uiAllow, void* nextState) {
 #ifdef MOTION_ENHANCER_AI_DEPTH
     Impl& m = *m_impl;
     if (!m.ready || !input || !flow || !mask) return false;
+    if (m.temporalUi && (!previousState || !historyValid || !uiAllow || !nextState || previousState == nextState)) return false;
     try {
         const Ort::MemoryInfo memory("DML", OrtAllocatorType::OrtDeviceAllocator, 0, OrtMemType::OrtMemTypeDefault);
         const int64_t inShape[4] = {1, 6, m.height, m.width};
@@ -235,6 +302,21 @@ bool AiFlowEstimator::run(void* input, void* flow, void* mask) {
         binding.BindInput(m.inputName.c_str(), in);
         binding.BindOutput(m.flowName.c_str(), outFlow);
         binding.BindOutput(m.maskName.c_str(), outMask);
+        // Keep these Ort values alive until Run returns. All buffers belong to
+        // the same serialized flow queue; no host/state readback is needed.
+        std::vector<Ort::Value> temporal;
+        if (m.temporalUi) {
+            const int64_t stateShape[] = {1, m.stateChannels, m.height / 2, m.width / 2};
+            const int64_t validShape[] = {1, 1, 1, 1};
+            temporal.emplace_back(Ort::Value::CreateTensor(memory, previousState, stateBytes(), stateShape, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT));
+            temporal.emplace_back(Ort::Value::CreateTensor(memory, historyValid, sizeof(float), validShape, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT));
+            temporal.emplace_back(Ort::Value::CreateTensor(memory, uiAllow, maskBytes(), maskShape, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT));
+            temporal.emplace_back(Ort::Value::CreateTensor(memory, nextState, stateBytes(), stateShape, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT));
+            binding.BindInput("previous_state", temporal[0]);
+            binding.BindInput("history_valid", temporal[1]);
+            binding.BindOutput("ui_allow", temporal[2]);
+            binding.BindOutput("next_state", temporal[3]);
+        }
         m.session->Run(Ort::RunOptions{nullptr}, binding);
     } catch (const Ort::Exception& e) {
         std::cerr << "AI flow: " << e.what() << "\n";
@@ -243,6 +325,7 @@ bool AiFlowEstimator::run(void* input, void* flow, void* mask) {
     return true;
 #else
     (void)input; (void)flow; (void)mask;
+    (void)previousState; (void)historyValid; (void)uiAllow; (void)nextState;
     return false;
 #endif
 }

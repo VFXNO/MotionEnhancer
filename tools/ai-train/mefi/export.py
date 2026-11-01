@@ -40,8 +40,17 @@ def main(argv=None):
         emit(event='error', message='the width must be a multiple of 64 and the height of 16')
         return 1
     try:
+        checkpoint = torch.load(args.checkpoint, map_location='cpu', weights_only=True)
+        if isinstance(checkpoint, dict) and checkpoint.get('format') == 'mefi-ui-training-1':
+            from .export_ui import export_checkpoint
+            return export_checkpoint(checkpoint, args, emit)
+        meta_path = os.path.splitext(args.out)[0] + '.json'
+        if os.path.isfile(meta_path):
+            with open(meta_path, encoding='utf-8') as handle:
+                if json.load(handle).get('format') == 'mefi-pyramid-ui-1':
+                    raise ValueError('This output belongs to a temporal UI bundle. Choose a separate flow-only filename.')
         ck, net = load_checkpoint(args.checkpoint)
-    except ValueError as e:
+    except (ValueError, OSError, RuntimeError, KeyError, TypeError) as e:
         emit(event='error', message=str(e))
         return 1
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -84,7 +93,8 @@ def main(argv=None):
         emit(event='warning', message=f'the network height {args.height} is far from the {trained} px frames '
                                       f'it was trained on; build the dataset at about {args.height} px '
                                       f'(or export near {trained} px) for the best results')
-    emit(event='done', out=os.path.abspath(args.out), dis_out=os.path.abspath(dis_out) if refined else None, **meta)
+    emit(event='done', out=os.path.abspath(args.out), dis_out=os.path.abspath(dis_out) if refined else None,
+         runtime_name='ai_flow.onnx', **meta)
     return 0
 
 

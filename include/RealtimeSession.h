@@ -38,6 +38,7 @@ int runProjectionSelfTest(GraphicsAdapterPreference adapter);
 // Exact GPU blend-mask checks; also checks network/ring lifetime if a model is installed.
 int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter);
 int runAiRefinementSelfTest(GraphicsAdapterPreference adapter);
+int runTemporalUiSelfTest(GraphicsAdapterPreference adapter);
 int runUiRegionsSelfTest(GraphicsAdapterPreference adapter);
 int runUiDetectTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter,
                     UiDetector::Choice choice = UiDetector::Choice::Automatic);

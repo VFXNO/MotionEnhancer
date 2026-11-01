@@ -241,9 +241,9 @@ float2 ProjectedVector(Texture2D<uint> projection, Texture2D<float4> field, uint
 static const float kUiMaxCount = 4.0f;
 static const float kUiConfirm = 3.0f;
 static const float kUiChangePenalty = 2.0f;
-// In 8-bit levels, max over RGB. "Unchanged" must survive the noise of a
-// lossless game capture, not of a compressed video: a static logo whose
-// pixels shimmer by more than this is simply interpolated as before.
+// Maximum absolute RGB-channel change in 8-bit levels. This tolerance targets
+// uncompressed capture surfaces, not video compression artifacts. Pixels whose
+// temporal change exceeds it remain eligible for normal interpolation.
 static const float kUiStaticTolerance = 4.0f;
 // How far the warped result must stray from the unchanged pixel to count
 // as damage. Well above the static tolerance, so noise can never supply

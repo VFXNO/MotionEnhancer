@@ -6,7 +6,7 @@ Train the **AI pyramid** flow engine on your own videos, with PyTorch on ROCm (A
 tools\ai-train\.venv\Scripts\python.exe tools\ai-train\app.py
 ```
 
-The window has three pages: **Dataset → Train → Export**. Each long job runs as its own process (`mefi.dataset`, `mefi.train`, `mefi.export`), so a crash in a job cannot take the window down, and every page can also be run from the command line.
+The window has **Dataset**, **Train**, **Export** and **Label UI** pages. Dataset/training/export jobs and requested label decoding/AI suggestions run in separate processes, so a failed job cannot take the window down. The original Dataset/Train/Export CLI entry points remain available.
 
 ## Setup (once)
 
@@ -233,7 +233,50 @@ untrained model. Tiny datasets still do not establish useful generalisation.
 python -m mefi.train --data datasets\mygame --run runs\mygame --preset medium --epochs 60
 ```
 
+### Optional temporal UI training (including from scratch)
+
+The Train page now has an opt-in **Temporal UI candidate training** selector:
+**Off** preserves the original flow-only workflow; **Flow + UI** creates both
+branches from scratch when Initial weights is empty; **UI only** freezes a
+checksum-pinned flow checkpoint. UI supervision requires a separate explicit
+dense-label manifest—existing flow triplets are not HUD ground truth.
+
+The GUI automatically calculates the initial checkpoint's SHA256 in the
+background after you choose or paste its file path. There is no manual hash
+lookup/copying step. Clearing Initial weights also clears the hash. A saved-pin
+mismatch blocks a new UI run rather than silently accepting different weights;
+**Recalculate** explicitly accepts the currently selected file's fingerprint.
+The trainer's independent hash verification and explicit CLI pin are unchanged.
+
+See [UI training, label format and safeguards](UI_TRAINING.md) for the GUI/CLI,
+source-disjoint splits, cumulative job caps and separate resumable UI checkpoint
+format. No training was launched during implementation. The Export page now
+converts these checkpoints to a separate experimental `ai_flow_ui.onnx` bundle;
+they do not establish HUD accuracy or a 4 ms gaming-load guarantee.
+
+Use **Label UI** (or **Train → Create / edit UI labels…**) to sample many windows
+across a video (20 by default, up to 100), reuse saved reviewed HUD foreground as
+conservative drafts, and **Save reviewed and next unreviewed** without repainting
+unchanged UI from scratch. Three consecutive frames form each sample; only the
+last frame is labeled. Draft reuse never copies background or review and still
+needs inspection/correction. You can also paint dense labels manually, review
+suggestions from a local segmentation model, and export PNGs/manifest/hashes
+automatically. EfficientSAM-Ti now provides
+smart click/box masks and automatic current-frame candidates with a separately
+downloaded, pinned 48.3 MB Apache-2.0 labeling model. It is ready in this user's
+local labeling cache; other machines get an explicit download button, not an
+automatic download. Only explicitly reviewed samples are exported. See the
+[labeling walkthrough and supported AI model contract](UI_LABELING.md).
+
 ## 3. Export
+
+**Trained temporal UI:** choose `best_ui.pt` or `last_ui.pt`. It is detected
+automatically and exported as **ai_flow_ui.onnx** plus JSON (and matching
+`.dis.onnx`/`.dis.json` for a refined backbone). The installed `ai_flow.onnx`
+stays unchanged. In the updated main program, select **AI pyramid**, keep
+**Keep static UI sharp** on, and enable **Trained temporal UI (exp.)**. Use
+**AI Model → Refresh** if it was open during export. See
+[UI export/runtime instructions and limitations](UI_TRAINING.md#export-and-run-the-trained-ui-model).
 
 Export writes the checkpoint as ONNX in FP16 with FP32 input and output. Output is `models\ai_flow.onnx` next to `motion_enhancer.exe`, plus a `.json` with its resolution, size and score. **Measure speed** runs `motion_enhancer.exe --ai-flow-test` on it.
 
