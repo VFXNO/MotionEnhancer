@@ -94,6 +94,9 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\UiMaskCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\UiPersistCS.cso.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\7a3e25a07f6f0d655299d63aa967ab03\motion_enhancer_shaders.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>

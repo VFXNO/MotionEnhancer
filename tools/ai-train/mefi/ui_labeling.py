@@ -13,6 +13,7 @@ import numpy as np
 
 PROJECT_FORMAT = 'me-ui-label-project-1'
 LABEL_FORMAT = 'me-ui-labels-1'
+AUTO_LABEL_FORMAT = 'me-ui-labels-2'
 REPO = Path(__file__).resolve().parents[3]
 LOCKED_CAPTURE = REPO / 'build-project/Release/captures/20261101-124214'
 MAX_PIXELS = 4096 * 4096
@@ -155,10 +156,14 @@ def video_window(path, current, resize=None, progress=None):
         # Decode from the beginning instead of trusting approximate keyframe
         # seeking. Frame IDs are exact ordinals in this decoder's output stream.
         for index in range(current + 1):
-            ok, frame = cap.read()
-            if not ok:
+            if not cap.grab():
                 raise ValueError('Video ended before the selected three-frame window')
             if index >= current - 2:
+                # Most decoded frames are not part of this sample. Retrieving
+                # only the final triplet avoids unnecessary BGR conversions.
+                ok, frame = cap.retrieve()
+                if not ok:
+                    raise ValueError(f'Could not retrieve decoded video frame {index}; no window accepted')
                 frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             if progress and index % 120 == 0:
                 progress(index, current)
@@ -461,15 +466,28 @@ class Project:
         prefix = f'annotations/{sample["id"]}/{revision}'
         refs = {key: write_png(self.root, prefix + '-' + key + '.png', array)
                 for key, array in (('coverage', annotation.coverage), ('valid', annotation.valid))}
-        sample.update(annotation=refs, reviewed=reviewed, guidance=copy.deepcopy(guidance), revision=revision)
-        self.persist()
+        previous = copy.deepcopy(sample)
+        sample.update(annotation=refs, reviewed=reviewed, guidance=copy.deepcopy(guidance), revision=revision, auto_label=None)
+        try:
+            self.persist()
+        except Exception:
+            sample.clear()
+            sample.update(previous)
+            raise
 
-    def export(self, destination):
+    def export(self, destination, *, include_auto=False):
+        if type(include_auto) is not bool:
+            raise ValueError('Automatic training label export must be explicitly enabled')
         if digest_bytes((self.root / 'project.json').read_bytes()) != self.disk_hash:
             raise ValueError('Project changed in another editor; reopen before exporting')
         if Path(destination).resolve().is_relative_to(self.root):
             raise ValueError('Export to a separate new folder, not inside the editable project')
-        samples = [sample for sample in self.samples if sample.get('reviewed') is True]
+        def automatic(sample):
+            meta = sample.get('auto_label') or {}
+            return (include_auto and sample['split'] == 'train' and sample.get('reviewed') is False
+                    and meta.get('format') == 'me-ui-auto-label-1' and meta.get('eligible') is True
+                    and meta.get('template_split') == 'train' and meta.get('human_reviewed') is False)
+        samples = [sample for sample in self.samples if sample.get('reviewed') is True or automatic(sample)]
         if not any(s['split'] == 'train' for s in samples) or not any(s['split'] == 'val' for s in samples):
             raise ValueError('Review at least one training and one validation sample from separate recordings first')
         # Validate all project references before creating an immutable export.
@@ -480,8 +498,20 @@ class Project:
             h, w = annotation.valid.shape
             if not (annotation.valid.reshape(h // 2, 2, w // 2, 2).min(axis=(1, 3)) == 255).any():
                 raise ValueError('A reviewed annotation has no fully known 2 x 2 cell')
+            if automatic(sample):
+                from .ui_auto_label import cell_counts, MIN_NEGATIVE_CELLS, MIN_POSITIVE_CELLS
+                counts = cell_counts(annotation)
+                if counts['positive_cells'] < MIN_POSITIVE_CELLS or counts['negative_cells'] < MIN_NEGATIVE_CELLS:
+                    raise ValueError('Automatic training labels no longer pass the two-class eligibility checks; regenerate them')
+                meta = sample['auto_label']
+                template = next((s for s in self.samples if s['id'] == meta.get('template_id')), None)
+                if (not template or template['split'] != 'train' or not template.get('reviewed')
+                        or template.get('revision') != meta.get('template_revision')):
+                    raise ValueError('The automatic HUD template changed; regenerate machine labels before exporting')
         root = new_folder(destination)
-        manifest = {'format': LABEL_FORMAT, 'label_version': self.document['label_version'], 'samples': []}
+        mixed = any(automatic(sample) for sample in samples)
+        manifest = {'format': AUTO_LABEL_FORMAT if mixed else LABEL_FORMAT,
+                    'label_version': self.document['label_version'], 'samples': []}
         for sample in samples:
             item = {key: copy.deepcopy(sample[key]) for key in ('id', 'source', 'split', 'height', 'width', 'frame_ids')}
             def copy_ref(ref):
@@ -500,6 +530,11 @@ class Project:
             item['frames'] = [copy_ref(ref) for ref in sample['frames']]
             for key in ('coverage', 'valid'):
                 item[key] = copy_ref(sample['annotation'][key])
+            if mixed:
+                item.update(label_origin='machine-generated' if automatic(sample) else 'human-reviewed',
+                            reviewed=sample['reviewed'])
+                if automatic(sample):
+                    item['auto_label'] = copy.deepcopy(sample['auto_label'])
             manifest['samples'].append(item)
         # Preserve origin/model/review provenance separately from the strict
         # trainer contract. Nothing in this project is installed or activated.

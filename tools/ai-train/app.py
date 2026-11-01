@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBo
                                QStackedWidget, QVBoxLayout, QWidget)
 
 from mefi.checkpoint_hash import file_identity
-from mefi.ui_label_gui import LabelPage
+from mefi.hud_label_gui import LabelPage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -304,7 +304,18 @@ class Job:
         self.on_event, self.on_finished = on_event, on_finished
         self.proc.readyReadStandardOutput.connect(self.read)
         self.proc.readyReadStandardError.connect(self.read_err)
-        self.proc.finished.connect(lambda code, _status: self.on_finished(code))
+        self.proc.finished.connect(lambda code, _status: self.deliver(self.on_finished, code))
+
+    @staticmethod
+    def deliver(callback, value):
+        """Call a page's handler, unless the window has been torn down while
+        the job ran: then Qt has deleted its widgets and the handler's first
+        setText raised 'Internal C++ object already deleted'."""
+        try:
+            callback(value)
+        except RuntimeError as e:
+            if 'already deleted' not in str(e):
+                raise
 
     def start(self, module, args):
         self.errors = []
@@ -326,23 +337,31 @@ class Job:
             self.proc.kill()
 
     def read(self):
-        self.buffer += bytes(self.proc.readAllStandardOutput())
+        try:
+            self.buffer += bytes(self.proc.readAllStandardOutput())
+        except RuntimeError:
+            # The window closed while the job ran: Qt deleted the process
+            # before its last "finished" signal arrived.
+            return
         while b'\n' in self.buffer:
             line, self.buffer = self.buffer.split(b'\n', 1)
             text = line.decode('utf-8', 'replace').strip()
             if not text:
                 continue
             try:
-                self.on_event(json.loads(text))
+                self.deliver(self.on_event, json.loads(text))
             except json.JSONDecodeError:
-                self.on_event({'event': 'log', 'text': text})
+                self.deliver(self.on_event, {"event": "log", "text": text})
 
     def read_err(self):
-        text = bytes(self.proc.readAllStandardError()).decode('utf-8', 'replace').strip()
+        try:
+            text = bytes(self.proc.readAllStandardError()).decode('utf-8', 'replace').strip()
+        except RuntimeError:   # see read()
+            return
         for line in text.splitlines():
             if line.strip() and 'Warning' not in line:
                 self.errors = (self.errors + [line])[-20:]
-                self.on_event({'event': 'log', 'text': line})
+                self.deliver(self.on_event, {"event": "log", "text": line})
 
 
 def path_row(edit, button_text, pick):
@@ -675,13 +694,16 @@ class TrainPage(Page):
         self.ui_options = QWidget()
         ul = QVBoxLayout(self.ui_options)
         ul.setContentsMargins(0, 0, 0, 0)
-        note = label('Requires separate dense UI labels and consecutive frames. No automatic labels. '
+        note = label('Requires separate dense UI labels and consecutive frames. Optional machine training labels need explicit permission; validation stays reviewed. '
                      'UI checkpoints are not runtime models; this does not activate HUD detection.', 'dim')
         note.setWordWrap(True)
         ul.addWidget(note)
         self.ui_labels = QLineEdit(s.get('ui_labels', ''))
-        ul.addWidget(label('Dense label manifest (me-ui-labels-1 JSON)', 'dim'))
+        ul.addWidget(label('Dense label manifest (me-ui-labels-1/2 JSON)', 'dim'))
         ul.addLayout(path_row(self.ui_labels, 'Browse', self.pick_ui_labels))
+        self.ui_allow_auto = QCheckBox('Allow machine-generated UI training labels')
+        self.ui_allow_auto.setToolTip('Off by default. Accepts marked me-ui-labels-2 training pseudo-labels, never automatic validation. Continue restores the saved permission.')
+        ul.addWidget(self.ui_allow_auto)
         make_labels = QPushButton('Create / edit UI labels…')
         make_labels.clicked.connect(lambda: self.app.show_page(self.app.pages.indexOf(self.app.label_ui)))
         ul.addWidget(make_labels)
@@ -971,6 +993,8 @@ class TrainPage(Page):
                      '--max-steps', str(self.ui_max_steps.value()), '--max-minutes', str(self.ui_max_minutes.value())]
             if mode == 'joint':
                 args += ['--data'] + sets
+            if self.ui_allow_auto.isChecked():
+                args += ['--allow-auto-ui-labels']
             if self.refiner.isChecked():
                 args += ['--refiner']
             if initial:
@@ -1154,6 +1178,7 @@ class TrainPage(Page):
             config = e['config']
             self.ui_mode.setCurrentIndex(self.ui_mode.findData(config['mode']))
             self.ui_labels.setText(config['labels'])
+            self.ui_allow_auto.setChecked(config.get('allow_auto_ui_labels', False))
             self.restore_initial_checkpoint(config.get('init_from'), config.get('init_sha256'))
             self.preset.setCurrentIndex(list(PRESET_TEXT).index(config['preset']))
             self.refiner.setChecked(config['refiner'])

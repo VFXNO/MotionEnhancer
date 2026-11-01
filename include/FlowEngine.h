@@ -104,6 +104,10 @@ struct FlowSettings {
     // from AI flow, refinement and the learned blend mask. Choose before capture.
     bool aiUiRegions = false;
     UiDetector::Choice uiDetector = UiDetector::Choice::Automatic;
+    // HUD persistence (UiPersistCS): learns, without a model, where structure
+    // stays fixed on screen while the world moves, and lets UiMaskCS hold
+    // the unchanged pixels there. With the UI mask only.
+    bool uiPersistence = true;
     // DIS: give the blocks beside a moving object that neither field
     // confirms one consistent vector - the visible surface's where the
     // picture says so, the background's where the block is hidden in the
@@ -188,10 +192,15 @@ public:
         // hasUiMask says whether this pair actually wrote it.
         ComPtr<ID3D12Resource> uiMask;
         bool hasUiMask = false;
+        // HUD persistence after this pair, one value per 4x4 cell
+        // (UiPersistCS); the next pair continues from it.
+        ComPtr<ID3D12Resource> hudPersist;
+        bool hasHudPersist = false;
         UiRegionDebug uiRegionDebug;
         // What InterpolateCS binds at t4: null reads as "no UI anywhere",
         // which is exactly the plain warp.
         ID3D12Resource* uiMaskInput() const { return hasUiMask ? uiMask.Get() : nullptr; }
+        ID3D12Resource* hudPersistInput() const { return hasHudPersist ? hudPersist.Get() : nullptr; }
         // The AI pair's midpoint blend preference, at network resolution.
         // Each ring entry owns its copy: a later inference must not overwrite
         // a mask that the presenter is still reading for an earlier pair.
@@ -393,6 +402,13 @@ private:
         uint64_t frameId = UINT64_MAX;
     };
     std::array<UiLink, 2> m_uiChain;
+    // The entry holding the newest HUD persistence (-1: none yet).
+    int m_hudEntry = -1;
+    // UiPersistCS: cell size in pixels, and where its flags sit in the
+    // constants (NeuralWeights[59]: x = UiMaskCS reads persistence, y = start
+    // from nothing). The UI-region boxes use NeuralWeights[0..31].
+    static constexpr uint32_t kHudCell = 4;
+    static constexpr int kHudFlagIndex = 59 * 4;
 
     // DIS, per direction and level: the patch grid and the densified
     // per-pixel field (both R32G32_FLOAT, in that level's pixels). Kept per

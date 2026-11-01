@@ -37,6 +37,7 @@ enum class Kernel : int {
     AiFlowToRing,
     UiDetectInput,
     UiDebugView,
+    UiPersist,
     Count
 };
 

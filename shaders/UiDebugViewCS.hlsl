@@ -5,11 +5,13 @@
 Texture2D<float4> Frame0 : register(t0);
 Texture2D<float4> Frame1 : register(t1);
 Texture2D<float> UiMask : register(t4);
+Texture2D<float> HudPersistence : register(t5);   // UiPersistCS (unbound: none)
 RWTexture2D<float4> Output : register(u0);
 
 static const float3 kBoxes = float3(0.0f, 0.85f, 1.0f);
 static const float3 kEvidence = float3(1.0f, 0.8f, 0.0f);
 static const float3 kProtected = float3(0.1f, 1.0f, 0.2f);
+static const float3 kFixed = float3(0.35f, 0.45f, 1.0f);   // HUD persistence: screen-fixed structure
 
 // Tiny 3x5 diagnostic font, no texture/font allocation or separate draw call.
 uint Glyph(uint ch)
@@ -76,7 +78,7 @@ float3 Legend(uint2 pixel, float3 color, int state, bool paired, uint count)
     const uint scale = Width >= 1600u ? 3u : 2u;
     if (pixel.x < 6u || pixel.y < 36u) return color;
     const uint2 p = (pixel - uint2(6, 36)) / scale;
-    if (p.x >= 96u || p.y >= 17u) return color;
+    if (p.x >= 132u || p.y >= 17u) return color;
     color = float3(0.025f, 0.025f, 0.035f);
     if (p.x < 2u) return color;
     const uint x = p.x - 2u;
@@ -90,12 +92,13 @@ float3 Legend(uint2 pixel, float3 color, int state, bool paired, uint count)
     }
     else if (p.y >= 10u && p.y < 15u)
     {
-        // BOXES   EVIDENCE   MASK
-        static const uint key[] = {66,79,88,69,83,32,32,32,69,86,73,68,69,78,67,69,32,32,32,77,65,83,75};
+        // BOXES   EVIDENCE   MASK   FIXED
+        static const uint key[] = {66,79,88,69,83,32,32,32,69,86,73,68,69,78,67,69,32,32,32,77,65,83,75,
+                                   32,32,32,70,73,88,69,68};
         const uint index = x / 4u;
-        ch = index < 23u ? key[index] : 32u;
+        ch = index < 31u ? key[index] : 32u;
         y = p.y - 10u;
-        ink = index < 8u ? kBoxes : index < 19u ? kEvidence : kProtected;
+        ink = index < 8u ? kBoxes : index < 19u ? kEvidence : index < 26u ? kProtected : kFixed;
     }
     if (x % 4u < 3u && ((Glyph(ch) >> (14u - (y * 3u + x % 4u))) & 1u) != 0u) color = ink;
     return color;
@@ -112,6 +115,14 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     float3 source = Frame0.Load(texel).rgb;
     if (paired) source = lerp(source, Frame1.Load(texel).rgb, saturate(TimeT));
     float3 color = 0.65f * DebugGrey(source);
+    if (paired && state != 0)
+    {
+        // Screen-fixed structure (UiPersistCS cells at or above one half).
+        uint hw, hh;
+        HudPersistence.GetDimensions(hw, hh);
+        if (hw > 0u && HudPersistence.Load(int3(min(id.xy / 4u, uint2(hw, hh) - 1u), 0)) >= 0.5f)
+            color = lerp(color, kFixed, 0.45f);
+    }
 
     if (paired && state != 0)
     {

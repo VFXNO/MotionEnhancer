@@ -411,12 +411,82 @@ class BulkLabelTests(unittest.TestCase):
         cap = Mock()
         cap.isOpened.return_value = True
         cap.get.return_value = 100000
-        cap.read.side_effect = [(True, np.zeros((64, 128, 3), np.uint8)) for _ in range(3)]
+        cap.grab.side_effect = [True, True, True]
+        cap.retrieve.side_effect = [(True, np.zeros((64, 128, 3), np.uint8)) for _ in range(3)]
         with patch('mefi.ui_label_batch.cv2.VideoCapture', return_value=cap):
             info = prepare_video_batch(path, self.root / 'stage', count=1)
         self.assertEqual(info['prepared'], 1)
-        self.assertEqual(cap.read.call_count, 3)
+        self.assertEqual(cap.grab.call_count, 3)
+        self.assertEqual(cap.retrieve.call_count, 3)
+        cap.read.assert_not_called()
         cap.release.assert_called_once()
+
+    def test_19000_frame_scan_retrieves_only_selected_triplets_with_exact_ids(self):
+        class OrdinalDecoder:
+            def __init__(self):
+                self.index, self.grabs, self.retrieved, self.released = -1, 0, [], False
+
+            def isOpened(self):
+                return True
+
+            def get(self, prop):
+                return 19000
+
+            def grab(self):
+                self.index += 1
+                self.grabs += 1
+                return self.index < 19000
+
+            def retrieve(self):
+                self.retrieved.append(self.index)
+                return True, np.full((64, 128, 3), self.index % 256, np.uint8)
+
+            def release(self):
+                self.released = True
+
+        path = self.root / 'long-video.marker'
+        path.write_bytes(b'generated ordinal decoder only; no user recording')
+        for batch in (False, True):
+            cap = OrdinalDecoder()
+            with self.subTest(batch=batch), patch('mefi.ui_label_batch.cv2.VideoCapture', return_value=cap):
+                if batch:
+                    folder = self.root / 'stage'
+                    info = prepare_video_batch(path, folder, count=20)
+                    positions = window_positions(2, 18999, 20)
+                    self.assertEqual(info['prepared'], 20)
+                    self.assertEqual([r['frame_ids'][2] for r in info['samples']], positions)
+                    for sample in info['samples']:
+                        for ref, ordinal in zip(sample['frames'], sample['frame_ids']):
+                            image = cv2.imread(str(folder / ref['path']))
+                            self.assertEqual(float(image.mean()), ordinal % 256)
+                else:
+                    frames, info = video_window(path, 18999)
+                    positions = [18999]
+                    self.assertEqual(info['frame_ids'], [18997, 18998, 18999])
+                    self.assertEqual([float(im.mean()) for im in frames], [i % 256 for i in info['frame_ids']])
+            expected = [i for current in positions for i in range(current - 2, current + 1)]
+            self.assertEqual(cap.retrieved, expected)
+            self.assertEqual(cap.grabs, 19000)
+            self.assertTrue(cap.released)
+
+    def test_failed_retrieval_refuses_incomplete_color_frames(self):
+        from unittest.mock import Mock
+        path = self.root / 'video.marker'
+        path.write_bytes(b'mocked retrieval failure')
+        for batch in (False, True):
+            cap = Mock()
+            cap.isOpened.return_value = True
+            cap.get.return_value = 24
+            cap.grab.return_value = True
+            cap.retrieve.return_value = (False, None)
+            with self.subTest(batch=batch), patch('mefi.ui_label_batch.cv2.VideoCapture', return_value=cap):
+                with self.assertRaisesRegex(ValueError, 'Could not retrieve decoded video frame'):
+                    if batch:
+                        prepare_video_batch(path, self.root / 'stage', count=4)
+                    else:
+                        video_window(path, 20)
+            cap.release.assert_called_once()
+        self.assertFalse((self.root / 'stage').exists())
 
     def test_changed_source_and_locked_regression_capture_are_refused(self):
         from mefi import ui_label_batch, ui_labeling
@@ -574,7 +644,10 @@ class GuiTests(unittest.TestCase):
             context.start()
             self.addCleanup(context.stop)
         self.window = self.ui.Trainer()
-        self.page = self.window.label_ui
+        # The trainer's Label UI page is now mefi.hud_label_gui (test_hud_label);
+        # these tests keep covering the older page module, which is still here.
+        from mefi.ui_label_gui import LabelPage as OlderLabelPage
+        self.page = OlderLabelPage(self.window, self.ui.Job)
         project = Project.create(self.root/'project')
         rng = np.random.default_rng(1)
         self.sample = project.add_sample([rng.integers(0, 256, (64, 128, 3), np.uint8) for _ in range(3)],
@@ -592,7 +665,7 @@ class GuiTests(unittest.TestCase):
     def test_navigation_preserves_old_indices_and_adds_label_page(self):
         self.assertIs(self.window.pages.widget(1), self.window.train)
         self.assertIs(self.window.pages.widget(2), self.window.export)
-        self.assertIs(self.window.pages.widget(3), self.page)
+        self.assertIs(self.window.pages.widget(3), self.window.label_ui)
         self.assertFalse(self.page.canvas.annotation.valid.any())
         self.assertIsNone(self.page.worker_temp)
 
@@ -652,12 +725,14 @@ class GuiTests(unittest.TestCase):
         path.write_bytes(b'GUI test marker; no inference will run')
         self.page.model.setText(str(path))
         self.page.model_hash = file_hash(path)
+        self.page.video_minutes.setValue(120)
         with patch.object(self.page.job, 'start') as launch:
             self.page.suggest()
         self.assertEqual(launch.call_args.args[0], 'mefi.ui_label_worker')
         request = json.loads(Path(self.page.worker_temp.name, 'request.json').read_text())
         self.assertEqual(request['sha256'], file_hash(path))
         self.assertEqual(request['action'], 'suggest')
+        self.assertEqual(self.page.deadline.interval(), 300000, 'Video time limit must not extend AI inference')
         self.assertFalse(self.page.controls.isEnabled())
         with patch.object(self.page.job, 'kill') as kill:
             self.page.timeout()
@@ -739,17 +814,56 @@ class GuiTests(unittest.TestCase):
         self.page.batch_count.setValue(4)
         self.page.current.setValue(5)
         self.page.batch_last.setValue(20)
+        self.page.video_minutes.setValue(45)
         with patch.object(self.page.job, 'start'):
             self.page.import_video_batch()
         request = json.loads(Path(self.page.worker_temp.name, 'request.json').read_text())
         self.assertEqual(request['action'], 'video_batch')
         self.assertEqual((request['first'], request['last'], request['count']), (5, 20, 4))
+        self.assertEqual(request['time_limit_minutes'], 45)
+        self.assertEqual(self.page.deadline.interval(), 45 * 60000)
         self.assertEqual(len(self.page.project.samples), 1)
         with patch.object(self.page.job, 'kill'):
             self.page.cancel_worker()
         self.page.worker_finished(1)
         self.assertEqual(len(self.page.project.samples), 1)
         self.assertIsNone(self.page.worker_temp)
+
+    def test_single_video_button_uses_selected_limit_and_actionable_timeout(self):
+        path = generated_video(self.root)
+        self.page.video.setText(str(path))
+        self.page.recording.setText('selected-recording')
+        self.page.video_minutes.setValue(60)
+        with patch.object(self.page.job, 'start'):
+            self.page.import_video()
+        request = json.loads(Path(self.page.worker_temp.name, 'request.json').read_text())
+        self.assertEqual(request['action'], 'video')
+        self.assertEqual(request['time_limit_minutes'], 60)
+        self.assertEqual(self.page.deadline.interval(), 60 * 60000)
+        with patch.object(self.page.job, 'kill') as kill:
+            self.page.timeout()
+        kill.assert_called_once()
+        self.page.worker_finished(1)
+        self.assertIn('60-minute video import limit', self.page.status.text())
+        self.assertIn('Video time limit (minutes)', self.page.status.text())
+        self.assertEqual(len(self.page.project.samples), 1)
+        self.assertIsNone(self.page.worker_temp)
+
+    def test_video_defaults_to_30_minutes_and_rejects_invalid_limits_before_starting(self):
+        self.assertEqual(self.page.video_minutes.value(), 30)
+        for action in ('video', 'video_batch'):
+            with patch.object(self.page.job, 'start'):
+                self.page.start_worker({'action': action})
+            self.assertEqual(self.page.deadline.interval(), 30 * 60000)
+            with patch.object(self.page.job, 'kill'):
+                self.page.timeout()
+            self.page.worker_finished(1)
+            self.assertIn('30-minute video import limit', self.page.status.text())
+            for value in (4, 121, '30', True):
+                with self.subTest(action=action, value=value), self.assertRaisesRegex(ValueError, '5..120'):
+                    self.page.start_worker({'action': action, 'time_limit_minutes': value})
+                self.assertIsNone(self.page.worker_temp)
+                self.assertTrue(self.page.controls.isEnabled())
 
     def test_generated_batch_worker_roundtrip_imports_many_unknown_windows_and_skips_duplicates(self):
         path = generated_video(self.root)

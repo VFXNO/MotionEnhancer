@@ -227,6 +227,7 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
         for (auto& entry : m_ring) entry = {};
     }
     m_uiChain = {};
+    m_hudEntry = -1;
     m_uiDetector.reset();
     if (m_settings.uiMask && m_settings.aiUiRegions) {
         m_uiDetector = std::make_unique<UiDetector>();
@@ -325,6 +326,11 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
             FAILED(m_device->createTexture2D(width, height, DXGI_FORMAT_R8_UNORM,
                                              D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                              D3D12_RESOURCE_STATE_COMMON, entry.uiMask, L"RingUiMask"))) return false;
+        if (m_settings.uiMask && m_settings.uiPersistence &&
+            FAILED(m_device->createTexture2D((width + kHudCell - 1) / kHudCell, (height + kHudCell - 1) / kHudCell,
+                                             DXGI_FORMAT_R16_FLOAT, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                             D3D12_RESOURCE_STATE_COMMON, entry.hudPersist, L"RingHudPersistence")))
+            return false;
         if (aiFlowActive() && m_settings.aiBlendMask &&
             FAILED(m_device->createTexture2D(static_cast<uint32_t>(m_aiFlow->width()),
                                              static_cast<uint32_t>(m_aiFlow->height()), DXGI_FORMAT_R32_FLOAT,
@@ -1169,13 +1175,36 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
         }
         // No regions at startup, expiry or failure means all-zero evidence.
     }
+    // HUD persistence (UiPersistCS), carried over from the newest entry that
+    // has it - across cuts and gaps too: where the HUD sits does not change
+    // with them, and a cell whose content changes loses it within a pair.
+    out.hasHudPersist = false;
+    ID3D12Resource* hud = nullptr;
+    if (m_settings.uiPersistence && out.hudPersist) {
+        const bool continued = m_hudEntry >= 0 && m_hudEntry != entryIndex &&
+                               m_ring[static_cast<size_t>(m_hudEntry)].hasHudPersist;
+        ShaderConstants h = c;
+        h.levelWidth = (m_width + kHudCell - 1) / kHudCell;
+        h.levelHeight = (m_height + kHudCell - 1) / kHudCell;
+        h.neuralWeights[kHudFlagIndex + 1] = continued ? 0.0f : 1.0f;
+        std::array<ID3D12Resource*, 6> hin = {previous.texture, current.texture, out.forward.Get(), out.backward.Get(),
+            continued ? m_ring[static_cast<size_t>(m_hudEntry)].hudPersist.Get() : nullptr, nullptr};
+        // The previous entry may be read by the present queue (debug view):
+        // promoted implicitly, like the UI mask chain below.
+        if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::UiPersist, hin, out.hudPersist.Get(), h,
+                                 (h.levelWidth + 15) / 16, (h.levelHeight + 15) / 16, 0x13)) return false;
+        out.hasHudPersist = true;
+        hud = out.hudPersist.Get();
+        c.neuralWeights[kHudFlagIndex] = 1.0f;
+    }
     std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, out.forward.Get(),
                                          out.backward.Get(), prior, m_settings.aiTemporalUi ? m_aiUiAllowTex.Get() : nullptr};
     // Inputs 0-1 are the shared capture textures; input 4, the chain entry,
     // may be read by the present queue at this moment, so it is promoted
     // implicitly too instead of being transitioned from two queues at once.
+    // Input 6 is this pair's HUD persistence.
     if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::UiMask, in, out.uiMask.Get(), c,
-                             (m_width + 15) / 16, (m_height + 15) / 16, 0x13)) return false;
+                             (m_width + 15) / 16, (m_height + 15) / 16, 0x13, hud)) return false;
     out.hasUiMask = true;
     return true;
 }
@@ -1248,6 +1277,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     }
     Entry scratch = m_ring[static_cast<size_t>(entryIndex)];  // textures only
     scratch.hasAiBlendMask = false;   // Never reuse an older pair's enable flag.
+    scratch.hasHudPersist = false;
     scratch.aiRefined = false;
     scratch.aiDisPatchPasses = 0;
     m_currentEntry = entryIndex;
@@ -1337,6 +1367,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
         e.blockSize = scratch.blockSize;
         e.singleField = scratch.singleField;
         e.hasUiMask = scratch.hasUiMask;
+        e.hasHudPersist = scratch.hasHudPersist;
         e.uiRegionDebug = scratch.uiRegionDebug;
         e.aiBlendMask = scratch.aiBlendMask;
         e.hasAiBlendMask = scratch.hasAiBlendMask;
@@ -1349,6 +1380,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     // Only a submitted pair extends the static-UI chain; any failure above
     // returned first and leaves it pointing at frames no pair starts from.
     // A link whose entry this pair just overwrote is gone.
+    if (scratch.hasHudPersist) m_hudEntry = entryIndex;
     if (scratch.hasUiMask) {
         m_uiChain[1] = m_uiChain[0].entry == entryIndex ? UiLink{} : m_uiChain[0];
         m_uiChain[0] = {entryIndex, current.id};

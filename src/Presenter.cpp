@@ -240,15 +240,17 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
                        ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
                        ID3D12Resource* depth0, ID3D12Resource* depth1, ID3D12Resource* const* dilated,
-                       ID3D12Resource* aiBlendMask) {
+                       ID3D12Resource* aiBlendMask, ID3D12Resource* hudPersist) {
     if (static_cast<int>(c.neuralControl[1]) == 7) {
         // This diagnostic needs only source frames, pair mask and its saved
         // allow-list. No projection, new inference or normal synthesis changes.
         ShaderConstants debug = c;
         debug.neuralControl[3] = 1.0f; // This view: an actual flow pair exists.
-        std::array<ID3D12Resource*, 6> in{frame0, frame1, nullptr, nullptr, uiMask, nullptr};
+        // The HUD persistence is promoted implicitly like the mask: the flow
+        // queue may be reading it as the next pair's starting point.
+        std::array<ID3D12Resource*, 6> in{frame0, frame1, nullptr, nullptr, uiMask, hudPersist};
         return dispatch.dispatch(list, kernels, Kernel::UiDebugView, in, output, debug,
-                                 (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs);
+                                 (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs | 0x20);
     }
     const bool project = c.flowScale == 0.0f && projection;
     if (project) {
@@ -595,7 +597,7 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         ID3D12Resource* const dilatedFields[2] = {m_dilated[0].Get(), m_dilated[1].Get()};
         ok = recordInterpolate(m_list.Get(), m_dispatch, *m_kernels, c, job.frame0, job.frame1, job.forwardFlow,
                                job.backwardFlow, job.uiMask, m_projection.Get(), m_output.Get(), 0x13,
-                               job.depth0, job.depth1, dilatedFields, job.aiBlendMask);
+                               job.depth0, job.depth1, dilatedFields, job.aiBlendMask, job.hudPersist);
     }
     if (!ok) {
         m_list->Close();

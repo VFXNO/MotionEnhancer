@@ -59,6 +59,7 @@ static void printUsage(const char* progName) {
               << "  --ai-temporal-ui-self-test  Verify temporal state chaining and reset on DirectML\n"
               << "  --no-ai-refinement       Backbone-only AI + DIS refinement (default; independent of blending mask)\n"
               << "  --no-ui-mask             Interpolate static UI too (default: HUD/subtitles kept sharp)\n"
+              << "  --no-ui-persistence      UI mask without HUD persistence (screen-fixed structure, no model)\n"
               << "  --ai-ui-regions          Native UI mask only inside AI-detected regions (optional ui_detect.onnx)\n"
               << "  --ui-detector <type>     auto|icons|matrix; icon detection only, not flow\n"
               << "  --ui-detect-test <in.png> <out.json>  Test UI boxes and worker latency; no capture\n"
@@ -346,6 +347,8 @@ int main(int argc, char** argv) {
             gpuSettings.refineSearchRadius = std::clamp(std::stoi(argv[++i]), 0, 8);
         } else if (arg == "--no-ui-mask") {
             gpuSettings.uiMask = false;
+        } else if (arg == "--no-ui-persistence") {
+            gpuSettings.uiPersistence = false;
         } else if (arg == "--ai-ui-regions") {
             gpuSettings.aiUiRegions = true;
         } else if (arg == "--ui-detector" && i + 1 < argc) {

@@ -448,6 +448,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.flowBlockSize = entry.blockSize;
                     job.singleFlowField = entry.singleField;
                     job.uiMask = entry.uiMaskInput();
+                    job.hudPersist = entry.hudPersistInput();
                     job.uiRegionDebug = entry.uiRegionDebug;
                     job.aiBlendMask = entry.aiBlendMaskInput();
                     job.flowFence = flow.fence();
@@ -974,7 +975,8 @@ int runOfflineGpuSequence(const std::string& prefix, const FlowSettings& setting
         if (!recordInterpolate(offline.list(), offline.dispatch(), kernels, c, textures[i].texture12.Get(),
                                textures[i + 1].texture12.Get(), entry.forward.Get(), entry.backward.Get(),
                                 entry.uiMaskInput(), projection.Get(), output.texture12.Get(), 0x13,
-                                depth0, depth1, dilatedFields, entry.aiBlendMaskInput())) return 1;
+                                depth0, depth1, dilatedFields, entry.aiBlendMaskInput(),
+                                entry.hudPersistInput())) return 1;
         uint64_t done = 0;
         if (!offline.execute(flow.fence(), result.fence, &done)) return 1;
 

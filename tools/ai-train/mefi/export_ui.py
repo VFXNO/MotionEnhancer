@@ -2,12 +2,13 @@
 
 Does not train, read datasets, or modify the source checkpoint/flow-only model.
 """
+import contextlib
 import copy
 import hashlib
 import json
 import os
 from pathlib import Path
-import tempfile
+import shutil
 import uuid
 
 import torch
@@ -16,6 +17,24 @@ from torch.nn import functional as F
 from .checkpoint import save_config
 from .model import ARCH, REFINED_ARCH, PRESETS, PyramidFlow, levels_for
 from .ui_model import FORMAT, HEAD_ARCH, ExportedTemporal, TemporalUi
+
+
+@contextlib.contextmanager
+def staging_folder(parent):
+    """A scratch folder beside the destination, made with os.mkdir's default
+    mode so it inherits the destination folder's permissions.
+
+    tempfile.TemporaryDirectory makes its folder owner-only (mode 0o700, which
+    Python 3.13+ enforces on Windows with an access-control list). The models
+    built inside kept that list, os.replace carried it to the published file,
+    and when the trainer had run as administrator the program, run normally,
+    could not open models\\ai_flow_ui.onnx ("system error number 13")."""
+    path = Path(parent) / f'.ui-export-{uuid.uuid4().hex}'
+    os.mkdir(path)
+    try:
+        yield str(path)
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 RUNTIME_FORMAT = 'mefi-pyramid-ui-1'
@@ -88,7 +107,7 @@ def export_checkpoint(ck, args, emit):
     bundle = uuid.uuid4().hex
     # Do all exports/checks before publishing anything. Metadata is published
     # last; a partial paired update cannot silently mix different bundles.
-    with tempfile.TemporaryDirectory(prefix='.ui-export-', dir=out.parent) as staging:
+    with staging_folder(out.parent) as staging:
         pending = []
         for destination, variant, integrated in variants:
             staged = Path(staging) / destination.name

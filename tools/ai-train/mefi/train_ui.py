@@ -57,7 +57,9 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--run', type=Path, required=True)
     p.add_argument('--mode', choices=('joint', 'frozen'))
-    p.add_argument('--labels', type=Path, help='explicit me-ui-labels-1 JSON manifest')
+    p.add_argument('--labels', type=Path, help='explicit me-ui-labels-1/2 JSON manifest')
+    p.add_argument('--allow-auto-ui-labels', action='store_true', default=None,
+                   help='opt in to marked machine-generated TRAINING labels; never automatic validation')
     p.add_argument('--data', nargs='+', help='original flow datasets; joint mode only')
     p.add_argument('--preset', choices=('small', 'medium', 'large'))
     p.add_argument('--refiner', action='store_true', default=None)
@@ -90,6 +92,8 @@ def settings(args, checkpoint=None):
         if any(type(checkpoint[name]) is not int or checkpoint[name] < 0 for name in ('step', 'ui_updates', 'flow_updates', 'validated_epochs')):
             raise ValueError('Invalid saved UI counters')
         config = checkpoint['config'].copy()
+        if args.allow_auto_ui_labels is not None and args.allow_auto_ui_labels != config.get('allow_auto_ui_labels', False):
+            raise ValueError('UI continuation restores allow_auto_ui_labels; use a new run to change label trust')
         if not config.get('experiment_id') or checkpoint.get('experiment_id') != config['experiment_id']:
             raise ValueError('UI experiment identity is missing/inconsistent')
         for key in (*DEFAULTS, 'labels', 'data', 'init_from', 'init_sha256'):
@@ -110,10 +114,13 @@ def settings(args, checkpoint=None):
         config.update(labels=str(args.labels.resolve()) if args.labels else None,
                       data=[str(Path(p).resolve()) for p in args.data] if args.data else [],
                       init_from=str(args.init_from.resolve()) if args.init_from else None,
-                      init_sha256=args.init_sha256, max_steps=args.max_steps, max_minutes=args.max_minutes)
+                      init_sha256=args.init_sha256, max_steps=args.max_steps, max_minutes=args.max_minutes,
+                      allow_auto_ui_labels=bool(args.allow_auto_ui_labels))
         config['experiment_id'] = uuid.uuid4().hex
     if not config.get('labels'):
         raise ValueError('UI training needs an explicit dense --labels manifest; flow triplets are not UI truth')
+    if type(config.get('allow_auto_ui_labels', False)) is not bool:
+        raise ValueError('Saved automatic UI label permission must be an explicit boolean')
     if config['mode'] not in ('joint', 'frozen') or config['preset'] not in ('small', 'medium', 'large'):
         raise ValueError('Invalid UI mode or model size')
     if config['mode'] == 'joint' and not config.get('data'):
@@ -261,7 +268,7 @@ def run(args, config, ck):
     previous_elapsed = float(ck['elapsed_seconds']) if ck else 0.
     if not math.isfinite(previous_elapsed) or previous_elapsed < 0:
         raise ValueError('Invalid saved UI job duration')
-    labels = Labels(config['labels'])
+    labels = Labels(config['labels'], allow_auto_labels=config.get('allow_auto_ui_labels', False))
     ui_train, ui_val = UiFrames(labels, 'train', config['ui_crop']), UiFrames(labels, 'val')
     flow_train = flow_val = None
     identities = {'labels': labels.identity, 'flow_training': None, 'flow_validation': None}

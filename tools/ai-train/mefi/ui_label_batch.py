@@ -1,7 +1,8 @@
 """Bounded batch preparation of explicitly selected video windows, not labels.
 
-One sequential decode preserves exact frame ordinals. Results stay in the
-operation's temporary directory until the editor accepts a completed import.
+One sequential decode preserves exact frame ordinals; only selected triplets
+are retrieved as color images. Results stay in the operation's temporary
+directory until the editor accepts a completed import.
 """
 from collections import deque
 import math
@@ -47,14 +48,20 @@ def prepare_video_batch(path, root, *, count=20, first=2, last=None, resize=None
             raise ValueError('Last current frame must be at most 10,000,000')
         positions = window_positions(first, last, count)
         targets = set(positions)
+        needed = {index for current in positions for index in range(current - 2, current + 1)}
         ring = deque(maxlen=3)
         end = positions[-1]
         for index in range(end + 1):
-            ok, frame = cap.read()
-            if not ok:
+            # grab() still advances the inter-frame decoder exactly once. Do
+            # not retrieve/convert thousands of unused frames to BGR images.
+            if not cap.grab():
                 warnings.append('Decoder ended before the requested final frame; only fully decoded windows were prepared.')
                 break
-            ring.append(frame)
+            if index in needed:
+                ok, frame = cap.retrieve()
+                if not ok:
+                    raise ValueError(f'Could not retrieve decoded video frame {index}; no windows accepted')
+                ring.append(frame)
             if progress and index % 120 == 0:
                 progress(index, end, len(records), len(positions))
             if index not in targets:
@@ -90,7 +97,7 @@ def prepare_video_batch(path, root, *, count=20, first=2, last=None, resize=None
                             'provenance': {'kind': 'video', 'path': str(path), 'sha256': digest,
                                            'source_id': source_id(path), 'resize': resize,
                                            'original_shape': list(ring[0].shape), 'frame_ids': [index - 2, index - 1, index],
-                                           'sampling': 'evenly spaced requested ordinals, single sequential decode'}})
+                                           'sampling': 'evenly spaced requested ordinals, sequential grab; retrieve selected triplets only'}})
         if not records:
             raise ValueError('No complete window fit this video/range/batch limit; choose an earlier range or smaller prepared size')
     finally:

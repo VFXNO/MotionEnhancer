@@ -61,7 +61,8 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
                        ID3D12Resource* forward, ID3D12Resource* backward, ID3D12Resource* uiMask,
                        ID3D12Resource* projection, ID3D12Resource* output, uint32_t implicitInputs,
                        ID3D12Resource* depth0 = nullptr, ID3D12Resource* depth1 = nullptr,
-                       ID3D12Resource* const* dilated = nullptr, ID3D12Resource* aiBlendMask = nullptr);
+                       ID3D12Resource* const* dilated = nullptr, ID3D12Resource* aiBlendMask = nullptr,
+                       ID3D12Resource* hudPersist = nullptr);
 // The projection for frames of width x height, at any flow grid of 2 px or
 // coarser.
 bool createProjection(GraphicsDevice& device, uint32_t width, uint32_t height, ComPtr<ID3D12Resource>& projection);
@@ -85,6 +86,7 @@ struct RenderJob {
     uint32_t flowBlockSize = 32;
     bool singleFlowField = false;      // FlowEngine::Entry::singleField
     ID3D12Resource* uiMask = nullptr;  // FlowEngine::Entry::uiMaskInput(); null = no UI
+    ID3D12Resource* hudPersist = nullptr;  // Entry::hudPersistInput(), debug view 7 only
     UiRegionDebug uiRegionDebug;       // Same pair's allow-list/status, not latest detections.
     ID3D12Resource* aiBlendMask = nullptr;  // pair-owned network blend mask; null = disabled
     ID3D12Fence* flowFence = nullptr;   // GPU-side wait before the interpolate pass

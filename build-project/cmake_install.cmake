@@ -71,6 +71,7 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/AiFlowToRingCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDetectInputCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiDebugViewCS.cso"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/UiPersistCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxFlowConvertCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineInitCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FfxRefineIterateCS.cso"

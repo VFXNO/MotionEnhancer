@@ -205,8 +205,8 @@ class LabelPage(QWidget):
         title = QLabel('Label UI')
         title.setObjectName('title')
         root.addWidget(title)
-        root.addWidget(text_label('Paint labels or use EfficientSAM smart selection / automatic candidates. '
-                                 'Suggestions need review. No training or game-model activation happens here.'))
+        root.addWidget(text_label('Batch-label training windows from one reviewed HUD example, or edit with brushes / EfficientSAM. '
+                                 'Machine labels are not verified truth. No training or game-model activation happens here.'))
         body = QHBoxLayout()
         root.addLayout(body, 1)
         self.controls = QWidget()
@@ -237,6 +237,9 @@ class LabelPage(QWidget):
         form.addRow('Current frame (zero-based)', self.current)
         form.addRow('Original recording ID', self.recording)
         form.addRow('Recording split', self.split)
+        self.video_minutes = number(30, 5, 120, 5)
+        self.video_minutes.setToolTip('Time allowed for either video-import button. AI suggestions still have a five-minute limit. Cancel remains available.')
+        form.addRow('Video time limit (minutes)', self.video_minutes)
         self.resize_frames = QCheckBox('Resize prepared copies\n(original files stay unchanged)')
         self.resize_width, self.resize_height = number(832, 64, 4096, 16), number(480, 64, 4096, 16)
         dims = QHBoxLayout()
@@ -303,6 +306,20 @@ class LabelPage(QWidget):
         left.addWidget(text_label('Same recording and size only. Copies UI pixels only where colors match '
                                  'the template in all 3 frames; never copies background or review. '
                                  'Changing text, transparency or moving HUD may need correction.'))
+        left.addWidget(text_label('Batch auto-labeling — no per-window Save needed'))
+        self.same_hud = QCheckBox('Other training recordings use this same\ngame, HUD layout and prepared size')
+        left.addWidget(self.same_hud)
+        form = QFormLayout()
+        self.auto_padding, self.auto_minutes = number(16, 0, 64), number(30, 5, 120, 5)
+        form.addRow('HUD neighborhood (pixels)', self.auto_padding)
+        form.addRow('Auto-label limit (minutes)', self.auto_minutes)
+        left.addLayout(form)
+        self.button(left, 'Auto-label all compatible training windows…', self.auto_label_all)
+        self.button(left, 'Next uncertain / recommended spot-check', self.next_auto_review)
+        self.auto_status = text_label('One reviewed TRAINING template with UI and nearby checked background is needed. '
+                                      'Local colors + temporal checks can adapt changing shapes inside seeded HUD neighborhoods. '
+                                      'Ambiguous pixels stay unknown; this is not a general HUD detector.')
+        left.addWidget(self.auto_status)
         left.addWidget(text_label('3. AI selection / automatic candidates (CPU)'))
         self.sam_status = text_label('')
         left.addWidget(self.sam_status)
@@ -355,7 +372,9 @@ class LabelPage(QWidget):
         left.addWidget(self.reviewed)
         self.button(left, 'Save annotation', self.save_current)
         self.button(left, 'Save reviewed and next unreviewed', self.save_next)
-        self.button(left, 'Export reviewed training dataset…', self.export_dataset)
+        self.include_auto_export = QCheckBox('Include eligible automatic TRAINING labels\n(unreviewed; validation stays human-reviewed)')
+        left.addWidget(self.include_auto_export)
+        self.button(left, 'Export training dataset…', self.export_dataset)
         self.use_button = self.button(left, 'Use exported manifest on Train page', self.use_manifest)
         self.use_button.setEnabled(False)
         left.addStretch(1)
@@ -649,7 +668,13 @@ class LabelPage(QWidget):
         self.guidance, self.exported_manifest = None, None
         self.hud_template = None
         self.auto_hud.setChecked(False)
+        self.same_hud.setChecked(False)
+        self.include_auto_export.setChecked(False)
         self.hud_status.setText('No HUD template selected. Review and save one good example first.')
+        automatic = [s for s in project.samples if s.get('auto_label') and not s.get('reviewed')]
+        eligible = sum(s['auto_label'].get('eligible', False) for s in automatic)
+        self.auto_status.setText(f'Project contains {len(automatic)} machine annotations ({eligible} eligible training masks). '
+                                 'Pin one reviewed TRAINING HUD example with nearby checked background to generate or regenerate a batch.')
         self.use_button.setEnabled(False)
         self.project_name.setText(str(project.root))
         self.canvas.frames, self.canvas.annotation, self.canvas.suggestion = None, None, None
@@ -669,6 +694,10 @@ class LabelPage(QWidget):
         if self.project:
             for item in self.project.samples:
                 state = 'reviewed' if item.get('reviewed') else 'draft'
+                if not item.get('reviewed') and item.get('auto_label'):
+                    state = 'auto training' if item['auto_label']['eligible'] else 'auto: needs review'
+                    if item['auto_label'].get('spot_check'):
+                        state += ' · spot-check'
                 self.samples.addItem(f"{item['split']} · frame {item['frame_ids'][2]} · {state} · {item['source'][:14]}")
         if selected is not None:
             self.samples.setCurrentRow(selected)
@@ -699,6 +728,10 @@ class LabelPage(QWidget):
             self.apply_button.setEnabled(False)
             self.fit()
             self.status.setText('Paint only the current frame. Green = UI, cyan = checked background, blue = unknown/ignored. Zoom in for text edges.')
+            if sample.get('auto_label'):
+                meta = sample['auto_label']
+                self.status.setText(f"Machine-generated labels, NOT human-reviewed. {meta['stats']['reason']}. "
+                                    'Inspect/correct a spot-check, or export eligible training labels with the explicit automatic-label option.')
             if self.auto_hud.isChecked() and self.hud_matches():
                 self.apply_hud_template()
         except Exception as error:
@@ -732,7 +765,7 @@ class LabelPage(QWidget):
             path = permitted_source(self.video.text().strip())
             self.start_worker({'action': 'video', 'path': str(path), 'current': self.current.value(),
                                'resize': self.resize_setting(), 'source': self.recording.text().strip(),
-                               'split': self.split.currentData()})
+                               'split': self.split.currentData(), 'time_limit_minutes': self.video_minutes.value()})
         except Exception as error:
             self.error(error)
 
@@ -766,7 +799,8 @@ class LabelPage(QWidget):
                 raise ValueError('Last current frame must be at or after Current frame')
             self.start_worker({'action': 'video_batch', 'path': str(path), 'first': self.current.value(),
                                'last': last, 'count': self.batch_count.value(), 'resize': self.resize_setting(),
-                               'source': self.recording.text().strip(), 'split': self.split.currentData()})
+                               'source': self.recording.text().strip(), 'split': self.split.currentData(),
+                               'time_limit_minutes': self.video_minutes.value()})
         except Exception as error:
             self.error(error)
 
@@ -797,6 +831,11 @@ class LabelPage(QWidget):
             raise ValueError('Wait for the current labeling operation or cancel it')
         if any(job.running() for job in (self.app.dataset.job, self.app.train.job, self.app.export.job)):
             raise ValueError('Finish/stop the existing trainer job before preparing labels')
+        video = request['action'] in ('video', 'video_batch')
+        automatic = request['action'] == 'auto_labels'
+        minutes = request.get('time_limit_minutes', 30) if video or automatic else 5
+        if type(minutes) is not int or not 5 <= minutes <= 120:
+            raise ValueError('Video time limit must be 5..120 whole minutes')
         base = Path(os.environ.get('LOCALAPPDATA', tempfile.gettempdir())) / 'Temp/opencode'
         base.mkdir(parents=True, exist_ok=True)
         self.worker_temp = tempfile.TemporaryDirectory(prefix='me-ui-label-operation-', dir=base)
@@ -812,8 +851,13 @@ class LabelPage(QWidget):
         self.candidate_panel.setEnabled(False)
         self.interaction.setEnabled(False)
         self.cancel_button.setEnabled(True)
-        self.status.setText('Running only this requested local operation. Cancel stops its subprocess; originals are read-only.')
-        self.deadline.start(300000)
+        self.status.setText(f'Importing video with a {minutes}-minute time limit. Only selected triplets become color images; '
+                            'sequential decoding still visits intervening frames. Cancel stops the import; originals are read-only.'
+                            if video else 'Running only this requested local operation. Cancel stops its subprocess; originals are read-only.')
+        if automatic:
+            self.status.setText(f'Batch auto-labeling training windows with a {minutes}-minute limit. '
+                                'Machine labels are saved together only on success; validation and manual labels stay unchanged.')
+        self.deadline.start(minutes * 60000)
         self.job.start('mefi.ui_label_worker', ['--request', str(folder / 'request.json')])
 
     def on_job(self, event):
@@ -821,6 +865,9 @@ class LabelPage(QWidget):
             self.status.setText(f"Decoding up to selected frame {event['total']}: frame {event['frame']}. No training or flow teacher.")
         elif event.get('event') == 'batch_progress':
             self.status.setText(f"Sampling video: frame {event['frame']}/{event['total']} · {event['done']}/{event['windows']} windows staged. Cancel accepts no windows.")
+        elif event.get('event') == 'auto_label_progress':
+            self.status.setText(f"Auto-labeling {event['done']}/{event['total']} · {event['eligible']} eligible training masks. "
+                                'Other results need review; cancel discards this operation, not existing labels.')
         elif event.get('event') == 'label_done':
             self.worker_done = True
         elif event.get('event') == 'sam_progress':
@@ -841,7 +888,15 @@ class LabelPage(QWidget):
             self.worker_finished(1)
 
     def timeout(self):
-        self.worker_error = 'The five-minute operation limit was reached; no result accepted'
+        if self.request and self.request['action'] == 'auto_labels':
+            minutes = self.deadline.interval() // 60000
+            self.worker_error = f'The {minutes}-minute auto-label limit was reached; no results accepted. Increase Auto-label limit (minutes) and retry.'
+        elif self.request and self.request['action'] in ('video', 'video_batch'):
+            minutes = self.deadline.interval() // 60000
+            self.worker_error = (f'The {minutes}-minute video import limit was reached; no result accepted. '
+                                 'Increase Video time limit (minutes), or choose an earlier frame/range, then retry.')
+        else:
+            self.worker_error = 'The five-minute operation limit was reached; no result accepted'
         self.job.kill()
 
     def worker_finished(self, code):
@@ -859,6 +914,23 @@ class LabelPage(QWidget):
                     self.status.setText('EfficientSAM-Ti ready and SHA256 verified. Select AI clicks/box, or Scan current frame. No inference or training started.')
                 elif self.request['action'] in ('sam_smart', 'sam_auto'):
                     self.set_candidates(data['masks'].copy(), info)
+                elif self.request['action'] == 'auto_labels':
+                    from .ui_auto_label import accept_auto_labels
+                    changed = accept_auto_labels(self.project, folder, info, project_sha256=self.request['project_sha256'],
+                                                 target_ids=self.request['target_ids'])
+                    selected = self.project.samples.index(self.sample) if self.sample else None
+                    self.dirty = False
+                    self.refresh_samples(selected)
+                    if selected is not None:
+                        self.select_sample(selected)
+                    eligible = sum(s['auto_label']['eligible'] for s in changed)
+                    audits = sum(s['auto_label'].get('spot_check', False) for s in changed)
+                    message = (f'Saved {len(changed)} automatic annotations: {eligible} eligible for training, '
+                               f'{len(changed) - eligible} need review, {audits} spot-checks recommended. '
+                               'No per-window Save is needed for eligible machine training labels. '
+                               'Validation still needs reviewed examples from another recording. ' + ' '.join(info.get('warnings', [])))
+                    self.auto_status.setText(message)
+                    self.status.setText(message)
                 elif self.request['action'] == 'video_batch':
                     records = info.get('samples', [])
                     if (info.get('kind') != 'video-batch' or info.get('prepared') != len(records)
@@ -958,18 +1030,21 @@ class LabelPage(QWidget):
             self.hud_template = {'sample_id': self.sample['id'], 'source': self.sample['source'],
                                  'height': self.sample['height'], 'width': self.sample['width'],
                                  'reference': frames[2], 'annotation': annotation,
+                                 'split': self.sample['split'], 'revision': self.sample.get('revision'),
                                  'provenance': {'kind': 'reviewed-hud-template', 'sample_id': self.sample['id'],
                                                 'revision': self.sample.get('revision'), 'frame_ids': self.sample['frame_ids'].copy(),
                                                 'annotation': self.sample['annotation'].copy(), 'frames': self.sample['frames'].copy()}}
-            self.hud_status.setText(f"HUD template: reviewed frame {self.sample['frame_ids'][2]} · {count:,} UI pixels. Same recording only.")
-            self.status.setText('Saved reviewed HUD pinned in memory. Enable reuse when opening unreviewed windows, '
-                                'or select another window and apply it. No other sample has changed.')
+            self.hud_status.setText(f"HUD template: reviewed frame {self.sample['frame_ids'][2]} · {count:,} UI pixels. "
+                                    'Per-window reuse stays in this recording; batch labeling can use other confirmed same-layout recordings.')
+            self.same_hud.setChecked(False)
+            self.status.setText('Saved reviewed HUD pinned in memory. Use Auto-label all compatible training windows for a saved batch, '
+                                'or the older per-window draft reuse. No other sample has changed.')
         except Exception as error:
             self.error(error)
 
     def hud_matches(self):
         template, sample = self.hud_template, self.sample
-        return bool(template and sample and not sample.get('reviewed') and template['sample_id'] != sample['id']
+        return bool(template and sample and not sample.get('reviewed') and not sample.get('auto_label') and template['sample_id'] != sample['id']
                     and (template['source'], template['height'], template['width'])
                     == (sample['source'], sample['height'], sample['width']))
 
@@ -1005,6 +1080,54 @@ class LabelPage(QWidget):
             self.edited()
             self.canvas.update()
 
+    def auto_label_all(self):
+        try:
+            if not self.project or not self.hud_template or self.hud_template['split'] != 'train':
+                raise ValueError('Pin one saved reviewed TRAINING HUD example first; validation may never teach automatic labels')
+            if not self.unsaved_ok():
+                return
+            from .ui_auto_label import HudTeacher, MAX_SAMPLES
+            template = self.hud_template
+            HudTeacher(template['reference'], template['annotation'], tolerance=self.hud_tolerance.value(), padding=self.auto_padding.value())
+            targets = [s for s in self.project.samples if s['split'] == 'train' and not s.get('reviewed')
+                       and (not s.get('annotation') or s.get('auto_label'))
+                       and (s['height'], s['width']) == (template['height'], template['width'])
+                       and (s['source'] == template['source'] or self.same_hud.isChecked())]
+            if not targets:
+                raise ValueError('No untouched/machine training windows match. Import windows first; for another recording confirm the same game/HUD layout')
+            if len(targets) > MAX_SAMPLES:
+                raise ValueError(f'At most {MAX_SAMPLES} windows per automatic-label operation')
+            if QMessageBox.question(self, 'Generate automatic TRAINING labels',
+                                    f'Generate and save machine labels for {len(targets)} training windows? '
+                                    'Reviewed labels, manual drafts and validation remain unchanged. '
+                                    'This uses local HUD colors and temporal consistency, not a semantic HUD classifier. '
+                                    'It can miss changed/transparent UI or confuse matching scenery. '
+                                    'Uncertain pixels stay unknown. Check recommended spot-checks and use reviewed validation. '
+                                    'No download, upload or training will start.',
+                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+                return
+            self.start_worker({'action': 'auto_labels', 'project_root': str(self.project.root),
+                               'project_sha256': self.project.disk_hash, 'template_id': template['sample_id'],
+                               'template_revision': template['revision'], 'target_ids': [s['id'] for s in targets],
+                               'tolerance': self.hud_tolerance.value(), 'padding': self.auto_padding.value(),
+                               'cross_source': self.same_hud.isChecked(), 'time_limit_minutes': self.auto_minutes.value()})
+        except Exception as error:
+            self.error(error)
+
+    def next_auto_review(self):
+        if not self.project:
+            return
+        count = len(self.project.samples)
+        current = self.project.samples.index(self.sample) if self.sample else -1
+        for offset in range(1, count + 1):
+            row = (current + offset) % count
+            sample = self.project.samples[row]
+            meta = sample.get('auto_label') or {}
+            if not sample.get('reviewed') and (not meta or not meta.get('eligible') or meta.get('spot_check')):
+                self.select_sample(row)
+                return
+        self.status.setText('No uncertain/recommended audit windows remain. Eligible automatic labels are still machine-generated, not human truth.')
+
     def reset_unknown(self):
         if self.sample is not None and QMessageBox.question(self, 'Reset current annotation',
                                                            'Clear the current draft to unknown? You can undo this change.',
@@ -1034,13 +1157,14 @@ class LabelPage(QWidget):
     def export_dataset(self):
         if not self.project or not self.unsaved_ok():
             return
-        folder = QFileDialog.getExistingDirectory(self, 'Choose a NEW/EMPTY export folder (copies reviewed samples only)')
+        folder = QFileDialog.getExistingDirectory(self, 'Choose a NEW/EMPTY export folder (reviewed + optionally eligible machine training labels)')
         if folder:
             try:
-                manifest = self.project.export(folder)
+                manifest = self.project.export(folder, include_auto=self.include_auto_export.isChecked())
                 self.exported_manifest = manifest
                 self.use_button.setEnabled(True)
-                self.status.setText(f'Exported immutable reviewed copies and generated all PNGs/hashes/JSON: {manifest}. No training started.')
+                self.status.setText(f'Exported immutable dataset and all PNGs/hashes/JSON: {manifest}. '
+                                    'Machine training labels, if included, remain marked unreviewed and require Allow machine-generated UI training labels on Train. No training started.')
             except Exception as error:
                 self.error(error)
 
@@ -1062,7 +1186,8 @@ class LabelPage(QWidget):
         if self.exported_manifest:
             self.app.train.ui_labels.setText(str(self.exported_manifest))
             self.app.show_page(1)
-            self.app.train.status.setText('Reviewed UI labels selected. Choose UI only or Flow + UI and a new run folder. Training has not started.')
+            self.app.train.status.setText('UI labels selected. If the export includes automatic labels, explicitly enable Allow machine-generated UI training labels. '
+                                          'Choose UI only or Flow + UI and a new run folder. Training has not started.')
 
     def prepare_close(self):
         if not self.unsaved_ok():

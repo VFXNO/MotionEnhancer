@@ -1,4 +1,4 @@
-"""Explicit dense UI labels only. No builder, OCR, teacher or pseudo-labels."""
+"""Explicit dense UI labels; machine training labels require a separate opt-in."""
 import hashlib
 import json
 from pathlib import Path
@@ -13,6 +13,7 @@ from .data import crop_size, to_tensor
 
 
 LABEL_FORMAT = 'me-ui-labels-1'
+AUTO_LABEL_FORMAT = 'me-ui-labels-2'
 LOCKED_CAPTURE = Path(__file__).resolve().parents[3] / 'build-project/Release/captures/20261101-124214'
 
 
@@ -45,16 +46,21 @@ class Labels:
     Hash verification reads only explicitly listed training/validation files.
     Source IDs must identify the original recording, not a crop or renamed copy.
     """
-    def __init__(self, path):
+    def __init__(self, path, *, allow_auto_labels=False):
         path = Path(path).resolve()
         raw = path.read_bytes()
         manifest = json.loads(raw.decode('utf-8'))
-        if not isinstance(manifest, dict) or manifest.get('format') != LABEL_FORMAT or not isinstance(manifest.get('label_version'), str) or not manifest['label_version']:
-            raise ValueError('Expected me-ui-labels-1 and a nonempty label_version')
+        if (not isinstance(manifest, dict) or manifest.get('format') not in (LABEL_FORMAT, AUTO_LABEL_FORMAT)
+                or not isinstance(manifest.get('label_version'), str) or not manifest['label_version']):
+            raise ValueError('Expected me-ui-labels-1/2 and a nonempty label_version')
+        mixed = manifest['format'] == AUTO_LABEL_FORMAT
+        if mixed and allow_auto_labels is not True:
+            raise ValueError('Machine-generated training labels require --allow-auto-ui-labels (validation must stay human-reviewed)')
         if not isinstance(manifest.get('samples'), list):
             raise ValueError('UI manifest needs an explicit samples list')
         self.path, self.items = path, {'train': [], 'val': [], 'test': []}
-        sources, frame_hashes, ids = {}, {}, set()
+        sources, frame_hashes, ids, templates = {}, {}, set(), set()
+        origins = {'human-reviewed': 0, 'machine-generated': 0}
         for value in manifest['samples']:
             if not isinstance(value, dict):
                 raise ValueError('Invalid UI sample')
@@ -67,6 +73,23 @@ class Labels:
             if source in sources and sources[source] != split:
                 raise ValueError('UI source leakage: an original recording crosses splits')
             sources[source] = split
+            origin = value.get('label_origin') if mixed else value.get('label_origin', 'human-reviewed')
+            if mixed:
+                if not isinstance(origin, str) or origin not in origins or type(value.get('reviewed')) is not bool:
+                    raise ValueError('Mixed UI manifests require explicit label_origin and review flags')
+                if origin == 'machine-generated':
+                    meta = value.get('auto_label') or {}
+                    if (split != 'train' or value['reviewed'] is not False or meta.get('format') != 'me-ui-auto-label-1'
+                            or meta.get('eligible') is not True or meta.get('template_split') != 'train'
+                            or meta.get('human_reviewed') is not False
+                            or not isinstance(meta.get('template_source'), str) or not meta['template_source']):
+                        raise ValueError('Automatic UI labels are training-only; validation/test must be human-reviewed')
+                    templates.add(meta['template_source'])
+                elif value['reviewed'] is not True or value.get('auto_label'):
+                    raise ValueError('Human UI validation/training labels must be explicitly reviewed')
+            elif origin != 'human-reviewed' or value.get('auto_label') or value.get('reviewed') is False:
+                raise ValueError('Automatic labels must use me-ui-labels-2, never masquerade as original human labels')
+            origins[origin] += 1
             h, w = value.get('height'), value.get('width')
             if any(type(d) is not int or d < 64 or d % 16 for d in (h, w)):
                 raise ValueError('UI dimensions must be multiples of 16, at least 64')
@@ -94,9 +117,11 @@ class Labels:
                 raise ValueError('The locked Arabic capture is test-only and may not be prepared or trained here')
             self.items[split].append({'id': name, 'source': source, 'frame_ids': frame_ids,
                                       'height': h, 'width': w, 'frames': frames,
-                                      'coverage': target, 'valid': valid})
+                                      'coverage': target, 'valid': valid, 'label_origin': origin})
         if not self.items['train'] or not self.items['val']:
             raise ValueError('UI training requires explicit nonempty source-disjoint train and val splits')
+        if any(sources.get(source) in ('val', 'test') for source in templates):
+            raise ValueError('Automatic UI template source leakage into validation/test')
         verified = set()
         for split in ('train', 'val'):
             for item in self.items[split]:
@@ -106,10 +131,12 @@ class Labels:
                         if sha256(ref['path']) != ref['sha256']:
                             raise ValueError(f'UI file SHA256 mismatch: {ref["path"]}')
                         verified.add(key)
-        self.identity = {'format': LABEL_FORMAT, 'manifest_sha256': hashlib.sha256(raw).hexdigest(),
+        self.identity = {'format': manifest['format'], 'manifest_sha256': hashlib.sha256(raw).hexdigest(),
                          'label_version': manifest['label_version'],
-                         'counts': {key: len(value) for key, value in self.items.items()}}
-        self.sources = set(sources)
+                          'counts': {key: len(value) for key, value in self.items.items()}}
+        if mixed:
+            self.identity['label_origins'] = origins
+        self.sources = set(sources) | templates
 
     def require_flow_disjoint(self, flow_items):
         """Conservative: UI recordings cannot also occur in ANY flow split.
@@ -171,6 +198,18 @@ class UiFrames:
             rng = random.Random(seed if seed is not None else 0)
             y = 2 * rng.randint(0, (shape[0] - h) // 2)
             x = 2 * rng.randint(0, (shape[1] - w) // 2)
+            if item.get('label_origin') == 'machine-generated':
+                # Sparse pseudo-label neighborhoods must not turn a random crop
+                # into an empty/background-only batch. Human sampling is unchanged.
+                known = valid.reshape(shape[0] // 2, 2, shape[1] // 2, 2).min(axis=(1, 3)) == 255
+                positive = target.reshape(shape[0] // 2, 2, shape[1] // 2, 2).mean(axis=(1, 3)) >= 127.5
+                locations = np.argwhere(known & positive)
+                if not len(locations):
+                    raise ValueError('Automatic UI training sample has no known positive head cells')
+                if not (known & positive)[y // 2:(y + h) // 2, x // 2:(x + w) // 2].any():
+                    cy, cx = (locations[rng.randrange(len(locations))] * 2).tolist()
+                    y = 2 * rng.randint(max(0, (cy + 2 - h) // 2), min(cy // 2, (shape[0] - h) // 2))
+                    x = 2 * rng.randint(max(0, (cx + 2 - w) // 2), min(cx // 2, (shape[1] - w) // 2))
             frames = [im[y:y + h, x:x + w] for im in frames]
             target, valid = target[y:y + h, x:x + w], valid[y:y + h, x:x + w]
         target = torch.from_numpy(np.ascontiguousarray(target))[None].float() / 255

@@ -254,19 +254,12 @@ format. No training was launched during implementation. The Export page now
 converts these checkpoints to a separate experimental `ai_flow_ui.onnx` bundle;
 they do not establish HUD accuracy or a 4 ms gaming-load guarantee.
 
-Use **Label UI** (or **Train → Create / edit UI labels…**) to sample many windows
-across a video (20 by default, up to 100), reuse saved reviewed HUD foreground as
-conservative drafts, and **Save reviewed and next unreviewed** without repainting
-unchanged UI from scratch. Three consecutive frames form each sample; only the
-last frame is labeled. Draft reuse never copies background or review and still
-needs inspection/correction. You can also paint dense labels manually, review
-suggestions from a local segmentation model, and export PNGs/manifest/hashes
-automatically. EfficientSAM-Ti now provides
-smart click/box masks and automatic current-frame candidates with a separately
-downloaded, pinned 48.3 MB Apache-2.0 labeling model. It is ready in this user's
-local labeling cache; other machines get an explicit download button, not an
-automatic download. Only explicitly reviewed samples are exported. See the
-[labeling walkthrough and supported AI model contract](UI_LABELING.md).
+Use **Label UI** (or **Train → Create / edit UI labels…**) to label the HUD on
+frames spread over your gameplay videos. Each frame opens with the HUD already
+painted from how it stays fixed while the game moves (the same idea as the
+program's HUD persistence); fix it with the brush (HUD / Erase / Unsure) and
+**Save & next**. Saved samples form an `me-ui-labels-1` project the Train page
+reads directly (**Use for training**). See the [labeling guide](UI_LABELING.md).
 
 ## 3. Export
 

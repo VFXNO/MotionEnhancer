@@ -36,6 +36,14 @@ def main(argv=None):
                                        progress=lambda index, end, done, total:
                                        emit(event='batch_progress', frame=index, total=end, done=done, windows=total))
             arrays = {}
+        elif request['action'] == 'auto_labels':
+            from .ui_auto_label import prepare_auto_labels
+            info = prepare_auto_labels(request['project_root'], root, project_sha256=request['project_sha256'],
+                                       template_id=request['template_id'], template_revision=request['template_revision'],
+                                       target_ids=request['target_ids'], tolerance=request['tolerance'], padding=request['padding'],
+                                       cross_source=request['cross_source'], progress=lambda done, total, eligible:
+                                       emit(event='auto_label_progress', done=done, total=total, eligible=eligible))
+            arrays = {}
         elif request['action'] == 'suggest':
             from .ui_label_assist import suggest
             with np.load(root / 'input.npz', allow_pickle=False) as data:
