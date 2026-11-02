@@ -90,7 +90,7 @@
 <a id="quick-start"></a>
 <img src="docs/assets/section-quick-start.png" alt="Quick start" width="100%">
 
-**1. Install** `dist\MotionEnhancer-1.0.0-Setup-x64.exe`, or extract the portable
+**1. Install** `dist\MotionEnhancer-1.1.0-Setup-x64.exe`, or extract the portable
 ZIP. No SDK installation is needed to run it. Alternatively, build from source
 with Visual Studio 2022/2026 (C++) and a compatible CMake version:
 
@@ -215,8 +215,8 @@ Motion enhancer/
 
 ### Windows installer and complete runtime package
 
-Run `dist\MotionEnhancer-1.0.0-Setup-x64.exe` to install for the current user,
-or extract the entire `dist\MotionEnhancer-1.0.0-win64.zip` for portable use.
+Run `dist\MotionEnhancer-1.1.0-Setup-x64.exe` to install for the current user,
+or extract the entire `dist\MotionEnhancer-1.1.0-win64.zip` for portable use.
 Both include the executable, all compiled shaders, FidelityFX support, ONNX
 Runtime/DirectML, Microsoft C++/OpenMP runtimes, and the existing AI/depth/neural
 models. Target computers do not need the SDKs or Visual Studio installed.

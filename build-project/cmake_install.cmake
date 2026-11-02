@@ -142,6 +142,54 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow_ui.onnx")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow_ui.json")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow_ui.dis.onnx")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow_ui.dis.json")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.onnx")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.source.json")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.LICENSE.txt")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" TYPE FILE RENAME "OmniParser-icon_detect-AGPL-3.0.txt" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.LICENSE.txt")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.matrix.param")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.matrix.bin")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.matrix.source.json")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ui_detect.matrix.LICENSE.txt")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" TYPE DIRECTORY FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/packaging/licenses/")
 endif()
 
@@ -151,6 +199,14 @@ endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE RENAME "ai_flow.json" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow.json")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE RENAME "ai_flow.dis.onnx" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow.dis.onnx")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/models" TYPE FILE RENAME "ai_flow.dis.json" FILES "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/models/ai_flow.dis.json")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)

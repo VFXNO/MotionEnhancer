@@ -9,12 +9,29 @@ current graphics driver are required. Windows N editions also need Microsoft's
 Media Feature Pack for video decoding. Graphics drivers and Windows features
 are not replaced by this installer.
 
+## What's new in 1.1.0
+
+- **HUD persistence:** the UI mask learns, with no model, where the HUD sits on
+  screen (structure that stays put while the camera moves) and keeps it sharp;
+  nothing outside it is protected, so plain sky and ground stay smooth.
+- **AI: UI regions** now adds to that protection instead of limiting it.
+- **AI trainer:** a new Label UI page pre-paints the HUD on frames from your
+  videos for you to correct; UI model exports are readable when the trainer
+  ran as administrator; closing the trainer during a job no longer raises.
+- Every AI mode now ships with its model: the AI flow model with its DIS
+  companion (`models\ai_flow.dis.onnx`, which the default AI engine needs),
+  the trained temporal UI model (`models\ai_flow_ui*.onnx`, experimental), and
+  the OmniParser icon detector for **AI: UI regions** (`models\ui_detect.onnx`,
+  plus its Vulkan matrix conversion for **Matrix: icons**).
+
 ## Included offline
 
 - `motion_enhancer.exe`, compiled GPU shaders, native FidelityFX Optical Flow.
 - ONNX Runtime, DirectML and Microsoft C++ / OpenMP runtime DLLs.
-- AI flow model with its JSON resolution metadata, MiDaS depth model, and the
-  native neural model (`models\neural_model.bin`, selected with Load in the GUI
+- AI flow model and its DIS companion with their JSON metadata, the trained
+  temporal UI model, the OmniParser UI detector (DirectML and Vulkan matrix
+  forms; AGPL-3.0, licence in `licenses\` and `models\`), MiDaS depth model,
+  and the native neural model (`models\neural_model.bin`, selected with Load in the GUI
   or `MOTION_ENHANCER_NEURAL_MODEL` for CLI use).
 - AI trainer source, dependency setup launcher, and third-party notices.
 

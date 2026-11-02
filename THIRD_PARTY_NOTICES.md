@@ -81,6 +81,8 @@ Source: https://github.com/Tencent/ncnn/tree/20261020
 
 The separately downloaded OmniParser V1 icon/UI detector weights (including
 their matrix-backend conversion) use **AGPL-3.0**, not this project's MIT or
-ncnn's BSD licence. Their licence and provenance remain alongside the optional
-model. Model files are not implicitly added to packages; redistribution
-obligations still require review before shipping.
+ncnn's BSD licence. They are included in the installer and portable package
+for the optional **AI: UI regions** mode, with their licence
+(`models/ui_detect.LICENSE.txt`, `licenses/OmniParser-icon_detect-AGPL-3.0.txt`)
+and provenance (`models/ui_detect*.source.json`, which name the exact upstream
+files). Redistributing them carries the AGPL-3.0's obligations.

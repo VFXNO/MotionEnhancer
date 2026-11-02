@@ -10,7 +10,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $build = [IO.Path]::GetFullPath((Join-Path $root $BuildDirectory))
 $dist = Join-Path $root 'dist'
 $work = Join-Path $root '.packaging'
-$version = '1.0.0'
+$version = '1.1.0'
 $name = "MotionEnhancer-$version-win64"
 function Invoke-Checked([string]$Exe, [string[]]$Arguments) {
     & $Exe @Arguments
@@ -47,7 +47,43 @@ try {
     foreach ($file in $required) {
         if (-not (Test-Path -LiteralPath (Join-Path $stage $file) -PathType Leaf)) { throw "Missing package dependency: $file" }
     }
-    if (@(Get-ChildItem -LiteralPath (Join-Path $stage 'shaders') -Filter '*.cso').Count -ne 29) { throw 'Expected all 29 compiled shaders.' }
+    # Every shader the program loads (ComputeKernels.cpp's list) must be packaged.
+    $kernels = Get-Content -LiteralPath (Join-Path $root 'src\ComputeKernels.cpp') -Raw
+    $shaders = @([regex]::Matches($kernels, '"(\w+CS)\.cso"') | ForEach-Object { $_.Groups[1].Value + '.cso' } | Sort-Object -Unique)
+    foreach ($shader in $shaders) {
+        if (-not (Test-Path -LiteralPath (Join-Path $stage "shaders\$shader") -PathType Leaf)) { throw "Missing compiled shader: $shader" }
+    }
+    # A refined AI model is a pair; the default AI engine loads the companion.
+    $meta = Get-Content -LiteralPath (Join-Path $stage 'models\ai_flow.json') -Raw
+    if ($meta -match '"dis_model"\s*:') {
+        foreach ($file in @('models\ai_flow.dis.onnx', 'models\ai_flow.dis.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $stage $file) -PathType Leaf)) { throw "Missing package dependency: $file" }
+        }
+        # The companion's own metadata, not a second copy of the main model's
+        # (the program rejects the pair and the AI engine will not start).
+        $companion = Get-Content -LiteralPath (Join-Path $stage 'models\ai_flow.dis.json') -Raw
+        if ($companion -notmatch '"integrated_refiner"\s*:\s*false') { throw 'models\ai_flow.dis.json is not the companion model''s metadata.' }
+    }
+    # Every optional AI mode ships with its model: trained temporal UI (both
+    # variants), the OmniParser icon detector with its licence, and its matrix
+    # conversion when that backend is built.
+    $optional = @('models\ai_flow_ui.onnx', 'models\ai_flow_ui.json', 'models\ai_flow_ui.dis.onnx', 'models\ai_flow_ui.dis.json',
+        'models\ui_detect.onnx', 'models\ui_detect.source.json', 'models\ui_detect.LICENSE.txt',
+        'licenses\OmniParser-icon_detect-AGPL-3.0.txt')
+    if ($cache -match 'MOTION_ENHANCER_ENABLE_UI_MATRIX:BOOL=ON') {
+        $optional += @('models\ui_detect.matrix.param', 'models\ui_detect.matrix.bin', 'models\ui_detect.matrix.source.json',
+            'models\ui_detect.matrix.LICENSE.txt')
+    }
+    foreach ($file in $optional) {
+        if (-not (Test-Path -LiteralPath (Join-Path $stage $file) -PathType Leaf)) { throw "Missing mode model: $file" }
+    }
+    $uiCompanion = Get-Content -LiteralPath (Join-Path $stage 'models\ai_flow_ui.dis.json') -Raw
+    if ($uiCompanion -notmatch '"integrated_refiner"\s*:\s*false') { throw 'models\ai_flow_ui.dis.json is not the companion model''s metadata.' }
+    # Each model must be readable by a normal user (an export made as
+    # administrator once produced files only administrators could open).
+    foreach ($model in @(Get-ChildItem -LiteralPath (Join-Path $stage 'models') -File)) {
+        try { [IO.File]::OpenRead($model.FullName).Dispose() } catch { throw "Unreadable model: $($model.Name)" }
+    }
     $files = @(Get-ChildItem -LiteralPath $stage -Recurse -File)
     if (@($files | Where-Object { $_.Extension -in @('.obj', '.pdb', '.log', '.lib', '.hlsl', '.hlsli', '.pyc') }).Count) {
         throw 'Build/debug-only files leaked into the package.'

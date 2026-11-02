@@ -17,7 +17,7 @@ Unicode true
   !error "Pass /DOUTPUT=<setup.exe>"
 !endif
 !ifndef VERSION
-  !define VERSION "1.0.0"
+  !define VERSION "1.1.0"
 !endif
 
 Name "Motion Enhancer"
@@ -50,7 +50,7 @@ VIAddVersionKey "LegalCopyright" "Motion Enhancer contributors"
 !define MUI_FINISHPAGE_RUN_PARAMETERS "--gui"
 !define MUI_FINISHPAGE_RUN_NOTCHECKED
 !define MUI_WELCOMEPAGE_TITLE "A smoother experience."
-!define MUI_WELCOMEPAGE_TEXT "Real-time frame generation, built for your GPU.$\r$\n$\r$\nINCLUDED IN THIS INSTALL$\r$\n$\r$\n    Motion Enhancer and compiled GPU shaders$\r$\n    AMD FidelityFX Optical Flow$\r$\n    AI flow and depth models$\r$\n    ONNX Runtime, DirectML and Microsoft runtimes$\r$\n$\r$\nThe AI trainer is optional. Existing models work offline.$\r$\n$\r$\nUse Music or Alt+M to toggle the ambient soundtrack."
+!define MUI_WELCOMEPAGE_TEXT "Real-time frame generation, built for your GPU.$\r$\n$\r$\nINCLUDED IN THIS INSTALL$\r$\n$\r$\n    Motion Enhancer and compiled GPU shaders$\r$\n    AMD FidelityFX Optical Flow$\r$\n    AI flow, depth and UI detection models$\r$\n    ONNX Runtime, DirectML and Microsoft runtimes$\r$\n$\r$\nThe AI trainer is optional. Existing models work offline.$\r$\n$\r$\nUse Music or Alt+M to toggle the ambient soundtrack."
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeWelcome
 !insertmacro MUI_PAGE_WELCOME
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ThemeLicense

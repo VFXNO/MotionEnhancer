@@ -1,0 +1,292 @@
+cmake_minimum_required(VERSION 3.16)
+project(MotionEnhancer VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(FIDELITYFX_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/FidelityFX-SDK-v1.1.4"
+    CACHE PATH "FidelityFX SDK root for native Optical Flow")
+option(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW
+        "Build the native AMD FidelityFX Optical Flow backend" ON)
+if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
+    if(NOT WIN32 OR NOT FIDELITYFX_SDK_DIR)
+        message(FATAL_ERROR
+            "Native FidelityFX Optical Flow requires Windows and "
+            "-DFIDELITYFX_SDK_DIR=<FidelityFX-SDK-v1.1.4 root>.")
+    endif()
+    if(NOT EXISTS "${FIDELITYFX_SDK_DIR}/CMakeLists.txt" OR
+       NOT EXISTS "${FIDELITYFX_SDK_DIR}/tools/binary_store/FidelityFX_SC.exe")
+        message(FATAL_ERROR
+            "FIDELITYFX_SDK_DIR must contain CMakeLists.txt and "
+            "tools/binary_store/FidelityFX_SC.exe from FidelityFX SDK v1.1.4.")
+    endif()
+    # Use AMD's CMake path so FidelityFX_SC generates the required DX12 shader
+    # permutation headers instead of copying generated SDK artifacts into this tree.
+    set(FFX_API_BACKEND DX12_X64 CACHE STRING "" FORCE)
+    set(FFX_OF ON CACHE BOOL "" FORCE)
+    set(FFX_FSR3 OFF CACHE BOOL "" FORCE)
+    set(FFX_ALL OFF CACHE BOOL "" FORCE)
+    add_subdirectory("${FIDELITYFX_SDK_DIR}" "${CMAKE_BINARY_DIR}/fidelityfx-sdk" EXCLUDE_FROM_ALL)
+endif()
+
+# Source files
+set(SOURCES
+    src/main.cpp
+    src/Image.cpp
+    src/Pyramid.cpp
+    src/ZNCCMatcher.cpp
+    src/FrameInterpolator.cpp
+    src/GraphicsDevice.cpp
+    src/ComputeKernels.cpp
+    src/FlowEngine.cpp
+    src/FrameTimeline.cpp
+    src/CaptureEngine.cpp
+    src/Presenter.cpp
+    src/RealtimeSession.cpp
+    src/NeuralFlow.cpp
+    src/NeuralFlowTrain.cpp
+    src/TrainingVideo.cpp
+    src/WindowHelper.cpp
+    src/GuiApp.cpp
+    src/DepthEstimator.cpp
+    src/DepthService.cpp
+    src/OrtRuntime.cpp
+    src/AiFlowEstimator.cpp
+    src/UiDetector.cpp
+    app.rc
+)
+
+# Header files
+set(HEADERS
+    include/AppResources.h
+    include/BrandLogo.h
+    include/BrandCharacter.h
+    include/BrandCharacterAtlas.h
+    include/Image.h
+    include/Pyramid.h
+    include/MotionVector.h
+    include/ZNCCMatcher.h
+    include/FrameInterpolator.h
+    include/GraphicsDevice.h
+    include/ComputeKernels.h
+    include/FlowEngine.h
+    include/FrameTimeline.h
+    include/CaptureEngine.h
+    include/Presenter.h
+    include/RealtimeSession.h
+    include/NeuralFlow.h
+    include/TrainingVideo.h
+    include/WallClock.h
+    include/WindowHelper.h
+    include/GuiApp.h
+    include/DepthEstimator.h
+    include/DepthService.h
+    include/UiDetector.h
+    include/UiRegions.h
+    third_party/stb_image.h
+    third_party/stb_image_write.h
+)
+
+add_executable(motion_enhancer ${SOURCES} ${HEADERS})
+
+option(MOTION_ENHANCER_ENABLE_UI_MATRIX "Explicit Vulkan cooperative-matrix UI detector (optional pinned ncnn)" OFF)
+if(MOTION_ENHANCER_ENABLE_UI_MATRIX)
+    set(UI_MATRIX_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ui-matrix/ncnn")
+    if(NOT EXISTS "${UI_MATRIX_SOURCE}/CMakeLists.txt")
+        message(FATAL_ERROR "Run tools/ui-detect/setup_matrix.py before enabling the UI matrix backend")
+    endif()
+    set(NCNN_VERSION 20261020 CACHE STRING "Pinned UI matrix runtime version" FORCE)
+    set(NCNN_VULKAN ON CACHE BOOL "" FORCE)
+    set(NCNN_SIMPLEVK ON CACHE BOOL "" FORCE)
+    set(NCNN_SHARED_LIB OFF CACHE BOOL "" FORCE)
+    set(NCNN_OPENMP OFF CACHE BOOL "" FORCE)
+    set(NCNN_RUNTIME_CPU OFF CACHE BOOL "" FORCE)
+    set(NCNN_SSE2 OFF CACHE BOOL "" FORCE)
+    set(NCNN_AVX OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
+    set(NCNN_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(NCNN_INT8 OFF CACHE BOOL "" FORCE)
+    set(NCNN_INSTALL_SDK OFF CACHE BOOL "" FORCE)
+    add_subdirectory("${UI_MATRIX_SOURCE}" "${CMAKE_CURRENT_BINARY_DIR}/ui-matrix" EXCLUDE_FROM_ALL)
+    target_sources(motion_enhancer PRIVATE src/UiMatrixDetector.cpp include/UiMatrixDetector.h)
+    target_link_libraries(motion_enhancer PRIVATE ncnn)
+    target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_UI_MATRIX=1)
+    add_custom_command(TARGET motion_enhancer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:motion_enhancer>/licenses"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${UI_MATRIX_SOURCE}/LICENSE.txt"
+            "$<TARGET_FILE_DIR:motion_enhancer>/licenses/UI-Matrix-ncnn.txt"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${UI_MATRIX_SOURCE}/glslang/LICENSE.txt"
+            "$<TARGET_FILE_DIR:motion_enhancer>/licenses/UI-Matrix-glslang.txt")
+endif()
+
+# The manifest is embedded manually via app.rc; disable the linker's
+# auto-generated manifest to avoid a duplicate resource.
+if(MSVC)
+    set_target_properties(motion_enhancer PROPERTIES LINK_FLAGS "/MANIFEST:NO")
+endif()
+
+target_include_directories(motion_enhancer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+)
+
+if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
+    target_link_libraries(motion_enhancer PRIVATE ffx_opticalflow_x64 ffx_backend_dx12_x64)
+    target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_FFX_OPTICAL_FLOW=1)
+endif()
+
+# Optional AI depth (DepthEstimator): ONNX Runtime with the DirectML execution
+# provider running MiDaS v2.1 small, from third_party/ai-depth (onnxruntime
+# 1.24.4 DirectML and DirectML 1.15.4 redistributables, the ONNX model).
+# onnxruntime.dll is delay-loaded, so the program still starts without it and
+# simply runs without depth.
+set(MOTION_ENHANCER_AI_DEPTH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ai-depth")
+if(WIN32 AND EXISTS "${MOTION_ENHANCER_AI_DEPTH_DIR}/lib/onnxruntime.lib")
+    target_include_directories(motion_enhancer PRIVATE "${MOTION_ENHANCER_AI_DEPTH_DIR}/include")
+    target_link_libraries(motion_enhancer PRIVATE "${MOTION_ENHANCER_AI_DEPTH_DIR}/lib/onnxruntime.lib" delayimp)
+    target_link_options(motion_enhancer PRIVATE "/DELAYLOAD:onnxruntime.dll")
+    target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_AI_DEPTH=1)
+    add_custom_command(TARGET motion_enhancer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/onnxruntime.dll"
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/onnxruntime_providers_shared.dll"
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/bin/DirectML.dll"
+            "$<TARGET_FILE_DIR:motion_enhancer>"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:motion_enhancer>/models"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MOTION_ENHANCER_AI_DEPTH_DIR}/models/midas_v21_small_256_fp16.onnx"
+            "$<TARGET_FILE_DIR:motion_enhancer>/models"
+        COMMENT "Staging the AI depth runtime and model next to the executable")
+endif()
+
+# OpenMP multi-threading support for CPU fallback
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found, enabling multi-threaded CPU acceleration")
+    target_link_libraries(motion_enhancer PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+# Windows libraries for D3D12, the D3D11On12 bridge, WGC, and DWM
+if(WIN32)
+    target_link_libraries(motion_enhancer PRIVATE
+        d3d11
+        d3d12
+        dxgi
+        d3dcompiler
+        dwmapi
+        avrt
+        comctl32
+        comdlg32
+        gdiplus
+        mfplat
+        mfreadwrite
+        mfuuid
+        ole32
+        windowscodecs
+        windowsapp
+    )
+    if(MSVC)
+        target_compile_options(motion_enhancer PRIVATE /O2 /Oi /Ot /fp:fast /W3 /permissive- /await)
+        target_compile_definitions(motion_enhancer PRIVATE 
+            _CRT_SECURE_NO_WARNINGS 
+            _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
+            NOMINMAX 
+            WIN32_LEAN_AND_MEAN
+        )
+    endif()
+
+    find_program(DXC_EXECUTABLE dxc
+        HINTS
+            "${FIDELITYFX_SDK_DIR}/tools/ffx_shader_compiler/libs/dxc/bin/x64"
+            "$ENV{VULKAN_SDK}/Bin"
+        DOC "DirectX Shader Compiler")
+    if(DXC_EXECUTABLE)
+        set(DXC_OUTPUTS)
+        set(MOTION_ENHANCER_SHADERS Common.hlsli Synthesis.hlsli Photometric.hlsli FfxRefine.hlsli LuminanceCS.hlsl PyramidCS.hlsl MotionSearchCS.hlsl
+                                      InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
+                                      FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
+                                      DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
+                                      DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl UiDetectInputCS.hlsl UiDebugViewCS.hlsl
+                                      UiPersistCS.hlsl)
+        if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
+            list(APPEND MOTION_ENHANCER_SHADERS FfxFlowConvertCS.hlsl FfxRefineInitCS.hlsl FfxRefineIterateCS.hlsl
+                                                FfxRefineToRingCS.hlsl FfxRefineConsistCS.hlsl FfxRepairCS.hlsl)
+        endif()
+        foreach(SHADER IN LISTS MOTION_ENHANCER_SHADERS)
+            if(SHADER MATCHES "\\.hlsl$")
+                string(REGEX REPLACE "\\.hlsl$" ".cso" SHADER_OBJECT "${SHADER}")
+                # DXC emits DXIL (SM 6.0) for every profile; the matcher uses
+                # wave intrinsics, which need the 6.0 profile explicitly.
+                set(SHADER_PROFILE cs_5_0)
+                if(SHADER STREQUAL "MotionSearchCS.hlsl" OR SHADER STREQUAL "DisPatchCS.hlsl")
+                    set(SHADER_PROFILE cs_6_0)
+                endif()
+                add_custom_command(
+                    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                            "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+                    COMMAND "${DXC_EXECUTABLE}" -E CSMain -T ${SHADER_PROFILE} -O3
+                            -I "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+                            -Fo "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"
+                    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER}"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Common.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Synthesis.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Photometric.hlsli"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/FfxRefine.hlsli"
+                    VERBATIM)
+                list(APPEND DXC_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER_OBJECT}")
+            endif()
+        endforeach()
+        add_custom_target(motion_enhancer_shaders ALL DEPENDS ${DXC_OUTPUTS})
+        add_dependencies(motion_enhancer motion_enhancer_shaders)
+        # The copy also hangs off the *shader* target, not only the
+        # executable. As a POST_BUILD step on motion_enhancer alone it ran
+        # only when the exe relinked, so editing nothing but an .hlsl
+        # recompiled the .cso into the build tree and left the stale one next
+        # to the binary - the program then kept running the previous shader
+        # while every source file on disk said otherwise, and an A/B
+        # measurement taken that way is simply wrong.
+        #
+        # The destination is spelled out rather than taken from
+        # $<TARGET_FILE_DIR:motion_enhancer>: that generator expression would
+        # make this target depend on the executable, which already depends on
+        # this target, and CMake rejects the cycle.
+        if(CMAKE_CONFIGURATION_TYPES)
+            set(MOTION_ENHANCER_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        else()
+            set(MOTION_ENHANCER_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        endif()
+        add_custom_command(TARGET motion_enhancer_shaders POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+                "${MOTION_ENHANCER_BIN_DIR}/shaders"
+            COMMENT "Staging compiled shaders next to the executable")
+        add_custom_command(TARGET motion_enhancer POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+                "$<TARGET_FILE_DIR:motion_enhancer>/shaders")
+        target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_DXC=1)
+    else()
+        message(FATAL_ERROR
+            "DXC is required to compile the live GPU shaders. "
+            "Set -DDXC_EXECUTABLE=<path to dxc.exe> or install the Windows SDK / Vulkan SDK.")
+    endif()
+
+    add_custom_command(TARGET motion_enhancer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+            "$<TARGET_FILE_DIR:motion_enhancer>/shaders"
+        COMMENT "Copying HLSL shaders to target binary directory"
+    )
+else()
+    target_compile_options(motion_enhancer PRIVATE -O3 -ffast-math -Wall -Wextra)
+endif()
+
+if(WIN32)
+    include(cmake/Install.cmake)
+endif()

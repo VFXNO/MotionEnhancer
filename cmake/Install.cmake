@@ -28,8 +28,37 @@ endif()
 if(MOTION_ENHANCER_ENABLE_UI_MATRIX)
     install(FILES "${UI_MATRIX_SOURCE}/LICENSE.txt" DESTINATION licenses RENAME UI-Matrix-ncnn.txt)
     install(FILES "${UI_MATRIX_SOURCE}/glslang/LICENSE.txt" DESTINATION licenses RENAME UI-Matrix-glslang.txt)
-    # UI detector weights remain an optional, separately licensed download.
-    # Do not package matrix or ONNX UI weights implicitly.
+endif()
+
+# Every optional AI mode's model, so each GUI option works after install.
+# A missing file here only leaves that option without its model; the package
+# script (tools/Build-Package.ps1) checks the complete set.
+set(_models "${CMAKE_SOURCE_DIR}/models")
+# Trained temporal UI (GUI "Trained temporal UI", --ai-temporal-ui): the
+# integrated model and its DIS companion, exported by the trainer.
+foreach(_file ai_flow_ui.onnx ai_flow_ui.json ai_flow_ui.dis.onnx ai_flow_ui.dis.json)
+    if(EXISTS "${_models}/${_file}")
+        install(FILES "${_models}/${_file}" DESTINATION models)
+    endif()
+endforeach()
+# OmniParser icon detector ("AI: UI regions", DirectML): AGPL-3.0 weights,
+# shipped with their licence and provenance.
+foreach(_file ui_detect.onnx ui_detect.source.json ui_detect.LICENSE.txt)
+    if(EXISTS "${_models}/${_file}")
+        install(FILES "${_models}/${_file}" DESTINATION models)
+    endif()
+endforeach()
+if(EXISTS "${_models}/ui_detect.LICENSE.txt")
+    install(FILES "${_models}/ui_detect.LICENSE.txt" DESTINATION licenses RENAME OmniParser-icon_detect-AGPL-3.0.txt)
+endif()
+# Its Vulkan matrix conversion ("Matrix: icons (WMMA)"), only useful when that
+# backend is compiled in.
+if(MOTION_ENHANCER_ENABLE_UI_MATRIX)
+    foreach(_file ui_detect.matrix.param ui_detect.matrix.bin ui_detect.matrix.source.json ui_detect.matrix.LICENSE.txt)
+        if(EXISTS "${_models}/${_file}")
+            install(FILES "${_models}/${_file}" DESTINATION models)
+        endif()
+    endforeach()
 endif()
 install(DIRECTORY packaging/licenses/ DESTINATION licenses)
 
@@ -46,6 +75,21 @@ if(EXISTS "${MOTION_ENHANCER_AI_FLOW_MODEL}")
     endif()
     install(FILES "${MOTION_ENHANCER_AI_FLOW_MODEL}" DESTINATION models RENAME ai_flow.onnx)
     install(FILES "${_model_json}" DESTINATION models RENAME ai_flow.json)
+    # A refined export is a pair: the integrated model and the backbone-only
+    # companion its JSON names ("dis_model"), which the default AI engine
+    # (refinement off) loads. Without the companion the AI engine refuses to
+    # start a capture (AiFlowEstimator::selectRefinementModel).
+    file(READ "${_model_json}" _model_meta)
+    if(_model_meta MATCHES "\"dis_model\"[ \t\r\n]*:[ \t\r\n]*\"([^\"]+)\"")
+        set(_dis_model "${_model_dir}/${CMAKE_MATCH_1}")
+        get_filename_component(_dis_name "${_dis_model}" NAME_WLE)   # "ai_flow.dis", not "ai_flow"
+        set(_dis_json "${_model_dir}/${_dis_name}.json")
+        if(NOT EXISTS "${_dis_model}" OR NOT EXISTS "${_dis_json}")
+            message(FATAL_ERROR "The AI flow model is a refined pair; its companion is missing: ${_dis_model} (and .json)")
+        endif()
+        install(FILES "${_dis_model}" DESTINATION models RENAME ai_flow.dis.onnx)
+        install(FILES "${_dis_json}" DESTINATION models RENAME ai_flow.dis.json)
+    endif()
     # A local trained/activated model is authoritative. An ordinary C++ rebuild
     # must not replace it with the repository's older packaging model.
     if(MOTION_ENHANCER_STAGE_AI_FLOW_MODEL)
