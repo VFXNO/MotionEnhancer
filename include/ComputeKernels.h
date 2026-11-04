@@ -38,6 +38,7 @@ enum class Kernel : int {
     UiDetectInput,
     UiDebugView,
     UiPersist,
+    FlowMedian5,
     Count
 };
 

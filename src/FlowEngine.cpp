@@ -655,8 +655,15 @@ bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) 
 // on average (the warp's flicker). Refined: 46 dB and 0.09. Joint bilateral
 // upsampling guided by the full-resolution frame measured no different from
 // bilinear (17.81 against 17.80 dB on edges) and was dropped. Refining down
-// to full resolution cost 2 ms more for about the same; more iterations
-// scored worse on the real captures (the field drifts from the network's).
+// to full resolution cost 2 ms more for about the same. Steps per patch:
+// the network undershoots small motions (a 3 px move found as nearly 0), and
+// what the refinement leaves of that shows as a jump where the output hands
+// over from frame0 to frame1. On a 1440p capture, motions of 1.5-6 px, the
+// step at the hand-over against the steps around it: 2 steps 1.19x, 4 steps
+// 1.14x, 6 steps 1.11x (DIS alone 1.05x); middle-frame PSNR 20.82 -> 20.84
+// -> 20.86 dB, field roughness after the 5x5 median 0.70 -> 0.79 -> 0.85.
+// (Two steps were chosen first, when more scored worse on earlier captures
+// before the median and pure warping.)
 bool FlowEngine::recordAiFlow(const FlowInput& previous, const FlowInput& current, Entry& out) {
     ID3D12GraphicsCommandList* list = m_list.Get();
     // DIS mode: at least one level must lie between the seed and the finest level,
@@ -1097,9 +1104,10 @@ bool FlowEngine::recordOcclusionFill(const FlowInput& previous, const FlowInput&
 
 // ------------------------------------------------------------ flow median
 
-// Both fields of a finished pair on the 2 px ring grid (FlowMedianCS): each
-// is filtered into its scratch field and copied back.
-bool FlowEngine::recordFlowMedian(Entry& out) {
+// Both fields of a finished pair on the 2 px ring grid (FlowMedianCS, or
+// FlowMedian5CS when `wide`): each is filtered into its scratch field and
+// copied back.
+bool FlowEngine::recordFlowMedian(Entry& out, bool wide) {
     if (!m_settings.flowMedian || !m_medianScratch[0] || (out.blockSize != kDisRingBlock && !m_neuralModelLoaded)) return true;
     ID3D12GraphicsCommandList* list = m_list.Get();
     ShaderConstants c = {};
@@ -1112,7 +1120,7 @@ bool FlowEngine::recordFlowMedian(Entry& out) {
     bool ok = true;
     for (int d = 0; ok && d < 2; ++d) {
         std::array<ID3D12Resource*, 6> in = {fields[d], nullptr, nullptr, nullptr, nullptr, nullptr};
-        ok = m_dispatch.dispatch(list, *m_kernels, Kernel::FlowMedian, in, m_medianScratch[d].Get(), c,
+        ok = m_dispatch.dispatch(list, *m_kernels, wide ? Kernel::FlowMedian5 : Kernel::FlowMedian, in, m_medianScratch[d].Get(), c,
                                  (gw + 15) / 16, (gh + 15) / 16);
     }
     for (int d = 0; ok && d < 2; ++d) {
@@ -1320,7 +1328,12 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     static const bool aiFill = GetEnvironmentVariableA("MOTION_ENHANCER_AI_FILL", nullptr, 0) > 0;
     static const bool aiMedian = GetEnvironmentVariableA("MOTION_ENHANCER_AI_MEDIAN", nullptr, 0) > 0;
     if (ok && m_usingAi && aiFill) ok = recordOcclusionFill(previous, current, scratch);
-    if (ok && m_usingAi && aiMedian) ok = recordFlowMedian(scratch);
+    // The AI engine's field after DIS refinement: a 5x5 median takes out the
+    // mottling the refinement leaves (FlowMedian5CS; on by default like the
+    // other engines' median, --no-flow-median turns it off). The integrated
+    // refiner's field is smooth already.
+    if (ok && m_usingAi && !scratch.aiRefined) ok = recordFlowMedian(scratch, true);
+    else if (ok && m_usingAi && aiMedian) ok = recordFlowMedian(scratch);
     // The neural estimator's 8x8 fields are median filtered as well: on the
     // user's real frames +0.14 dB (24.52 -> 24.66, the two sequences with
     // fast near grass +0.4 dB each), and less speckle beside the character

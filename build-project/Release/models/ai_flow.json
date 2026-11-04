@@ -5,17 +5,17 @@
  "height": 480,
  "levels": 7,
  "preset": "large",
- "psnr": 28.80075240135193,
- "epoch": 10,
+ "psnr": null,
+ "epoch": 7,
  "train_height": 480,
  "validation": {
   "protocol": "temporal-balanced-v1",
-  "selection": "39bc3f42ff7d2f03ab5fee4717fa6996c49c313d0b59636e6d17bcc457b42291"
+  "selection": "bb0371698a2e65648271467d57123d63b8e181f2867f385e033e0714bfb0d9ad"
  },
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2\\best.pt",
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\last.pt",
  "trained_arch": "pyramid-refine-v1",
  "integrated_refiner": true,
- "bundle_id": "11ed79175bf64d60b0a6cf48cb71ffa1",
+ "bundle_id": "087f92acabbb4890983b411ffd8981a4",
  "dis_model": "ai_flow.dis.onnx",
  "refined_model": "ai_flow.onnx"
 }

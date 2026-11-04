@@ -169,7 +169,7 @@ public:
     // kAiRefineIterations steps per patch.
     static constexpr int kAiSeedLevel = 4;
     static constexpr int kAiFinestLevel = 1;
-    static constexpr int kAiRefineIterations = 2;
+    static constexpr int kAiRefineIterations = 6;
 
     struct Entry {
         // R32G32B32A32_FLOAT per block: xy = vector in full-resolution
@@ -330,7 +330,7 @@ private:
     // between - the AI network - runs after the first part, before the rest.
     bool splitList(const FlowInput& previous, const FlowInput& current);
     void releaseAiBuffers();
-    bool recordFlowMedian(Entry& out);
+    bool recordFlowMedian(Entry& out, bool wide = false);
     void readTimestamps(UINT set);
 
     GraphicsDevice* m_device = nullptr;

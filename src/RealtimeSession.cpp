@@ -791,7 +791,18 @@ int runOfflineGpuInterpolation(const std::string& frame0Path, const std::string&
                         << (bx + 1 < gridW ? " " : "\n");
                 }
             }
-            std::cout << "  Saved forward flow visualization to: " << flowOutputPath << " (+ .txt grid)\n";
+            // The exact field for measurements: int32 gridW, gridH, then
+            // float32 (x, y) per block, row by row.
+            std::ofstream bin(flowOutputPath + ".bin", std::ios::binary);
+            const int32_t dims[2] = {static_cast<int32_t>(gridW), static_cast<int32_t>(gridH)};
+            bin.write(reinterpret_cast<const char*>(dims), sizeof(dims));
+            for (uint32_t by = 0; by < gridH; ++by) {
+                for (uint32_t bx = 0; bx < gridW; ++bx) {
+                    const float* v = reinterpret_cast<const float*>(flowBytes.data() + static_cast<size_t>(by) * fpitch + bx * flowTexelBytes(entry.forward.Get()));
+                    bin.write(reinterpret_cast<const char*>(v), 2 * sizeof(float));
+                }
+            }
+            std::cout << "  Saved forward flow visualization to: " << flowOutputPath << " (+ .txt grid, .bin floats)\n";
         }
     }
 

@@ -63,6 +63,7 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/ProjectClearCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/ProjectSplatCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FlowMedianCS.cso"
+    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FlowMedian5CS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthInputCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthFinishCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthViewCS.cso"

@@ -1,23 +1,14 @@
 {
  "page": 1,
  "videos": [
-  "C:/Users/bsher/Downloads/Video/Wait-THIS-GAME-SnapYT.App.mp4",
-  "C:/Users/bsher/Downloads/Video/BLACKBIRD-GAMEPLAY-GOES-SnapYT.App.mp4",
-  "C:/Users/bsher/Downloads/Video/Professional-Immortal-Player-SnapYT.App.mp4",
-  "C:/Users/bsher/Downloads/Video/Flash-flicker-background-SnapYT.App.mp4",
-  "C:/Users/bsher/Downloads/Video/Lily-Gameplay-SnapYT.App.mp4",
-  "C:/Users/bsher/Downloads/Video/Kinemaster-white-flash-SnapYT.App.webm",
-  "C:/Users/bsher/Downloads/Video/Download (2).mp4",
-  "C:/Users/bsher/Downloads/Video/videoplayback.mp4",
-  "C:/Users/bsher/Downloads/Video/videoplayback.webm",
-  "C:/Users/bsher/Downloads/Video/Wuthering Waves 11 Minutes of Exclusive Gameplay.mp4"
+  "C:/Users/bsher/Videos/2026-11-04 20-51-06.mp4"
  ],
  "dataset": "C:/Users/bsher/Downloads/Video",
- "height": 480,
+ "height": 720,
  "max_per_video": 10000,
- "gap": 6,
- "min_motion": 0.0,
- "max_motion": 60.0,
+ "gap": 3,
+ "min_motion": 1.0,
+ "max_motion": 80.0,
  "duplicate": 0.6,
  "cut": 45.0,
  "strides": [
@@ -27,13 +18,13 @@
  "train_datasets": [
   "C:/Users/bsher/Downloads/Video"
  ],
- "preset": "large",
- "epochs": 12,
+ "preset": "small",
+ "epochs": 20,
  "batch": 4,
- "lr": 0.0007,
- "crop": 480,
- "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2",
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2\\best.pt",
+ "lr": 0.0001,
+ "crop": 720,
+ "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\720p",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/last.pt",
  "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow.onnx",
  "ui_mode": "frozen",
  "ui_labels": "C:\\Users\\bsher\\Downloads\\New folder\\frames\\labels.json",
