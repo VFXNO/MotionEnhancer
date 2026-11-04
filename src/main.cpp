@@ -7,6 +7,7 @@
 #include "NeuralFlow.h"
 #include "WindowHelper.h"
 #include "GuiApp.h"
+#include "FrameTimeline.h"
 
 #include <iostream>
 #include <fstream>
@@ -46,6 +47,9 @@ static void printUsage(const char* progName) {
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
               << "  --multiplier <2|3|4|max>      Output FPS multiplier (default: max = display rate)\n"
+              << "  --switch-width <w>            Hand-over from frame0's warp to frame1's: 0 = pure warping\n"
+              << "                                (default), up to 0.45 = spread over 0.5 +/- w of the pair,\n"
+              << "                                1 = the old full blend (same as --allow-crossfade)\n"
               << "  --gpu-levels <1-10>      Real-time pyramid levels (default: 8)\n"
               << "  --gpu-min-refine <n>     Finest searched level, 0 to levels-1 (default: 0)\n"
               << "  --gpu-coarse-radius <0-8>   Coarse search radius (default: 4)\n"
@@ -208,7 +212,79 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
 }
 
 
+// Frame pacing on a source whose timestamps land on the refresh grid (a
+// game rendering at a rate that does not divide the display refresh reaches
+// the screen, and WGC's timestamps, after 2, 4, 3... refreshes) while its
+// content advances evenly. Every displayed frame's position along the
+// source (pair index + alpha) should advance by the same step.
+static int runTimelineSelfTest() {
+    // Intervals in refreshes of a 120 Hz display (40 fps on average), repeated.
+    struct Case { const char* name; std::vector<int> refreshes; uint32_t multiplier; };
+    const Case cases[] = {
+        {"steady 40 fps, max", {3}, 0},
+        {"steady 40 fps, 4x", {3}, 4},
+        {"alternating 2/4 refreshes, max", {2, 4}, 0},
+        {"alternating 2/4 refreshes, 4x", {2, 4}, 4},
+        {"capture pattern 3/3/4/2/4/2, max", {3, 3, 4, 2, 4, 2}, 0},
+    };
+    const double refreshHz = 120.0;
+    const int64_t ms = 10000;
+    bool ok = true;
+    for (const Case& c : cases) {
+        FrameTimeline timeline;
+        timeline.configure(0, refreshHz, c.multiplier);
+        const int64_t refresh = static_cast<int64_t>(10000000.0 / refreshHz + 0.5);
+        int64_t ts = 10000 * ms;
+        int frames = 0;
+        std::vector<double> positions;
+        int64_t display = ts;
+        for (int i = 0; i < 120; ++i) {
+            ts += c.refreshes[i % c.refreshes.size()] * refresh;
+            const auto plan = timeline.onFrameArrived(ts, ts + 3 * ms);
+            if (plan.acceptThis) {
+                TimelineFrame frame;
+                frame.slot = i % 8;
+                frame.tsRaw = ts;
+                frame.arrival = ts + 3 * ms;
+                timeline.push(frame);
+                ++frames;
+            }
+            // Display refreshes up to this frame's arrival.
+            while (display + refresh <= ts + 3 * ms) {
+                display += refresh;
+                const auto sel = timeline.select(display);
+                if (i > 40 && sel.valid && !sel.hold && !sel.startup && sel.f0.index != sel.f1.index)
+                    positions.push_back(static_cast<double>(sel.f0.index) + sel.alpha);
+                timeline.retireBefore(sel.f0.index);
+            }
+        }
+        // Distinct positions in display order, and the steps between them.
+        std::vector<double> steps;
+        for (size_t i = 1; i < positions.size(); ++i)
+            if (positions[i] > positions[i - 1] + 1e-6) steps.push_back(positions[i] - positions[i - 1]);
+        if (steps.size() < 10) {
+            std::cout << "Timeline self-test: " << c.name << ": too few steps\n";
+            ok = false;
+            continue;
+        }
+        double mean = 0.0, smallest = 1e9, largest = 0.0;
+        for (double s : steps) { mean += s; smallest = std::min(smallest, s); largest = std::max(largest, s); }
+        mean /= static_cast<double>(steps.size());
+        double var = 0.0;
+        for (double s : steps) var += (s - mean) * (s - mean);
+        const double spread = std::sqrt(var / static_cast<double>(steps.size())) / mean;
+        std::cout << "Timeline self-test: " << c.name << ": step mean " << std::fixed << std::setprecision(3) << mean
+                  << " of a source frame, min " << smallest << ", max " << largest << ", spread "
+                  << std::setprecision(1) << 100.0 * spread << "%\n";
+        if (largest > 1.6 * smallest) ok = false;
+    }
+    std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL (uneven steps)") << "\n";
+    return ok ? 0 : 1;
+}
+
+
 int main(int argc, char** argv) {
+    if (argc == 2 && std::string(argv[1]) == "--timeline-self-test") return runTimelineSelfTest();
     setvbuf(stdout, nullptr, _IONBF, 0);
     setvbuf(stderr, nullptr, _IONBF, 0);
     std::cout.setf(std::ios::unitbuf);
@@ -349,6 +425,10 @@ int main(int argc, char** argv) {
             gpuSettings.uiMask = false;
         } else if (arg == "--no-ui-persistence") {
             gpuSettings.uiPersistence = false;
+        } else if (arg == "--allow-crossfade") {
+            SetEnvironmentVariableA("MOTION_ENHANCER_ALLOW_CROSSFADE", "1");
+        } else if (arg == "--switch-width" && i + 1 < argc) {
+            SetEnvironmentVariableA("MOTION_ENHANCER_SWITCH_WIDTH", argv[++i]);
         } else if (arg == "--ai-ui-regions") {
             gpuSettings.aiUiRegions = true;
         } else if (arg == "--ui-detector" && i + 1 < argc) {

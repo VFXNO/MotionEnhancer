@@ -310,6 +310,51 @@ class TrainingTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn('no last.pt', events[-1]['message'])
 
+    def test_pure_warp_scores_each_side_and_selects_by_it(self):
+        result, events = self.run_training(['--pure-warp', '1'])
+        self.assertEqual(result, 0)
+        scored = next(e for e in events if e['event'] == 'epoch')
+        self.assertEqual(scored['pure_warp'], 1.0)
+        self.assertTrue(np.isfinite(scored['pure_psnr']) and np.isfinite(scored['mask_psnr']))
+        # The headline (and best.pt) is the pure-warp score.
+        self.assertEqual(scored['psnr'], scored['pure_psnr'])
+        best = torch.load(self.run / 'best.pt', map_location='cpu')
+        self.assertEqual(best['pure_warp'], 1.0)
+        self.assertEqual(best['psnr'], scored['pure_psnr'])
+
+    def test_max_steps_ends_the_run_validated_and_not_as_a_stop(self):
+        result, events = self.run_training(['--epochs', '3', '--max-steps', '1'])
+        self.assertEqual(result, 0)
+        done = events[-1]
+        self.assertEqual((done['event'], done['step'], done['steps'], done['stopped']), ('done', 1, 1, False))
+        self.assertEqual(sum(1 for e in events if e['event'] == 'epoch'), 1)
+        self.assertTrue((self.run / 'best.pt').exists())
+        # Continuing a capped run does nothing more.
+        result, events = self.run_training(['--resume'])
+        self.assertEqual(result, 0)
+        self.assertTrue(events[-1].get('already_complete'))
+
+    def test_pure_warp_sides_are_exact_for_known_motion(self):
+        # A pattern moving 4 px right per frame: true F01 = +8 px, F10 = -8;
+        # each side alone must land on the middle frame exactly.
+        x = torch.linspace(0, 12.0, 96)
+        row = 0.5 + 0.4 * torch.sin(x)[None, None, None, :].repeat(1, 3, 32, 1)
+        f0 = row
+        f2 = torch.roll(row, 8, dims=3)
+        f1 = torch.roll(row, 4, dims=3)
+        flow = torch.zeros(1, 4, 32, 96)
+        flow[:, 0] = 8.0
+        flow[:, 2] = -8.0
+        s0, s2 = train.sides(f0, f2, flow)
+        inner = (slice(None), slice(None), slice(None), slice(16, 80))
+        self.assertLess(float((s0 - f1)[inner].abs().max()), 1e-4)
+        self.assertLess(float((s2 - f1)[inner].abs().max()), 1e-4)
+        # A short flow (90 %) is scored worse by each side alone.
+        short = flow * 0.9
+        a0, a2 = train.sides(f0, f2, short)
+        self.assertGreater(float((a0 - f1)[inner].abs().mean()), 0.005)
+        self.assertGreater(float((a2 - f1)[inner].abs().mean()), 0.005)
+
     def test_flash_only_dataset_trains_and_scores_without_motion(self):
         path = self.data / 'index.json'
         entries = json.loads(path.read_text())

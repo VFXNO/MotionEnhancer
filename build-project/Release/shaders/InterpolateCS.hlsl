@@ -105,6 +105,39 @@ static const float kAgreement = 8.0f;
 // 1440p with no measurable change in quality).
 static const float kSearchBelow = 2.0f;
 
+// Pure warping, no blend. Every output pixel is one motion-compensated
+// sample: the frame that counts more - frame0 warped forward before the
+// middle of the pair, frame1 warped backward from it, and the other frame
+// wherever that one's sample is covered (occlusion) or lands on UI. A blend
+// of the two shows both versions wherever the motion is wrong - a
+// half-faded double image that stays put while the scene moves (the
+// ghosting and stutter of a fast pan over water reflections and thin
+// plants close to the camera). Measured against true middle frames the
+// blend scores higher (PSNR averages the two errors), but it is the
+// cross-fade. NeuralControl.z = 1 brings the blend back (--allow-crossfade).
+//
+// Switch width: NeuralControl.z in (0, 0.5) is a half-width w. What warping
+// cannot do is change shape - a swinging braid, a cloak fold - so at the
+// switch the whole pose of frame0 is replaced by frame1's in one refresh.
+// With w > 0 that hand-over is spread over 0.5 - w .. 0.5 + w of the pair
+// (smoothstep on the samples' relative weight) instead of happening at one
+// instant; outside it every pixel is still a single warped sample.
+float SwitchWeight(float weightA, float weightB)
+{
+    const float width = NeuralControl.z;
+    // Also when both weights are tiny (two candidates both far off): the
+    // larger one, never a default side.
+    if (width <= 0.0f || weightA + weightB <= 1e-6f) return weightA >= weightB ? 0.0f : 1.0f;
+    const float share = weightB / (weightA + weightB);
+    return smoothstep(0.5f - width, 0.5f + width, share);
+}
+
+float3 NoCrossFade(float3 color, float3 a, float3 b, float weightA, float weightB)
+{
+    if (NeuralControl.z > 0.5f) return color;
+    return lerp(a, b, SwitchWeight(weightA, weightB));
+}
+
 // Debug view 4: one arrow per kArrowCell pixels, drawn at a quarter of the
 // vector and capped below the cell size so arrows never run into each
 // other; a capped one keeps its direction.
@@ -324,12 +357,13 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             // in by how close the tie is (see ClosestTrajectory).
             const float tie0 = (runnerUpResidual0 - residual0) / kTieWidth;
             const float tie1 = (runnerUpResidual1 - residual1) / kTieWidth;
-            if (residual0 > kTieGate && tie0 < 3.0f)
+            // (Pure warping, the default, takes the best trajectory alone.)
+            if (NeuralControl.z > 0.5f && residual0 > kTieGate && tie0 < 3.0f)
             {
                 const float w = exp(-tie0 * tie0);
                 b0 = (b0 + w * SampleSharp(Frame0, pixel - t * runnerUp0)) / (1.0f + w);
             }
-            if (residual1 > kTieGate && tie1 < 3.0f)
+            if (NeuralControl.z > 0.5f && residual1 > kTieGate && tie1 < 3.0f)
             {
                 const float w = exp(-tie1 * tie1);
                 b1 = (b1 + w * SampleSharp(Frame1, pixel - (1.0f - t) * runnerUp1)) / (1.0f + w);
@@ -358,6 +392,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         if (w0 + w1 > 1e-4f) color = (w0 * c0 + w1 * c1) / (w0 + w1);
     }
     color = ApplyAiBlendMask(color, c0, c1, pixel, from0, from1, t, valid0, valid1);
+    color = NoCrossFade(color, c0, c1, (1.0f - t) * valid0, t * valid1);
     if (hybrid)
     {
         const float vb0 = (1.0f - UiCoverage(UiMask.SampleLevel(LinearClamp, (fromB0 + 0.5f) * inverseSize, 0))) * trustB0;
@@ -365,10 +400,14 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         const float wb0 = (1.0f - t) * vb0, wb1 = t * vb1;
         float3 colorB = wb0 + wb1 > 1e-4f ? (wb0 * b0 + wb1 * b1) / (wb0 + wb1) : lerp(b0, b1, t);
         colorB = ApplyAiBlendMask(colorB, b0, b1, pixel, fromB0, fromB1, t, vb0, vb1);
+        colorB = NoCrossFade(colorB, b0, b1, wb0, wb1);
         const float dA = MaxComponent(abs(c0 - c1)) * kLumaScale / kAgreement;
         const float dB = MaxComponent(abs(b0 - b1)) * kLumaScale / kAgreement;
         const float wA = exp(-dA * dA), wB = exp(-dB * dB);
-        color = wA + wB > 1e-6f ? (wA * color + wB * colorB) / (wA + wB) : 0.5f * (color + colorB);
+        const float3 mixed = wA + wB > 1e-6f ? (wA * color + wB * colorB) / (wA + wB) : 0.5f * (color + colorB);
+        // Two candidates that each chose a different frame's sample would
+        // fade into one another here too: the more consistent one alone.
+        color = NoCrossFade(mixed, color, colorB, wA, wB);
     }
     // A confirmed pixel is held in place only inside a patch of UI: at least
     // kUiSupport of its 3x3 neighbourhood confirmed too. Isolated confirmed
@@ -388,8 +427,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     }
     if (uiHere > 0.0f)
     {
-        const float3 still = lerp(Frame0.Load(int3(id.xy, 0)).rgb, Frame1.Load(int3(id.xy, 0)).rgb, t);
-        color = lerp(color, still, uiHere);
+        // Held UI: the nearer real frame's pixel (no blend either).
+        const float3 p0 = Frame0.Load(int3(id.xy, 0)).rgb, p1 = Frame1.Load(int3(id.xy, 0)).rgb;
+        const float3 still = NeuralControl.z > 0.5f ? lerp(p0, p1, t) : lerp(p0, p1, SwitchWeight(1.0f - t, t));
+        color = NeuralControl.z > 0.5f ? lerp(color, still, uiHere) : (uiHere >= 0.5f ? still : color);
     }
 
     const int view = DebugView();

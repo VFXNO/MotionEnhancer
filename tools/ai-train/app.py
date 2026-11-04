@@ -671,6 +671,11 @@ class TrainPage(Page):
         self.refiner.setToolTip('Reuses the finest block’s features to correct motion vectors. '
                                 'Same training losses and triplets; no teacher or extra dataset processing. '
                                 'Continue restores the checkpoint’s architecture instead.')
+        self.pure_warp = QCheckBox('Score pure warping (what the program shows; no cross-fade)')
+        self.pure_warp.setChecked(s.get('pure_warp', True))
+        self.pure_warp.setToolTip('Scores frame0 warped alone and frame2 warped alone against the true middle, '
+                                  'instead of their blend, and keeps the best checkpoint by that score. A blended '
+                                  'score rewards slightly short motion, which pure warping shows as a jump.')
         self.init_from = QLineEdit(s.get('init_from', ''))
         grid.addWidget(label('Size'), 0, 0)
         grid.addWidget(self.preset, 0, 1, 1, 2)
@@ -681,6 +686,7 @@ class TrainPage(Page):
             grid.addWidget(label(hint, 'dim'), r, 2)
         ml.addLayout(grid)
         ml.addWidget(self.refiner)
+        ml.addWidget(self.pure_warp)
         ml.addWidget(label('Initial weights (optional; same size, NEW run only)', 'dim'))
         ml.addLayout(path_row(self.init_from, 'Browse', self.pick_initial))
         self.ui_mode = QComboBox()
@@ -1051,7 +1057,7 @@ class TrainPage(Page):
         v = {'train_datasets': sets, 'preset': self.preset.currentData(), 'epochs': self.epochs.value(),
              'batch': self.batch.value(), 'lr': self.lr.value(), 'crop': self.crop.value(), 'run': self.active_run,
              'refiner': self.refiner.isChecked(), 'init_from': self.init_from.text().strip(),
-             'ui_init_sha': self.ui_init_sha.text().strip()}
+             'ui_init_sha': self.ui_init_sha.text().strip(), 'pure_warp': self.pure_warp.isChecked()}
         self.app.store(v)
         args = ['--run', v['run'], '--preset', v['preset'], '--epochs', str(v['epochs']),
                 '--batch', str(v['batch']), '--lr', str(v['lr']), '--crop', str(v['crop']),
@@ -1063,6 +1069,8 @@ class TrainPage(Page):
         else:
             if v['refiner']:
                 args.append('--refiner')
+            if v['pure_warp']:
+                args += ['--pure-warp', '1']
             if v['init_from']:
                 args += ['--init-from', v['init_from']]
             self.loss_chart.clear()
@@ -1071,6 +1079,7 @@ class TrainPage(Page):
         self.stop_button.setEnabled(True)
         self.run.setEnabled(False)
         self.refiner.setEnabled(False)
+        self.pure_warp.setEnabled(False)
         self.init_from.setEnabled(False)
         self.ui_controls_enabled(False)
         self.bar.setRange(0, 1)
@@ -1098,6 +1107,7 @@ class TrainPage(Page):
             config = e['config']
             self.preset.setCurrentIndex(list(PRESET_TEXT).index(config['preset']))
             self.refiner.setChecked(config.get('refiner', False))
+            self.pure_warp.setChecked(config.get('pure_warp', 0.0) > 0)
             self.init_from.clear()
             for name in ('batch', 'crop', 'lr'):
                 widget = getattr(self, name)
@@ -1230,6 +1240,7 @@ class TrainPage(Page):
         self.stop_button.setEnabled(False)
         self.run.setEnabled(True)
         self.refiner.setEnabled(True)
+        self.pure_warp.setEnabled(True)
         self.init_from.setEnabled(True)
         self.ui_controls_enabled(True)
         self.app.set_busy(None)

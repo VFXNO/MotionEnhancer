@@ -5,6 +5,7 @@
 #include "stb_image_write.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -289,6 +290,19 @@ bool recordInterpolate(ID3D12GraphicsCommandList* list, DispatchContext& dispatc
     std::array<ID3D12Resource*, 6> in = {frame0, frame1, forward, backward, uiMask, project ? projection : nullptr};
     ShaderConstants synthesis = c;
     synthesis.neuralControl[3] = aiBlendMask && c.flowScale == 0.0f ? 1.0f : 0.0f;
+    // InterpolateCS shows one sample instead of a cross-fade where the two
+    // disagree; MOTION_ENHANCER_ALLOW_CROSSFADE (--allow-crossfade) restores
+    // the plain blend. MOTION_ENHANCER_SWITCH_WIDTH (--switch-width) spreads
+    // the frame0-to-frame1 hand-over over 0.5 +/- w of the pair (w up to
+    // 0.45); 1 (any value from 0.5) is the plain blend, as --allow-crossfade.
+    static const bool allowCrossFade = GetEnvironmentVariableA("MOTION_ENHANCER_ALLOW_CROSSFADE", nullptr, 0) > 0;
+    static const float switchWidth = [] {
+        char value[32] = {};
+        if (GetEnvironmentVariableA("MOTION_ENHANCER_SWITCH_WIDTH", value, sizeof(value)) == 0) return 0.0f;
+        const float width = static_cast<float>(std::atof(value));
+        return width >= 0.5f ? 1.0f : std::clamp(width, 0.0f, 0.45f);
+    }();
+    synthesis.neuralControl[2] = allowCrossFade ? 1.0f : switchWidth;
     if (!dispatch.dispatch(list, kernels, Kernel::Interpolate, in, output, synthesis,
                            (c.width + 15) / 16, (c.height + 15) / 16, implicitInputs, aiBlendMask)) return false;
     if (static_cast<int>(c.neuralControl[1]) == 5) return recordDepthView(list, dispatch, kernels, c, depth0, depth1, output);

@@ -7,6 +7,13 @@ of each triplet at t = 0.5, plus how well each direction's flow alone maps
 one end frame onto the other, plus a little smoothness of the flow where the
 picture is flat. No motion labels are needed.
 
+--pure-warp W (0..1) scores the middle frame the way the program shows it
+without cross-fade: frame0 warped alone and frame2 warped alone, each against
+the true middle, instead of their blend (W = 1: only that; 0: only the
+blend). A blended middle rewards hedged, slightly short motion - two
+half-way samples average out - which pure warping shows as a jump at the
+switch from frame0 to frame2. With W > 0 best.pt is chosen by that score.
+
 Progress goes to stdout as JSON lines (the trainer app reads them). Writing
 a file named STOP into the run folder ends the run after the current step,
 keeping the checkpoints. --resume continues from the run's last checkpoint.
@@ -26,7 +33,7 @@ from torch.utils.data import DataLoader
 from .checkpoint import (RESUME_VERSION, backup_checkpoint, lr_factor, restore_rng,
                          rng_state, save_checkpoint, save_config)
 from .data import EpochBatches, FullFrames, Triplets, is_moving, load_index, sample_identity, split, validation_identity
-from .model import (ARCH, COMPATIBLE, REFINED_ARCH, PyramidFlow, image_pyramid,
+from .model import (ARCH, COMPATIBLE, FINE, REFINED_ARCH, PyramidFlow, image_pyramid,
                     initialize_from, level_sizes, warp)
 
 
@@ -38,9 +45,10 @@ def charbonnier(x, eps=1e-3):
     return torch.sqrt(x * x + eps * eps).mean()
 
 
-def census(a, b, size=7):
+def census(a, b, size=7, weight=None):
     """Ternary census difference: compares local structure rather than
-    brightness, so a flow is not rewarded for matching shading alone."""
+    brightness, so a flow is not rewarded for matching shading alone.
+    `weight` [N, 1, H, W] (optional) counts each pixel by that much."""
     def transform(img):
         g = img.mean(1, keepdim=True)
         patches = F.unfold(g, size, padding=size // 2)
@@ -49,7 +57,11 @@ def census(a, b, size=7):
         return t / torch.sqrt(0.81 + t * t)
     ta, tb = transform(a), transform(b)
     d = (ta - tb) ** 2
-    return (d / (0.1 + d)).mean()
+    d = d / (0.1 + d)
+    if weight is None:
+        return d.mean()
+    w = weight.flatten(2)
+    return (d * w).sum() / (w.sum() * d.shape[1] + 1.0)
 
 
 def smoothness(flow, image, weight=10.0):
@@ -95,6 +107,31 @@ def middle(f0, f2, flow, mask):
     return mask * warp(f0, ft0) + (1.0 - mask) * warp(f2, ft1)
 
 
+def sides(f0, f2, flow):
+    """The two pure-warp candidates for the middle frame: frame0 warped
+    forward alone and frame2 warped backward alone (what the program shows
+    before and after the middle of the pair, without cross-fade)."""
+    f01, f10 = flow[:, 0:2], flow[:, 2:4]
+    return warp(f0, -0.25 * f01 + 0.25 * f10), warp(f2, 0.25 * f01 - 0.25 * f10)
+
+
+def side_trust(mask):
+    """How much each side is scored: all of it except where the model's own
+    blend mask says the point is hidden in that frame (the program takes the
+    other frame there). Detached: the mask is not trained to excuse errors."""
+    m = mask.detach().float()
+    return (m * 3.0 - 0.3).clamp(0, 1), ((1.0 - m) * 3.0 - 0.3).clamp(0, 1)
+
+
+def pure_middles(f0, f2, flow, mask):
+    """Each side alone, the other frame filling where that side is hidden:
+    the middle frame just before (frame0's) and just after (frame2's) the
+    switch."""
+    s0, s2 = sides(f0, f2, flow)
+    t0, t2 = side_trust(mask)
+    return t0 * s0 + (1.0 - t0) * s2, t2 * s2 + (1.0 - t2) * s0
+
+
 # Every level's loss counts the same. Halving it per level left the coarse
 # levels - the only ones that can find a large motion - almost untrained,
 # and training sat at a plain blend for longer (synthetic test, 15 epochs:
@@ -107,7 +144,7 @@ MIN_SCORED = 8
 DIRECT_WEIGHT = 0.25
 
 
-def losses(net, batch, occlusion=1.0):
+def losses(net, batch, occlusion=1.0, pure=0.0):
     """`occlusion` (0..1) fades in the occlusion masking: with it on from the
     start, the untrained model's two directions disagreed everywhere, the
     check marked almost every point hidden, the main motion signal vanished
@@ -116,6 +153,9 @@ def losses(net, batch, occlusion=1.0):
     after training without it."""
     f0, f1, f2 = batch[:, 0:3], batch[:, 3:6], batch[:, 6:9]
     levels = net(f0, f2, all_levels=True)
+    # The integrated refiner's own correction of the finest flow (network
+    # pixels), from this forward pass.
+    correction = getattr(net.fine[FINE - 1], 'last_correction', None) if net.arch == REFINED_ARCH else None
     # The frames at every level, exactly as the network built its own.
     sizes = level_sizes(*f0.shape[-2:])
     p0, p1, p2 = image_pyramid(f0, sizes), image_pyramid(f1, sizes), image_pyramid(f2, sizes)
@@ -129,6 +169,14 @@ def losses(net, batch, occlusion=1.0):
         mask = torch.sigmoid(mask_logit)
         pred = middle(a, b, flow, mask)
         rec = charbonnier(pred - m) + census(pred, m)
+        if pure > 0.0:
+            # Each side alone against the true middle, where that side is
+            # visible (see side_trust).
+            s0, s2 = sides(a, b, flow)
+            t0, t2 = side_trust(mask)
+            single = 0.5 * (masked_charbonnier(s0 - m, t0) + census(s0, m, weight=t0)
+                            + masked_charbonnier(s2 - m, t2) + census(s2, m, weight=t2))
+            rec = (1.0 - pure) * rec + pure * single
         # Each direction mapping one end frame onto the other, where the
         # point is visible in both, and the two directions agreeing there -
         # what the program's occlusion check (round trip) relies on.
@@ -145,7 +193,20 @@ def losses(net, batch, occlusion=1.0):
         # A term pulling the two directions to be mirror images everywhere
         # was tried: it drove training to near-zero motion (which is
         # trivially consistent) and a plain blend's score.
-        smooth = smoothness(flow[:, 0:2], a) + smoothness(flow[:, 2:4], b)
+        if level == 0 and correction is not None:
+            # The refiner's correction is smoothed on its own, the flow it
+            # corrects as without it. Smoothing the corrected flow rewarded
+            # shortening it: |grad flow| falls with the motion's length, so
+            # every few percent of length taken off small motions (where flat
+            # texture barely changes the photometric score) lowered the loss.
+            # The refiner learned exactly that - small motions 6-9% short,
+            # the backbone alone exact - which pure warping shows as a jump
+            # at the switch from frame0 to frame2.
+            base = flow - correction
+            smooth = (smoothness(base[:, 0:2], a) + smoothness(base[:, 2:4], b)
+                      + smoothness(correction[:, 0:2], a) + smoothness(correction[:, 2:4], b))
+        else:
+            smooth = smoothness(flow[:, 0:2], a) + smoothness(flow[:, 2:4], b)
         weight = LEVEL_WEIGHT ** level
         total = total + weight * (rec + DIRECT_WEIGHT * direct + 0.02 * consistent + 0.02 * smooth)
         if level == 0:
@@ -163,7 +224,7 @@ def validate(net, dataset, device, epoch):
     moving validation triplets (the headline) and over all of them, and the
     preview of this epoch's sample (a different moving one each epoch)."""
     net.eval()
-    scores = {'moving': ([], []), 'all': ([], [])}
+    scores = {'moving': ([], [], []), 'all': ([], [], [])}
     show = dataset.preview_order[epoch % len(dataset.preview_order)]
     preview = None
     for k in range(len(dataset)):
@@ -175,17 +236,23 @@ def validate(net, dataset, device, epoch):
         flow, mask = flow.float(), mask.float()
         pred = middle(f0, f2, flow, mask).clamp(0, 1)
         blend = 0.5 * (f0 + f2)
-        p = float(10 * torch.log10(1.0 / ((pred - f1) ** 2).mean().clamp_min(1e-10)))
-        b = float(10 * torch.log10(1.0 / ((blend - f1) ** 2).mean().clamp_min(1e-10)))
+        score = lambda x: float(10 * torch.log10(1.0 / ((x.clamp(0, 1) - f1) ** 2).mean().clamp_min(1e-10)))
+        p = score(pred)
+        b = score(blend)
+        # Pure warping: the mean of the two sides' scores (each shown for
+        # half of the pair).
+        before, after = pure_middles(f0, f2, flow, mask)
+        q = 0.5 * (score(before) + score(after))
         for group in (('moving', 'all') if bool(moving) else ('all',)):
             scores[group][0].append(p)
             scores[group][1].append(b)
+            scores[group][2].append(q)
         if k == show:
             v0, v1, _, _ = visible(flow[:, 0:2], flow[:, 2:4])
             preview = (f0[0], f1[0], f2[0], pred[0], blend[0], flow[0, 0:2], flow[0, 2:4], mask[0], v0[0])
     net.train()
     mean = lambda xs: float(np.mean(xs)) if xs else float('nan')
-    out = {g: (mean(s[0]), mean(s[1]), len(s[0])) for g, s in scores.items()}
+    out = {g: (mean(s[0]), mean(s[1]), len(s[0]), mean(s[2])) for g, s in scores.items()}
     return out, preview
 
 
@@ -220,11 +287,15 @@ def save_preview(path, preview):
     cv2.imwrite(path, cv2.cvtColor(np.concatenate(rows, 0), cv2.COLOR_RGB2BGR))
 
 
-def headline(scores):
+def headline(scores, pure=False):
+    """(group, (score, blend score, count)): the score is the pure-warp one
+    when training for it, so best.pt is what the program shows."""
     group = 'moving' if scores['moving'][2] else 'all'
-    if not math.isfinite(scores[group][0]):
+    model, blend, count, single = scores[group]
+    score = single if pure else model
+    if not math.isfinite(score):
         raise ValueError('validation is not finite; existing checkpoints have been kept')
-    return group, scores[group]
+    return group, (score, blend, count)
 
 
 def read_resume(path, args):
@@ -248,7 +319,8 @@ def read_resume(path, args):
     config = config or {}
     # Continue means the same experiment, not a silent change of batch size,
     # crop, seed, initial LR or model because the UI still has other defaults.
-    for name in ('data', 'batch', 'crop', 'lr', 'val', 'pan', 'warmup', 'occlusion_start', 'seed'):
+    for name in ('data', 'batch', 'crop', 'lr', 'val', 'pan', 'warmup', 'occlusion_start', 'seed', 'pure_warp',
+                 'max_steps'):
         if name in config:
             setattr(args, name, config[name])
     args.preset = ck['preset']
@@ -257,7 +329,7 @@ def read_resume(path, args):
     return ck
 
 
-def rescore_resume(net, ck, previous, dataset, device, validation, train_height):
+def rescore_resume(net, ck, previous, dataset, device, validation, train_height, pure=False):
     """Rebase legacy/changed metrics instead of discarding learned weights or
     comparing old and new scores. The old best is evaluated, not forgotten."""
     best, candidate = -1.0, None
@@ -268,7 +340,7 @@ def rescore_resume(net, ck, previous, dataset, device, validation, train_height)
                 raise ValueError('best.pt belongs to a different model; existing checkpoints have been kept')
             net.load_state_dict(state['model'])
             scores, _ = validate(net, dataset, device, max(0, state['epoch']))
-            _, (score, _, _) = headline(scores)
+            _, (score, _, _) = headline(scores, pure)
             if score > best:
                 best = score
                 candidate = {'arch': net.arch, 'preset': ck['preset'], 'model': state['model'],
@@ -298,6 +370,12 @@ def main(argv=None):
     # without, synthetic test) and fading it in at 20% stalled training.
     p.add_argument('--occlusion-start', type=float, default=2.0,
                    help='fraction of the run where occlusion masking starts fading in (over 0.2); 2 = never')
+    p.add_argument('--max-steps', type=int, default=0,
+                   help='end the run after this many steps (0: all epochs); the learning-rate schedule '
+                        'spans this length, and the run is validated when it ends')
+    p.add_argument('--pure-warp', type=float, default=0.0,
+                   help='share (0..1) of the middle-frame score taken by each frame warped alone instead of '
+                        'their blend; > 0 also selects best.pt by that score')
     start = p.add_mutually_exclusive_group()
     start.add_argument('--resume', action='store_true')
     start.add_argument('--init-from', help='weights-only initialization in a new run; preserves the source checkpoint')
@@ -328,6 +406,10 @@ def main(argv=None):
         return 1
     if args.epochs < 1 or args.batch < 1 or args.workers < 0 or args.save_every < 0 or not 0 < args.val < 1:
         p.error('epochs/batch must be positive, workers/save-every nonnegative, and val between 0 and 1')
+    if not 0.0 <= args.pure_warp <= 1.0:
+        p.error('--pure-warp must be between 0 and 1')
+    if args.max_steps < 0:
+        p.error('--max-steps must be 0 or positive')
     os.makedirs(args.run, exist_ok=True)
     stop_file = os.path.join(args.run, 'STOP')
     if not args.stop_token and os.path.exists(stop_file):
@@ -393,6 +475,8 @@ def main(argv=None):
     emit(event='model', arch=net.arch, preset=args.preset, parameters=sum(p.numel() for p in net.parameters()))
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=1e-4)
     steps = args.epochs * per_epoch
+    if args.max_steps:
+        steps = min(steps, args.max_steps)
     warmup = args.warmup if args.warmup >= 0 else min(500, steps // 20)
     plan = {'kind': 'cosine', 'steps': steps, 'warmup': warmup}
     start_epoch, start_batch, step, best = 0, 0, 0, -1.0
@@ -409,6 +493,8 @@ def main(argv=None):
                  'dataset for this run; existing checkpoints are unchanged.')
             return 1
         original_steps = int(ck.get('epochs', args.epochs)) * per_epoch
+        if args.max_steps:
+            original_steps = min(original_steps, args.max_steps)
         original_warmup = args.warmup if args.warmup >= 0 else min(500, original_steps // 20)
         plan = ck.get('schedule', {'kind': 'cosine', 'steps': max(1, original_steps), 'warmup': original_warmup})
         if steps != original_steps:
@@ -434,7 +520,7 @@ def main(argv=None):
                 raise ValueError('the checkpoint contains nonfinite model weights')
             emit(event='resumed', epoch=start_epoch, batch=start_batch, step=step, steps=steps,
                  lr=opt.param_groups[0]['lr'], best=best, config=vars(args))
-            if start_epoch >= args.epochs:
+            if start_epoch >= args.epochs or (args.max_steps and step >= steps):
                 emit(event='done', best=best, stopped=False, already_complete=True, epoch=start_epoch,
                      message=f'Already completed {start_epoch} epochs. Increase Total epochs above '
                      f'{start_epoch} to continue training.')
@@ -452,7 +538,8 @@ def main(argv=None):
                 emit(event='warning', message='Validation changed or this is a legacy checkpoint. '
                      'Re-scoring the saved best and last weights on the current hold-out before continuing; '
                      'original checkpoints will be backed up.')
-                best, rescored = rescore_resume(net, ck, previous, val_set, device, validation, train_height)
+                best, rescored = rescore_resume(net, ck, previous, val_set, device, validation, train_height,
+                                                args.pure_warp > 0)
             else:
                 rescored = None
                 if previous is not None:
@@ -507,7 +594,7 @@ def main(argv=None):
             # Occlusion masking fades in between 40% and 60% of the run.
             occlusion = min(1.0, max(0.0, (step / steps - args.occlusion_start) / 0.2))
             with torch.autocast('cuda', dtype=torch.float16, enabled=device.type == 'cuda'):
-                loss, parts, _ = losses(net, batch, occlusion)
+                loss, parts, _ = losses(net, batch, occlusion, args.pure_warp)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
@@ -544,10 +631,11 @@ def main(argv=None):
                      lr=sched.get_last_lr()[0], eta=round(remaining), skipped=skipped,
                      **{k: float(v) for k, v in parts.items()})
             stopped = stop_requested()
-            if stopped or (args.save_every and step % args.save_every == 0):
+            capped = step >= steps   # --max-steps reached: ends like Stop, but is not one
+            if stopped or capped or (args.save_every and step % args.save_every == 0):
                 write_last(epoch, epoch, consumed, running, count)
                 emit(event='checkpoint', step=step, epoch=epoch, batch=consumed, path=last_path)
-            if stopped:
+            if stopped or capped:
                 break
         if not all(torch.isfinite(p).all() for p in net.parameters()):
             # Broken beyond what skipping steps prevents: stop, and keep the
@@ -561,7 +649,7 @@ def main(argv=None):
         # Keep the motion-only headline, but score all triplets when none
         # moves, including flash-only datasets with identical endpoints.
         try:
-            group, (psnr, blend, _) = headline(scores)
+            group, (psnr, blend, _) = headline(scores, args.pure_warp > 0)
         except ValueError as error:
             emit(event='error', message=str(error))
             return 1
@@ -569,15 +657,17 @@ def main(argv=None):
         if improved:
             best = psnr
             save_checkpoint({'arch': net.arch, 'model': net.state_dict(), 'preset': args.preset, 'psnr': psnr,
-                             'epoch': epoch, 'train_height': train_height, 'validation': validation}, best_path)
+                             'epoch': epoch, 'train_height': train_height, 'validation': validation,
+                             'pure_warp': args.pure_warp}, best_path)
         complete = consumed == per_epoch
         write_last(epoch, epoch + 1 if complete else epoch, 0 if complete else consumed,
                    0.0 if complete else running, 0 if complete else count)
         emit(event='epoch', epoch=epoch, epochs=args.epochs, loss=float(running) / max(1, count), psnr=psnr,
              blend_psnr=blend, best=best, improved=improved, preview=preview_path, scored=group,
              scored_count=scores[group][2], complete=complete, step=step, steps=steps, batch=consumed,
-             moving=scores['moving'][2], psnr_all=scores['all'][0], blend_all=scores['all'][1])
-        if stopped:
+             moving=scores['moving'][2], psnr_all=scores['all'][0], blend_all=scores['all'][1],
+             mask_psnr=scores[group][0], pure_psnr=scores[group][3], pure_warp=args.pure_warp)
+        if stopped or step >= steps:
             break
     emit(event='done', best=best, stopped=stopped, step=step, steps=steps, seconds=round(time.time() - started))
     return 0

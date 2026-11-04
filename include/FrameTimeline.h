@@ -106,6 +106,7 @@ private:
     uint32_t m_sourceFpsOverride = 0;
     std::deque<int64_t> m_intervals;
     int64_t m_period = 333333;       // 30 fps until measured
+    bool m_periodMeasured = false;   // m_period is a measurement (or the override)
     bool m_locked = false;
     int64_t m_lastArrivalTsRaw = 0;  // newest non-duplicate arrival (any decision)
     int64_t m_lastAcceptedTsRaw = 0;

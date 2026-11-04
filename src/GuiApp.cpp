@@ -50,6 +50,7 @@ constexpr int IDC_LIVE_MULTIPLIER = 112;
 constexpr int IDC_LIVE_FLOW_ENGINE = 113;
 constexpr int IDC_LIVE_ADAPTER = 114;
 constexpr int IDC_AI_DEPTH_RATE = 115;
+constexpr int IDC_SWITCH_WIDTH = 116;
 constexpr int IDC_OPEN_TRAINER = 116;
 constexpr int IDC_USE_AI_ENGINE = 117;
 constexpr int IDC_AI_REFRESH = 118;
@@ -155,6 +156,7 @@ struct GuiState {
     HWND ffxOcclusion = nullptr;
     HWND aiDepth = nullptr;
     HWND aiDepthRate = nullptr;
+    HWND switchWidth = nullptr;
     HWND aiBlendMask = nullptr;
     HWND aiRefinement = nullptr;
     HWND aiRefinementHelp = nullptr;
@@ -1181,6 +1183,12 @@ void startCapture() {
         "--flow-engine", flowEngineArg,
         "--adapter", adapterArg
     };
+    {
+        static const char* const widths[] = {"0", "0.15", "0.25", "1"};
+        const LRESULT selection = SendMessageA(g_state.switchWidth, CB_GETCURSEL, 0, 0);
+        captureArgs.push_back("--switch-width");
+        captureArgs.push_back(widths[selection >= 0 && selection < 4 ? selection : 0]);
+    }
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
     else if (SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         const LRESULT selection = SendMessageA(g_state.uiDetector, CB_GETCURSEL, 0, 0);
@@ -1531,6 +1539,14 @@ void createControls() {
     SendMessageA(g_state.liveAdapter, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>("Discrete GPU"));
     SendMessageA(g_state.liveAdapter, CB_SETCURSEL, 0, 0);
 
+    // Hand-over from frame0's warped picture to frame1's (--switch-width):
+    // pure warping switches at the middle of the pair in one refresh; the
+    // soft widths spread it over 0.5 +/- w; Full blend is the old cross-fade.
+    HWND switchWidthLabel = makeLabel("HAND-OVER", 700, 208, 130);
+    g_state.switchWidth = makeCombo(700, 244, 130, IDC_SWITCH_WIDTH);
+    for (const char* option : {"Pure warp", "Soft 0.15", "Soft 0.25", "Full blend (old)"})
+        SendMessageA(g_state.switchWidth, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.switchWidth, CB_SETCURSEL, 0, 0);
     HWND gpuLevelsLabel = makeLabel("Pyramid levels (1-10)", 56, 208, 160);
     g_state.gpuLevels = makeEdit("8", 224, 204, 80, IDC_GPU_LEVELS, true);
     HWND gpuMinRefineLabel = makeLabel("Finest searched level", 430, 208, 175);
@@ -1619,7 +1635,7 @@ void createControls() {
     g_state.liveControls = {
         liveHeading, g_state.windowList, g_state.refreshButton,
         liveFpsLabel, g_state.liveSourceFps, multiplierLabel, g_state.liveMultiplier,
-        adapterLabel, g_state.liveAdapter,
+        adapterLabel, g_state.liveAdapter, switchWidthLabel, g_state.switchWidth,
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,

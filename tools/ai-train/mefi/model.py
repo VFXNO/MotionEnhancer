@@ -164,6 +164,9 @@ class RefinedBlock(Block):
         features = self.body(features) + features
         residual = F.pixel_shuffle(self.head(features), 2)[:, :, :h, :w]
         correction = self.refiner(x, features, residual)
+        if self.training:
+            # Training scores the refiner's smoothness on its own (train.losses).
+            self.last_correction = correction
         # The caller scales the block's four flow outputs by FLOW_GAIN.
         return torch.cat((residual[:, :4] + correction / FLOW_GAIN, residual[:, 4:5]), 1)
 

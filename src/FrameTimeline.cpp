@@ -15,6 +15,10 @@ constexpr double kGridTolerance = 0.3;
 constexpr double kDeferWindow = 0.7;
 constexpr size_t kCadenceWindow = 16;
 constexpr size_t kCadenceMinSamples = 8;
+// Unsteady cadence (see regularize): the smoothed clock resyncs to the raw
+// timestamp when it is this many periods off, or after a gap this long.
+constexpr double kFreeTolerance = 0.75;
+constexpr double kFreeGap = 4.0;
 }
 
 void FrameTimeline::configure(uint32_t sourceFpsOverride, double refreshHz, uint32_t outputMultiplier) {
@@ -24,6 +28,7 @@ void FrameTimeline::configure(uint32_t sourceFpsOverride, double refreshHz, uint
     m_refreshInterval = static_cast<int64_t>(static_cast<double>(kSecond) / std::max(1.0, refreshHz) + 0.5);
     if (sourceFpsOverride > 0) {
         m_period = kSecond / static_cast<int64_t>(sourceFpsOverride);
+        m_periodMeasured = true;
         m_locked = true;
     }
     // Latency budget: the next source frame (one period) must have arrived
@@ -66,13 +71,17 @@ void FrameTimeline::updateCadence() {
     const bool wasLocked = m_locked;
     const int64_t oldPeriod = m_period;
     m_locked = near * 4 >= sorted.size() * 3;
-    if (m_locked) {
-        m_period = period;
+    // The period is tracked whether or not the cadence is steady: a source
+    // whose frames land on a refresh grid its rate does not divide (2, 4, 3
+    // refreshes...) still has a mean rate, and regularize() paces it by that.
+    m_period = period;
+    m_periodMeasured = true;
+    {
         const bool changed = std::llabs(m_period - oldPeriod) > oldPeriod / 5;
-        if (!wasLocked || changed) {
+        if ((m_locked && !wasLocked) || changed) {
             m_minLatencyBudget = m_period + m_refreshInterval + 4 * kMs;
             m_maxLatencyBudget = 3 * m_period + 60 * kMs;
-            if (!wasLocked) {
+            if (m_locked && !wasLocked) {
                 m_latencyBudget = m_period + 2 * m_refreshInterval + 10 * kMs;
             }
             m_latencyBudget = std::clamp(m_latencyBudget, m_minLatencyBudget, m_maxLatencyBudget);
@@ -89,16 +98,30 @@ bool FrameTimeline::onGrid(int64_t delta) const {
 }
 
 int64_t FrameTimeline::regularize(int64_t tsRaw) {
-    if (m_frames.empty() || !m_locked) return tsRaw;
+    if (m_frames.empty() || !m_periodMeasured) return tsRaw;
     const int64_t delta = tsRaw - m_lastAcceptedTsRaw;
-    const double k = std::max(1.0, std::round(static_cast<double>(delta) / static_cast<double>(m_period)));
+    const double periods = static_cast<double>(delta) / static_cast<double>(m_period);
+    const double k = std::max(1.0, std::round(periods));
     const int64_t predicted = m_lastAcceptedTs + static_cast<int64_t>(k * static_cast<double>(m_period));
     const int64_t err = tsRaw - predicted;
     int64_t ts;
-    if (std::llabs(err) > static_cast<int64_t>(kGridTolerance * m_period)) {
-        ts = tsRaw;                 // phase shift: resync
+    if (m_locked) {
+        if (std::llabs(err) > static_cast<int64_t>(kGridTolerance * m_period)) {
+            ts = tsRaw;                 // phase shift: resync
+        } else {
+            ts = predicted + err / 10;  // slow phase correction
+        }
+    } else if (periods < 0.5 || periods > kFreeGap ||
+               std::llabs(err) > static_cast<int64_t>(kFreeTolerance * m_period)) {
+        ts = tsRaw;                     // repaint between frames, pause, or drift: resync
     } else {
-        ts = predicted + err / 10;  // slow phase correction
+        // Unsteady cadence: a game rendering at a rate the refresh does not
+        // divide reaches the screen (and WGC's timestamps) after 2, 4, 3...
+        // refreshes while its content advances evenly. Its raw timestamps
+        // would pace the in-between frames unevenly - pairs of 2 refreshes
+        // rushed, pairs of 4 dragged - so they follow a smoothed clock at
+        // the mean period instead, pulled slowly toward the raw phase.
+        ts = predicted + err / 8;
     }
     return std::max(ts, m_frames.back().ts + m_period / 10);
 }
@@ -275,8 +298,12 @@ FrameTimeline::Selection FrameTimeline::select(int64_t displayWallTime) {
             if (m_outputMultiplier > 0) {
                 // Quantize to the requested output cadence so 2x/3x/4x show
                 // each intermediate position for a whole output interval.
+                // Only when that interval is at least a refresh: a finer
+                // grid than the display shows (40 fps x4 on 120 Hz) would
+                // just snap every refresh to a grid point behind it, steps
+                // of 1/4, 1/4, 1/2 instead of an even 1/3.
                 const int64_t step = std::max<int64_t>(1, m_period / static_cast<int64_t>(m_outputMultiplier));
-                offset = (offset / step) * step;
+                if (step >= m_refreshInterval) offset = (offset / step) * step;
             }
             sel.alpha = std::clamp(static_cast<float>(static_cast<double>(offset) / static_cast<double>(duration)), 0.0f, 1.0f);
             m_currentF1Index = b.index;

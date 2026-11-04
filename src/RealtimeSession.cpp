@@ -2310,6 +2310,9 @@ int runUiRegionsSelfTest(GraphicsAdapterPreference adapter) {
 }
 
 int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter) {
+    // This test checks synthesis arithmetic that blends the two frames;
+    // synthesis is pure warping by default (InterpolateCS NoCrossFade).
+    SetEnvironmentVariableA("MOTION_ENHANCER_ALLOW_CROSSFADE", "1");
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;
     ComputeKernels kernels;
@@ -2544,6 +2547,9 @@ int runAiBlendMaskSelfTest(GraphicsAdapterPreference adapter) {
 }
 
 int runProjectionSelfTest(GraphicsAdapterPreference adapter) {
+    // This test checks synthesis arithmetic that blends the two frames;
+    // synthesis is pure warping by default (InterpolateCS NoCrossFade).
+    SetEnvironmentVariableA("MOTION_ENHANCER_ALLOW_CROSSFADE", "1");
     GraphicsDevice device;
     if (!device.initialize(adapter)) return 1;
     ComputeKernels kernels;
