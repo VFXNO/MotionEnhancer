@@ -1191,18 +1191,18 @@ void startCapture() {
     }
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
     else if (SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-        const LRESULT selection = SendMessageA(g_state.uiDetector, CB_GETCURSEL, 0, 0);
-        const auto choice = selection == 1 ? UiDetector::Choice::MatrixIcons : UiDetector::Choice::DirectMLIcons;
+        const LRESULT detector = SendMessageA(g_state.uiDetector, CB_GETCURSEL, 0, 0);
+        const auto choice = detector == 1 ? UiDetector::Choice::MatrixIcons : UiDetector::Choice::DirectMLIcons;
         const auto path = std::filesystem::path(UiDetector::defaultModelPath(choice));
         if (!std::filesystem::is_regular_file(path) ||
-            (selection == 1 && !std::filesystem::is_regular_file(std::filesystem::path(path).replace_extension(L".bin")))) {
+            (detector == 1 && !std::filesystem::is_regular_file(std::filesystem::path(path).replace_extension(L".bin")))) {
             CloseHandle(stopEvent);
             SetWindowTextA(g_state.liveStatus, "Selected UI detector missing: see tools/ui-detect/README.md. No fallback.");
             return;
         }
         captureArgs.push_back("--ai-ui-regions");
         captureArgs.push_back("--ui-detector");
-        captureArgs.push_back(selection == 1 ? "matrix" : "icons");
+        captureArgs.push_back(detector == 1 ? "matrix" : "icons");
     }
     // Engine-specific, ignored by the others: the occlusion fill is DIS's,
     // the refinement and its occlusion handling FFX's (occlusion handling

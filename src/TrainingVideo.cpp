@@ -13,6 +13,12 @@
 using Microsoft::WRL::ComPtr;
 
 namespace {
+// The source reader's stream indices are negative enum values passed as
+// DWORD; converted once here instead of at every call.
+constexpr DWORD kVideoStream = static_cast<DWORD>(MF_SOURCE_READER_FIRST_VIDEO_STREAM);
+constexpr DWORD kAllStreams = static_cast<DWORD>(MF_SOURCE_READER_ALL_STREAMS);
+constexpr DWORD kMediaSource = static_cast<DWORD>(MF_SOURCE_READER_MEDIASOURCE);
+
 struct MediaFoundationSession {
     HRESULT comResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool started = false;
@@ -99,13 +105,13 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
         error = "cannot open video (or Windows has no decoder for it)";
         return false;
     }
-    if (FAILED(reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE)) ||
-        FAILED(reader->SetStreamSelection(MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE)) ||
+    if (FAILED(reader->SetStreamSelection(kAllStreams, FALSE)) ||
+        FAILED(reader->SetStreamSelection(kVideoStream, TRUE)) ||
         FAILED(MFCreateMediaType(&rgbType)) ||
         FAILED(rgbType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video)) ||
         FAILED(rgbType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)) ||
-        FAILED(reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, rgbType.Get())) ||
-        FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, &currentType))) {
+        FAILED(reader->SetCurrentMediaType(kVideoStream, nullptr, rgbType.Get())) ||
+        FAILED(reader->GetCurrentMediaType(kVideoStream, &currentType))) {
         error = "Windows could not convert the video to RGB32";
         return false;
     }
@@ -118,7 +124,7 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
 
     PROPVARIANT duration;
     PropVariantInit(&duration);
-    const bool canSeek = SUCCEEDED(reader->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE,
+    const bool canSeek = SUCCEEDED(reader->GetPresentationAttribute(kMediaSource,
                                                                     MF_PD_DURATION, &duration)) &&
                          duration.vt == VT_UI8 && duration.uhVal.QuadPart > 0;
     const uint64_t duration100ns = canSeek ? duration.uhVal.QuadPart : 0;
@@ -148,7 +154,7 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
             DWORD flags = 0;
             LONGLONG timestamp = 0;
             ComPtr<IMFSample> sample;
-            if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, nullptr,
+            if (FAILED(reader->ReadSample(kVideoStream, 0, nullptr,
                                           &flags, &timestamp, &sample))) {
                 error = "video decoding failed";
                 return false;
@@ -158,7 +164,7 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
                 // Common on real files: the decoder changes resolution or
                 // stride mid-stream. Re-read the type and keep decoding.
                 currentType = nullptr;
-                if (FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+                if (FAILED(reader->GetCurrentMediaType(kVideoStream,
                                                        &currentType)) ||
                     FAILED(MFGetAttributeSize(currentType.Get(), MF_MT_FRAME_SIZE, &width, &height)) ||
                     width == 0 || height == 0 || width > 16384 || height > 16384) {
@@ -178,7 +184,7 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
                     DWORD flags = 0;
                     LONGLONG timestamp = 0;
                     ComPtr<IMFSample> sample;
-                    if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, nullptr,
+                    if (FAILED(reader->ReadSample(kVideoStream, 0, nullptr,
                                                   &flags, &timestamp, &sample))) {
                         error = "could not decode consecutive video frames";
                         return false;
@@ -186,7 +192,7 @@ bool decodeTrainingVideo(const std::string& path, size_t frameLimit,
                     if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
                     if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) {
                         currentType = nullptr;
-                        if (FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+                        if (FAILED(reader->GetCurrentMediaType(kVideoStream,
                                                                &currentType)) ||
                             FAILED(MFGetAttributeSize(currentType.Get(), MF_MT_FRAME_SIZE,
                                                       &width, &height))) {
@@ -233,13 +239,13 @@ bool streamTrainingVideo(const std::string& path, const TrainingFrameConsumer& c
         error = "cannot open video";
         return false;
     }
-    if (FAILED(reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE)) ||
-        FAILED(reader->SetStreamSelection(MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE)) ||
+    if (FAILED(reader->SetStreamSelection(kAllStreams, FALSE)) ||
+        FAILED(reader->SetStreamSelection(kVideoStream, TRUE)) ||
         FAILED(MFCreateMediaType(&rgbType)) ||
         FAILED(rgbType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video)) ||
         FAILED(rgbType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)) ||
-        FAILED(reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, rgbType.Get())) ||
-        FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, &currentType))) {
+        FAILED(reader->SetCurrentMediaType(kVideoStream, nullptr, rgbType.Get())) ||
+        FAILED(reader->GetCurrentMediaType(kVideoStream, &currentType))) {
         error = "Windows could not convert video to RGB32";
         return false;
     }
@@ -252,7 +258,7 @@ bool streamTrainingVideo(const std::string& path, const TrainingFrameConsumer& c
     PROPVARIANT duration;
     PropVariantInit(&duration);
     const bool knownDuration = SUCCEEDED(reader->GetPresentationAttribute(
-        MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &duration)) &&
+        kMediaSource, MF_PD_DURATION, &duration)) &&
         duration.vt == VT_UI8 && duration.uhVal.QuadPart > 0;
     const uint64_t duration100ns = knownDuration ? duration.uhVal.QuadPart : 0;
     PropVariantClear(&duration);
@@ -260,7 +266,7 @@ bool streamTrainingVideo(const std::string& path, const TrainingFrameConsumer& c
         DWORD flags = 0;
         LONGLONG timestamp = 0;
         ComPtr<IMFSample> sample;
-        if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, nullptr,
+        if (FAILED(reader->ReadSample(kVideoStream, 0, nullptr,
                                       &flags, &timestamp, &sample))) {
             error = "video decoding failed";
             return false;
@@ -272,7 +278,7 @@ bool streamTrainingVideo(const std::string& path, const TrainingFrameConsumer& c
         if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
         if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) {
             currentType = nullptr;
-            if (FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+            if (FAILED(reader->GetCurrentMediaType(kVideoStream,
                                                    &currentType)) ||
                 FAILED(MFGetAttributeSize(currentType.Get(), MF_MT_FRAME_SIZE, &width, &height)) ||
                 width == 0 || height == 0 || width > 16384 || height > 16384) {

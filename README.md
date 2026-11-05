@@ -473,7 +473,7 @@ The network supplies the coarse motion; the frames, at the resolution the pictur
 
 On the real captures the mean went from 24.01 to 24.29 dB (edges 17.80 → 18.24). Two other approaches were measured and dropped: joint bilateral upsampling guided by the full-resolution frame (no difference) and refining down to full resolution (2 ms more for the same result).
 
-At 640×352 the whole engine measured 2.55 ms per 1440p pair on an RX 9070 XT (the network alone about 1.3 ms, medium model, plus about 1 ms of DIS), against DIS's 4.3 ms. `--ai-flow-test model.onnx` times the network alone. Without a model it falls back to DIS. `MOTION_ENHANCER_AI_FLOW_MODEL` points it at another file, and `MOTION_ENHANCER_AI_FILL` / `MOTION_ENHANCER_AI_MEDIAN` try DIS's occlusion fill and the 3×3 median on its fields. Its quality is only as good as its training: train it on footage like what you play.
+At 640×352 the whole engine measured 2.55 ms per 1440p pair on an RX 9070 XT (the network alone about 1.3 ms, medium model, plus about 1 ms of DIS), against DIS's 4.3 ms. `--ai-flow-test model.onnx` times the network alone. Without a model it falls back to DIS. `MOTION_ENHANCER_AI_FLOW_MODEL` points it at another file. Its quality is only as good as its training: train it on footage like what you play.
 
 ### Dense Inverse Search (`--flow-engine dis`, the default)
 

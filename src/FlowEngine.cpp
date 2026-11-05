@@ -1323,17 +1323,12 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     m_usingDis = !ok && disActive();
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
     if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
-    // Experiments on the AI engine's fields: DIS's occlusion fill and the
-    // 3x3 median (MOTION_ENHANCER_AI_FILL / MOTION_ENHANCER_AI_MEDIAN).
-    static const bool aiFill = GetEnvironmentVariableA("MOTION_ENHANCER_AI_FILL", nullptr, 0) > 0;
-    static const bool aiMedian = GetEnvironmentVariableA("MOTION_ENHANCER_AI_MEDIAN", nullptr, 0) > 0;
-    if (ok && m_usingAi && aiFill) ok = recordOcclusionFill(previous, current, scratch);
     // The AI engine's field after DIS refinement: a 5x5 median takes out the
     // mottling the refinement leaves (FlowMedian5CS; on by default like the
     // other engines' median, --no-flow-median turns it off). The integrated
-    // refiner's field is smooth already.
+    // refiner's field is smooth already (0.2% speckled vectors), so it gets
+    // none.
     if (ok && m_usingAi && !scratch.aiRefined) ok = recordFlowMedian(scratch, true);
-    else if (ok && m_usingAi && aiMedian) ok = recordFlowMedian(scratch);
     // The neural estimator's 8x8 fields are median filtered as well: on the
     // user's real frames +0.14 dB (24.52 -> 24.66, the two sequences with
     // fast near grass +0.4 dB each), and less speckle beside the character
