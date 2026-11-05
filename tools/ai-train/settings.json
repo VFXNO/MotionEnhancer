@@ -19,7 +19,7 @@
   "C:/Users/bsher/Downloads/Video"
  ],
  "preset": "large",
- "epochs": 10,
+ "epochs": 40,
  "batch": 8,
  "lr": 0.0001,
  "crop": 352,
