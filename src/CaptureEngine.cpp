@@ -171,8 +171,8 @@ bool CaptureEngine::prepare(HWND target) {
             return false;
         }
         const auto itemSize = m_item.Size();
-        m_width = static_cast<uint32_t>(itemSize.Width);
-        m_height = static_cast<uint32_t>(itemSize.Height);
+        m_width = m_itemWidth = static_cast<uint32_t>(itemSize.Width);
+        m_height = m_itemHeight = static_cast<uint32_t>(itemSize.Height);
         m_cropX = m_cropY = 0;
 
         // Capture the client area only: the window frame never moves and
@@ -390,13 +390,19 @@ bool CaptureEngine::runDiff(int slot, int referenceSlot, DiffResult& out) {
 void CaptureEngine::processFrame(QueuedFrame& queued) {
     auto& frame = queued.frame;
     const int64_t tsRaw = frame.SystemRelativeTime().count();
+    // The pool, slots and every GPU resource are sized for the window as it
+    // was when capture started. A resized window (or one switched between
+    // windowed and fullscreen) is counted; RealtimeSession ends the session
+    // when that persists. Smaller frames cannot be used at all, larger ones
+    // would show only the old size's top-left part.
     const auto contentSize = frame.ContentSize();
-    if (static_cast<uint32_t>(contentSize.Width) < m_cropX + m_width ||
-        static_cast<uint32_t>(contentSize.Height) < m_cropY + m_height) {
+    const uint32_t contentWidth = static_cast<uint32_t>(contentSize.Width);
+    const uint32_t contentHeight = static_cast<uint32_t>(contentSize.Height);
+    if (contentWidth != m_itemWidth || contentHeight != m_itemHeight) {
         std::lock_guard<std::mutex> lock(m_statsMutex);
         ++m_stats.sizeMismatch;
-        return;
     }
+    if (contentWidth < m_cropX + m_width || contentHeight < m_cropY + m_height) return;
     auto access = frame.Surface().as<Windows::Graphics::DirectX::Direct3D11::IDirect3DDxgiInterfaceAccess>();
     ComPtr<ID3D11Texture2D> source;
     if (FAILED(access->GetInterface(IID_PPV_ARGS(&source)))) return;

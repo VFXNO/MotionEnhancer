@@ -576,7 +576,7 @@ class DatasetPage(Page):
             r = e['rejected']
             self.status.setText(f"{self.current}: frame {e['frame']} / {e['frames']}, kept {e['kept']} "
                                 f"({e.get('flashes', 0)} flashes; skipped: {r['duplicate']} repeated, {r['cut']} cuts, "
-                                f"{r['still']} still, {r['fast']} fast)")
+                                f"{r['still']} still, {r['fast']} fast, {r.get('uneven', 0)} uneven)")
         elif kind == 'sample':
             ims = [QImage(os.path.join(e['path'], f'im{k}.jpg')) for k in range(3)]
             if all(not i.isNull() for i in ims):

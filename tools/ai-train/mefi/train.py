@@ -38,7 +38,8 @@ from torch.utils.data import DataLoader
 
 from .checkpoint import (RESUME_VERSION, backup_checkpoint, lr_factor, restore_rng,
                          rng_state, save_checkpoint, save_config)
-from .data import EpochBatches, FullFrames, Triplets, is_moving, load_index, sample_identity, split, validation_identity
+from .data import (EpochBatches, FullFrames, Triplets, crop_size, is_moving, load_index, sample_identity, split,
+                   validation_identity)
 from .model import (ARCH, COMPATIBLE, FINE, REFINED_ARCH, PyramidFlow, image_pyramid,
                     initialize_from, level_sizes, warp)
 
@@ -382,6 +383,10 @@ def read_resume(path, args):
                  'max_steps', 'subpixel'):
         if name in config:
             setattr(args, name, config[name])
+    # The run's own length unless --epochs extends it (it used to fall back
+    # to the default 60, so a command-line continue ran on far too long).
+    if args.epochs is None:
+        args.epochs = config.get('epochs', ck.get('epochs'))
     args.preset = ck['preset']
     args.refiner = ck['arch'] == REFINED_ARCH
     args.init_from = None
@@ -416,7 +421,9 @@ def main(argv=None):
     p.add_argument('--run', required=True, help='run folder (checkpoints, previews, log)')
     p.add_argument('--preset', default='medium', choices=['small', 'medium', 'large'])
     p.add_argument('--refiner', action='store_true', help='integrated lightweight flow-only refinement (new run)')
-    p.add_argument('--epochs', type=int, default=60, help='total target epochs, including epochs already trained')
+    p.add_argument('--epochs', type=int, default=None,
+                   help='total target epochs, including epochs already trained (default 60; a continued run '
+                        'keeps its own unless given)')
     p.add_argument('--batch', type=int, default=16)
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--crop', type=int, default=256)
@@ -466,6 +473,8 @@ def main(argv=None):
     if not args.data:
         emit(event='error', message='Choose a dataset folder (--data). This checkpoint has no saved dataset settings.')
         return 1
+    if args.epochs is None:
+        args.epochs = 60
     if args.epochs < 1 or args.batch < 1 or args.workers < 0 or args.save_every < 0 or not 0 < args.val < 1:
         p.error('epochs/batch must be positive, workers/save-every nonnegative, and val between 0 and 1')
     if not 0.0 <= args.pure_warp <= 1.0:
@@ -508,6 +517,17 @@ def main(argv=None):
     # The frame height the dataset was built at: the export compares it with
     # the network resolution it is asked for.
     train_height = int(np.median([e['height'] for _, _, e in train_items]))
+    widths = [e['width'] for _, _, e in train_items if e.get('width')]
+    frame_width = int(np.median(widths)) if widths else None
+    crop_h, crop_w = crop_size(args.crop)
+    if crop_h > train_height or (frame_width and crop_w > frame_width):
+        # Triplets enlarges frames smaller than the crop, so the model would
+        # learn on blown-up pictures, at another scale than the program's.
+        fit = max((c for c in range(64, train_height + 1, 16)
+                   if crop_size(c)[0] <= train_height and (not frame_width or crop_size(c)[1] <= frame_width)),
+                  default=64)
+        emit(event='warning', message=f'crop {crop_w}x{crop_h} is larger than the {frame_width or "?"}x{train_height} '
+                                      f'frames, so every frame is enlarged to fit; use crop {fit} or less')
     val_set = FullFrames(val_items)
     validation = validation_identity(val_set)
     training = sample_identity(train_items)

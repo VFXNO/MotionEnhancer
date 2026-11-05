@@ -117,6 +117,52 @@ class SourceTests(unittest.TestCase):
             meter.return_value.return_value = motion
             return dataset.build(args)
 
+    def build_events(self, args, frames, meter_values):
+        """Like build(), returning the emitted events; the motion meter
+        returns meter_values in order (cycled)."""
+        values = list(meter_values)
+        calls = {'n': 0}
+
+        def measure(*_):
+            v = values[calls['n'] % len(values)]
+            calls['n'] += 1
+            return v
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output),                 patch.object(dataset, 'probe', return_value=(48, 32, 30, len(frames))),                 patch.object(dataset, 'frames', side_effect=lambda *a: iter(frames)),                 patch.object(dataset, 'MotionMeter') as meter:
+            meter.return_value.side_effect = measure
+            self.assertEqual(dataset.build(args), 0)
+        return [json.loads(line) for line in output.getvalue().splitlines()]
+
+    def test_stride_two_rejects_a_repeat_between_the_kept_frames(self):
+        # Frames 3 and 4 are identical. At stride 2 the kept frames (k, k+2,
+        # k+4) never pair 3 with 4 directly; the window check must see it.
+        frames = [np.full((32, 48, 3), i * 9, np.uint8) for i in range(9)]
+        frames[4] = frames[3].copy()
+        args = self.args(['a.mp4'])
+        args.strides, args.gap, args.max_per_video = [2], 1, 100
+        events = self.build_events(args, frames, [(4.0, 8.0)])
+        index = json.loads((self.root / 'dataset' / 'index.json').read_text(encoding='utf-8'))
+        for e in index:
+            self.assertFalse(e['frame'] <= 3 and e['frame'] + 4 >= 4, e)
+        done = next(e for e in events if e['event'] == 'video_done')
+        self.assertGreater(done['rejected']['duplicate'], 0)
+
+    def test_uneven_halves_are_rejected_as_a_hitch(self):
+        # Per candidate the meter is asked frame0->frame2, then each half:
+        # here frame0->frame1 barely moved while frame1->frame2 jumped.
+        frames = [np.full((32, 48, 3), i * 9, np.uint8) for i in range(9)]
+        args = self.args(['b.mp4'])
+        args.max_per_video = 100
+        events = self.build_events(args, frames, [(4.0, 8.0), (0.2, 0.3), (6.0, 9.0)])
+        done = next(e for e in events if e['event'] == 'video_done')
+        self.assertEqual(done['kept'], 0)
+        self.assertGreater(done['rejected']['uneven'], 0)
+        # With the check off they are kept.
+        args.balance = 0.0
+        args.out = str(self.root / 'dataset_off')
+        events = self.build_events(args, frames, [(4.0, 8.0), (0.2, 0.3), (6.0, 9.0)])
+        self.assertGreater(next(e for e in events if e['event'] == 'video_done')['kept'], 0)
+
     def test_loading_same_dataset_twice_does_not_reweight_training(self):
         folder = self.root / 'one'
         self.make_index(folder)
@@ -304,6 +350,36 @@ class TrainingTests(unittest.TestCase):
         self.assertEqual(first['validation'], second['validation'])
         for name in first['model']:
             self.assertTrue(torch.equal(first['model'][name], second['model'][name]), name)
+
+    def test_crop_larger_than_the_frames_is_warned_with_a_fitting_size(self):
+        # The test frames are 128x64; crop 64 is 128x64 and fits exactly.
+        _, events = self.run_training()
+        self.assertFalse(any('enlarged' in e.get('message', '') for e in events))
+        base = list(self.args)
+        base[base.index('--crop') + 1] = '80'
+        base[base.index('--run') + 1] = str(self.run) + '_big'
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), patch.object(torch.cuda, 'is_available', return_value=False):
+            train.main(base)
+        warnings = [json.loads(line)['message'] for line in output.getvalue().splitlines()
+                    if json.loads(line).get('event') == 'warning']
+        self.assertTrue(any('enlarged' in w and 'use crop 64' in w for w in warnings), warnings)
+
+    def test_resume_without_epochs_keeps_the_runs_own_length(self):
+        # The run is 1 epoch long (self.args). Continuing it without
+        # --epochs used to fall back to the default 60 and train on.
+        result, _ = self.run_training()
+        self.assertEqual(result, 0)
+        base = list(self.args)
+        i = base.index('--epochs')
+        del base[i:i + 2]
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), patch.object(torch.cuda, 'is_available', return_value=False):
+            result = train.main(base + ['--resume'])
+        events = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(result, 0)
+        self.assertTrue(events[-1].get('already_complete'))
+        self.assertFalse(any(e['event'] == 'epoch' for e in events))
 
     def test_resume_requires_a_checkpoint(self):
         result, events = self.run_training(['--resume'])

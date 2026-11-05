@@ -31,6 +31,10 @@
 #include <utility>
 
 namespace {
+// Frames at another window size within one 2 s status period (about half a
+// second at 60 fps) that end the live session (kExitWindowResized).
+constexpr uint64_t kResizedFrames = 30;
+
 bool envFlag(const char* name) {
     char buffer[8] = {};
     return GetEnvironmentVariableA(name, buffer, sizeof(buffer)) > 0 && buffer[0] != '0';
@@ -370,6 +374,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
         uint64_t idleTicks = 0;
         uint64_t consecutiveSkips = 0;
         uint64_t forcedPresents = 0;
+        uint64_t lastSizeMismatch = 0;
         // Last presented content; an unchanged static frame is not presented
         // again (it would only keep the compositor awake for nothing).
         uint64_t lastKeyF0 = 0, lastKeyF1 = 0;
@@ -557,12 +562,22 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << " noclock " << ps.clockFallbacks
                           << " | wgc " << cs.arrivals << " dup " << cs.duplicates << " acc " << cs.accepted
                           << " def " << ts.deferred << " drop " << ts.dropped + cs.queueDrops << " rep " << ts.replaced
-                          << " cut " << cs.sceneCuts
+                          << " cut " << cs.sceneCuts << " resized " << cs.sizeMismatch
                            << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames << "\n";
                 log.write(status.str());
                 if (device.debugLayerEnabled()) device.dumpInfoQueue("live");
+                // Every resource is sized for the window as it was at the
+                // start: a window that stays at another size (resized, or
+                // switched between windowed and fullscreen) would freeze the
+                // overlay on its last frame. End the session and say why.
+                if (cs.sizeMismatch - lastSizeMismatch >= kResizedFrames) {
+                    log.write("[Overlay] The captured window changed size; start capture again.\n");
+                    exitCode = kExitWindowResized;
+                    break;
+                }
+                lastSizeMismatch = cs.sizeMismatch;
                 statusTime = now;
                 renderCpuMs = 0.0;
                 renderCount = 0;

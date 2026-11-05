@@ -2,6 +2,7 @@
 #include "AppResources.h"
 #include "FlowEngine.h"
 #include "Image.h"
+#include "RealtimeSession.h"
 #include "WindowHelper.h"
 
 #include <windows.h>
@@ -2284,7 +2285,10 @@ LRESULT CALLBACK guiWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
                 SetWindowTextA(g_state.captureButton, "START CAPTURE");
                 updateAiRefinementControl();
                 EnableWindow(g_state.trainButton, TRUE);
-                SetWindowTextA(g_state.liveStatus, exitCode == 0 ? "Capture stopped." : "Capture ended with an error.");
+                SetWindowTextA(g_state.liveStatus, exitCode == 0 ? "Capture stopped."
+                                                 : exitCode == kExitWindowResized
+                                                     ? "Capture stopped: the game window changed size. Start capture again."
+                                                     : "Capture ended with an error.");
             } else if (jobType == JobType::Offline) {
                 EnableWindow(g_state.offlineButton, TRUE);
                 EnableWindow(g_state.trainButton, TRUE);

@@ -33,7 +33,7 @@ public:
         uint64_t arrivals = 0;      // WGC frames delivered
         uint64_t duplicates = 0;    // identical repaints rejected
         uint64_t queueDrops = 0;    // no free slot / callback queue overflow
-        uint64_t sizeMismatch = 0;
+        uint64_t sizeMismatch = 0;  // frames whose window size is not the one capture was prepared for
         uint64_t accepted = 0;
         uint64_t sceneCuts = 0;
         double lastDiffMs = 0.0;
@@ -114,6 +114,8 @@ private:
     uint32_t m_height = 0;
     uint32_t m_cropX = 0;
     uint32_t m_cropY = 0;
+    uint32_t m_itemWidth = 0;   // the captured window's size when capture was prepared
+    uint32_t m_itemHeight = 0;
 
     // callback -> producer queue
     std::mutex m_queueMutex;

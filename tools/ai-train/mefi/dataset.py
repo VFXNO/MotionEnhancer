@@ -10,9 +10,14 @@ Per video, frames are decoded by ffmpeg already scaled to --height (the
 network works at a quarter of the capture, so 360 matches 1440p capture),
 and a triplet is kept only when it is a clean sample of motion:
 
-  * no duplicated frame inside it (recorded games often repeat frames when
-    the game ran below the recording rate; a repeat breaks "frame1 is the
-    middle")
+  * no duplicated frame inside it, at any step of a stride-2 triplet too
+    (recorded games often repeat frames when the game ran below the
+    recording rate; a repeat breaks "frame1 is the middle")
+  * both halves moving alike: frame0 -> frame1 and frame1 -> frame2 within
+    --balance of each other. A game hitch leaves frames that are not exact
+    repeats (particles, HUD) but barely moved, followed by a jump; frame1 is
+    then far from the middle in time. Measured on a 1440p60 recording, a
+    fifth of the triplets were such (28% at stride 2).
   * no scene cut (frame0 and frame2 differ too much, or one half of the
     triplet changes far more than the other); strong A-B-A flashes are kept
   * motion between frame0 and frame2 within --min-motion .. --max-motion
@@ -178,7 +183,7 @@ def build(args):
         taken = 0               # kept now or already in the dataset
         last_kept = -10 ** 9
         flash_kept = 0
-        rejected = {'duplicate': 0, 'cut': 0, 'still': 0, 'fast': 0}
+        rejected = {'duplicate': 0, 'cut': 0, 'still': 0, 'fast': 0, 'uneven': 0}
         for i, frame in enumerate(frames(video, args.height)):
             history.append(frame)
             if len(history) > reach + 1:
@@ -195,7 +200,11 @@ def build(args):
                     continue
                 f0, f1, f2 = history[-1 - 2 * s], history[-1 - s], history[-1]
                 d01, d12, d02 = mean_abs_diff(f0, f1), mean_abs_diff(f1, f2), mean_abs_diff(f0, f2)
-                if min(d01, d12) < args.duplicate:
+                # Every step of the window, not only the three frames kept: at
+                # stride 2 a repeat between them went unseen.
+                window = history[-1 - 2 * s:]
+                steps = [mean_abs_diff(window[k], window[k + 1]) for k in range(2 * s)] if s > 1 else [d01, d12]
+                if min(steps) < args.duplicate:
                     rejected['duplicate'] += 1
                     continue
                 # Keep strong return flashes as training examples. Both halves
@@ -213,6 +222,12 @@ def build(args):
                 if median > args.max_motion:
                     rejected['fast'] += 1
                     continue
+                balance = getattr(args, 'balance', 0.5)
+                if not flash and balance > 0:
+                    m01, m12 = meter(f0, f1)[1], meter(f1, f2)[1]
+                    if max(m01, m12) >= 1.0 and min(m01, m12) < balance * max(m01, m12):
+                        rejected['uneven'] += 1
+                        continue
                 name = f'{stem}_{source[:12]}_{i - 2 * s:06d}_s{s}'
                 folder = os.path.join(args.out, 'triplets', name)
                 if name in known:
@@ -263,6 +278,9 @@ def main(argv=None):
     p.add_argument('--cut', type=float, default=45.0, help='mean abs difference (levels) of a scene cut')
     p.add_argument('--asymmetry', type=float, default=4.0, help='one half changing this much more = a cut')
     p.add_argument('--quality', type=int, default=95, help='JPEG quality')
+    p.add_argument('--balance', type=float, default=0.5,
+                   help='reject a triplet whose halves move less than this fraction of each other '
+                        '(a game hitch); 0 = off')
     args = p.parse_args(argv)
     return build(args)
 

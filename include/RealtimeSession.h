@@ -16,6 +16,11 @@ struct RealtimeOptions {
     GraphicsAdapterPreference adapter = GraphicsAdapterPreference::Auto;
 };
 
+// runRealtimeSession's exit code when the captured window changed size
+// (resized, or switched between windowed and fullscreen): every resource is
+// sized for the window at the start, so the GUI asks to start again.
+constexpr int kExitWindowResized = 3;
+
 // Runs the live overlay until the window closes or Ctrl+Alt+Esc. Returns a
 // process exit code.
 int runRealtimeSession(const RealtimeOptions& options);

@@ -24,7 +24,7 @@
  "lr": 0.0001,
  "crop": 352,
  "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\refiner",
- "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/720p/last.pt",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/refiner/last.pt",
  "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow.onnx",
  "ui_mode": "frozen",
  "ui_labels": "C:\\Users\\bsher\\Downloads\\New folder\\frames\\labels.json",
