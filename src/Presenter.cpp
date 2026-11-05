@@ -53,7 +53,8 @@ Presenter::~Presenter() {
 }
 
 bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                           uint32_t width, uint32_t height, UINT maxFrameLatency, bool vsyncOff) {
+                           uint32_t width, uint32_t height, UINT maxFrameLatency, bool vsyncOff,
+                           uint32_t displayWidth, uint32_t displayHeight) {
     m_device = device;
     m_kernels = kernels;
     m_window = window;
@@ -61,12 +62,33 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     m_height = height;
     ID3D12Device* d3d = device->device();
 
+    // Experimental FSR upscaling to a display size of its own: frames are
+    // still made at width x height, then upscaled (recordUpscale).
+    const bool upscale = displayWidth && displayHeight && (displayWidth != width || displayHeight != height);
+    m_displayWidth = upscale ? displayWidth : width;
+    m_displayHeight = upscale ? displayHeight : height;
+    if (upscale) {
+        m_upscaler = std::make_unique<FsrUpscaler>();
+        const D3D12_RESOURCE_FLAGS uav = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        if (!m_upscaler->initialize(d3d, width, height, displayWidth, displayHeight, upscaleError) ||
+            FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R16G16_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON,
+                                           m_upscaleMotion, L"UpscaleMotion")) ||
+            FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R32_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON,
+                                           m_upscaleDepth, L"UpscaleDepth")) ||
+            FAILED(device->createTexture2D(displayWidth, displayHeight, DXGI_FORMAT_R8G8B8A8_UNORM, uav,
+                                           D3D12_RESOURCE_STATE_COMMON, m_upscaled, L"UpscaledOutput"))) {
+            if (upscaleError.empty()) upscaleError = "FSR upscaling resources";
+            m_upscaler.reset();
+            return false;
+        }
+    }
+
     ComPtr<IDXGIFactory2> factory;
     if (FAILED(device->adapter()->GetParent(IID_PPV_ARGS(&factory)))) return false;
 
     DXGI_SWAP_CHAIN_DESC1 desc = {};
-    desc.Width = width;
-    desc.Height = height;
+    desc.Width = m_displayWidth;
+    desc.Height = m_displayHeight;
     // RGBA8 typed UAV support is guaranteed; the compute output is copied
     // into the back buffer.
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -181,6 +203,43 @@ bool Presenter::waitFence(uint64_t value) {
     if (WaitForSingleObject(m_fenceEvent, kGpuWaitTimeoutMs) != WAIT_OBJECT_0) {
         std::cerr << "Presenter: GPU fence timeout (device removed reason 0x" << std::hex
                   << m_device->device()->GetDeviceRemovedReason() << std::dec << ")\n";
+        return false;
+    }
+    return true;
+}
+
+std::string Presenter::upscaler() const {
+    return m_upscaler ? m_upscaler->selected() : std::string();
+}
+
+// FSR upscaling of m_output (width x height) into m_upscaled (the display
+// size): this frame's motion is the pair's backward field scaled by the
+// share of the pair since the previous presented frame (FsrScaledMotionCS),
+// the depth one flat surface (no AI depth: it made no measured difference).
+bool Presenter::recordUpscale(const RenderJob& job) {
+    ShaderConstants c = {};
+    c.width = c.levelWidth = m_width;
+    c.height = c.levelHeight = m_height;
+    c.blockSize = c.parentBlockSize = static_cast<int32_t>(job.flowBlockSize);
+    c.timeT = job.backwardFlow ? job.upscaleMotion : 0.0f;
+    c.flowScale = 0.5f;
+    const std::array<ID3D12Resource*, 6> flow = {job.backwardFlow, nullptr, nullptr, nullptr, nullptr, nullptr};
+    const std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    const UINT gx = (m_width + 15) / 16, gy = (m_height + 15) / 16;
+    if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FsrScaledMotion, flow, m_upscaleMotion.Get(), c, gx, gy))
+        return false;
+    ShaderConstants dc = c;
+    dc.timeT = 0.0f;   // FsrDepthCS: flat
+    if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FsrDepth, none, m_upscaleDepth.Get(), dc, gx, gy))
+        return false;
+    std::string error;
+    if (!m_upscaler->upscale(m_list.Get(), m_output.Get(), m_upscaleMotion.Get(), m_upscaleDepth.Get(), m_upscaled.Get(),
+                             job.upscaleReset, static_cast<float>(m_refreshInterval) / 10000.0f, 0.0f, error)) {
+        static bool reported = false;
+        if (!reported) {
+            reported = true;
+            std::cerr << "Presenter: " << error << "\n";
+        }
         return false;
     }
     return true;
@@ -653,13 +712,25 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         return false;
     }
 
+    // Experimental FSR upscaling: the display-size frame is shown instead
+    // (the replay buffer keeps the frame as made, at width x height).
+    if (m_upscaler && !recordUpscale(job)) {
+        m_list->Close();
+        return false;
+    }
+    ID3D12Resource* shown = m_upscaler ? m_upscaled.Get() : m_output.Get();
+
     ID3D12Resource* back = m_backBuffers[m_swapChain->GetCurrentBackBufferIndex()].Get();
     DispatchContext::transition(m_list.Get(), m_output.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
     recordReplay(job);
+    if (m_upscaler)
+        DispatchContext::transition(m_list.Get(), shown, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
     DispatchContext::transition(m_list.Get(), back, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-    m_list->CopyResource(back, m_output.Get());
+    m_list->CopyResource(back, shown);
     DispatchContext::transition(m_list.Get(), back, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
     DispatchContext::transition(m_list.Get(), m_output.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
+    if (m_upscaler)
+        DispatchContext::transition(m_list.Get(), shown, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
     if (FAILED(m_list->Close())) return false;
 
     ID3D12CommandQueue* queue = m_device->presentQueue();

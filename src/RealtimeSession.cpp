@@ -8,6 +8,7 @@
 #include "FrameTimeline.h"
 #include "FsrFrameGen.h"
 #include "FsrRealtime.h"
+#include "FsrUpscaler.h"
 #include "Image.h"
 #include "MotionVector.h"
 #include "NeuralFlow.h"
@@ -323,6 +324,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
 
         std::cout << "[2/5] Creating click-through overlay window...\n" << std::flush;
         OverlayWindow overlay;
+        overlay.coverMonitor = options.upscale;   // scaling: the whole monitor
         if (!overlay.create(target, "Motion Enhancer GPU Overlay")) { exitCode = 1; return; }
 
         std::cout << "[3/5] Preparing Windows Graphics Capture...\n" << std::flush;
@@ -337,8 +339,17 @@ int runRealtimeSession(const RealtimeOptions& options) {
         const uint32_t height = capture.height();
 
         std::cout << "[4/5] Creating presentation surface (" << width << "x" << height << ")...\n" << std::flush;
+        // Scaling (--upscale fsr4): frames are made at the game window's
+        // size and upscaled by FSR to the overlay's, the monitor's.
         if (!presenter.initialize(&device, &kernels, overlay.hwnd, width, height,
-                                  static_cast<UINT>(options.frameLatency), !options.vsync)) { exitCode = 1; return; }
+                                  static_cast<UINT>(options.frameLatency), !options.vsync,
+                                  options.upscale ? overlay.width : 0, options.upscale ? overlay.height : 0)) {
+            if (!presenter.upscaleError.empty())
+                std::cerr << "Error: FSR upscaling unavailable: " << presenter.upscaleError
+                          << " (start without --upscale)\n";
+            exitCode = 1;
+            return;
+        }
         // The present fence gates slot and flow-ring recycling.
         capture.setPresentFence(presenter.fence());
 
@@ -399,6 +410,13 @@ int runRealtimeSession(const RealtimeOptions& options) {
                   << "  Adapter:        " << device.adapterName() << "\n"
                   << "  Flow Engine:    " << engine << ", " << flow.searchedLevels() << " pyramid levels\n"
                   << "  Source Cadence: " << (options.sourceFps ? std::to_string(options.sourceFps) + " fps" : "auto") << "\n"
+                  << "  Upscaling:      "
+                  << (presenter.upscaler().empty()
+                          ? std::string(options.upscale ? "none (the game window is already the monitor's size)" : "off")
+                          : "FSR " + presenter.upscaler() + ", " + std::to_string(width) + "x" + std::to_string(height) +
+                                " -> " + std::to_string(overlay.width) + "x" + std::to_string(overlay.height) +
+                                " (mouse clicks reach the game window where it really is, not where it is shown)")
+                  << "\n"
                   << "  Queues:         latency margin " << options.latencyMinExtraMs << " ms, cap "
                   << (options.latencyMaxMs > 0.0 ? std::to_string(static_cast<int>(options.latencyMaxMs)) + " ms"
                                                   : std::string("auto (3 frames + 60 ms)"))
@@ -464,6 +482,10 @@ int runRealtimeSession(const RealtimeOptions& options) {
         // Vsync off: the time the frame queue chose for this frame
         // (FrameTimeline::nextPresentTime); 0 with vsync on.
         int64_t scheduledDisplay = 0;
+        // Experimental FSR upscaling: the previous presented frame's content
+        // time in game frames (-1: none yet), for the motion FSR is given.
+        const bool upscaling = !presenter.upscaler().empty();
+        double upscaleLastContent = -1.0;
         auto renderTick = [&]() -> bool {
             const auto cpu0 = std::chrono::steady_clock::now();
             const int64_t wake = wallClock100ns();
@@ -514,6 +536,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
             job.depth1 = flow.depthFor(in1);
             job.alpha = sel.alpha;
             const bool pair = sel.f0.index != sel.f1.index;
+            bool shownFsrMiddle = false;   // FSR frame generation's middle frame is shown
             FlowEngine::Entry entry;
             const char* mode = "S";
             if (!pair) {
@@ -580,9 +603,30 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.alpha = 0.0f;
                     mode = "F";
                     ++fsrShown;
+                    shownFsrMiddle = true;
                 }
             }
             lastPairIndex = sel.f1.index;
+
+            // Experimental FSR upscaling (--upscale fsr4): the motion since
+            // the previous presented frame, as a share of this pair (the
+            // presenter scales the pair's backward field by it). Where the
+            // shown content sits in the pair: the blend position, 0.5 for
+            // FSR's middle frame, the shown frame itself for a single one.
+            if (upscaling) {
+                const double position = shownFsrMiddle ? 0.5
+                                      : !pair ? 0.0
+                                      : job.single ? (job.alpha < 0.5f ? 0.0 : 1.0)
+                                                   : static_cast<double>(job.alpha);
+                // Content time in game frames (consecutive accepted frames
+                // are one apart); the motion is its step since the last one.
+                const double content = static_cast<double>(sel.f0.index) + position;
+                const double motion = content - upscaleLastContent;
+                const bool reset = upscaleLastContent < 0.0 || sel.f1.sceneCut || motion < 0.0 || motion > 2.0;
+                job.upscaleMotion = reset ? 0.0f : static_cast<float>(motion);
+                job.upscaleReset = reset;
+                upscaleLastContent = content;
+            }
 
             uint64_t presentFence = 0;
             if (!presenter.render(job, presentFence)) {
@@ -3206,4 +3250,158 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
     // with three frames), every pair made, nothing failed.
     const uint64_t sequences = frames.size() >= 4 ? 2 : 1;
     return s.failures == 0 && s.resets == sequences && s.generated == starts.size() ? 0 : 1;
+}
+
+// ======================================================================
+// Experimental: AMD FSR upscaling, offline
+// ======================================================================
+
+// FSR upscaling (FsrUpscaler) of a sequence of low-resolution frames to
+// displayWidth x displayHeight, in order (FSR builds up history), with this
+// program's optical flow of each pair as the motion vectors and the AI depth
+// (--ai-depth, spread by depthSpan) or a constant depth. Writes
+// <outputFolder>/fsr_up_<i>.png for every frame, for comparing with the
+// full-resolution originals and plain resizes outside the program.
+int runFsrUpscaleTest(const std::vector<std::string>& framePaths, uint32_t displayWidth, uint32_t displayHeight,
+                      const std::string& outputFolder, const FlowSettings& settings, GraphicsAdapterPreference adapter,
+                      float depthSpan, float sharpness) {
+    if (framePaths.size() < 2 || displayWidth == 0 || displayHeight == 0 || outputFolder.empty()) {
+        std::cerr << "--fsr-upscale-test needs --upscale-size WxH, --fsr-save <dir> and two or more frames in order\n";
+        return 1;
+    }
+    std::vector<Image> frames;
+    for (const std::string& path : framePaths) {
+        frames.push_back(Image::load(path));
+        if (frames.back().empty() || frames.back().width != frames.front().width ||
+            frames.back().height != frames.front().height) {
+            std::cerr << "Error: cannot use " << path << "\n";
+            return 1;
+        }
+    }
+    const uint32_t width = static_cast<uint32_t>(frames.front().width);
+    const uint32_t height = static_cast<uint32_t>(frames.front().height);
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+    FlowEngine flow;
+    const int slots = std::min<int>(FlowEngine::kMaxSlots, static_cast<int>(frames.size()));
+    if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, slots)) return 1;
+    FsrUpscaler fsr;
+    std::string error;
+    if (!fsr.initialize(device.device(), width, height, displayWidth, displayHeight, error)) {
+        std::cerr << "FSR upscaling: " << error << "\n";
+        return 1;
+    }
+    std::cout << "FSR upscaling in use: " << fsr.selected() << ", " << width << "x" << height << " -> " << displayWidth
+              << "x" << displayHeight << ", depth " << (settings.aiDepth && depthSpan > 0.0f ? "AI" : "flat")
+              << ", sharpening " << sharpness << "\n";
+
+    std::vector<SharedTexture> textures(frames.size());
+    std::vector<FlowInput> inputs(frames.size());
+    for (size_t i = 0; i < frames.size(); ++i) {
+        uint64_t ready = 0;
+        if (!uploadFrame(device, frames[i], textures[i], ready)) return 1;
+        inputs[i] = {textures[i].texture12.Get(), ready, static_cast<uint64_t>(i + 1),
+                     static_cast<int>(i % static_cast<size_t>(slots))};
+    }
+    ComPtr<ID3D12Resource> motion, depth, output;
+    const D3D12_RESOURCE_FLAGS uav = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    if (FAILED(device.createTexture2D(width, height, DXGI_FORMAT_R16G16_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON, motion,
+                                      L"FsrUpscaleMotion")) ||
+        FAILED(device.createTexture2D(width, height, DXGI_FORMAT_R32_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON, depth,
+                                      L"FsrUpscaleDepth")) ||
+        FAILED(device.createTexture2D(displayWidth, displayHeight, DXGI_FORMAT_R8G8B8A8_UNORM, uav,
+                                      D3D12_RESOURCE_STATE_COMMON, output, L"FsrUpscaleOutput"))) return 1;
+
+    // GPU time of FSR's own work on the last frame.
+    ComPtr<ID3D12QueryHeap> queries;
+    ComPtr<ID3D12Resource> times;
+    D3D12_QUERY_HEAP_DESC queryDesc = {};
+    queryDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+    queryDesc.Count = 2;
+    if (FAILED(device.device()->CreateQueryHeap(&queryDesc, IID_PPV_ARGS(&queries))) ||
+        FAILED(device.createBuffer(2 * sizeof(uint64_t), D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
+                                   D3D12_RESOURCE_FLAG_NONE, times))) queries.Reset();
+
+    for (size_t i = 0; i < frames.size(); ++i) {
+        FlowEngine::Entry entry;
+        uint64_t flowFence = 0;
+        if (i > 0) {
+            const FlowEngine::Result r = flow.submitPair(inputs[i - 1], inputs[i]);
+            if (r.entry < 0 || !flow.waitFence(r.fence)) {
+                std::cerr << "Error: flow submission failed\n";
+                return 1;
+            }
+            entry = flow.entry(r.entry);
+            flowFence = r.fence;
+        }
+        ID3D12Resource* nearness = settings.aiDepth && depthSpan > 0.0f ? flow.waitDepth(inputs[i], 5000) : nullptr;
+        if (!offline.begin()) return 1;
+        // Motion vectors at the frames' own size (the flow's size): the
+        // backward field in this frame's pixels. Depth: as for the frame
+        // generation (FsrDepthCS).
+        ShaderConstants c = {};
+        c.width = c.levelWidth = width;
+        c.height = c.levelHeight = height;
+        c.blockSize = c.parentBlockSize = static_cast<int32_t>(i > 0 ? entry.blockSize : 2);
+        c.flowScale = 0.5f;
+        const std::array<ID3D12Resource*, 6> in = {i > 0 ? entry.backward.Get() : nullptr, nullptr, nullptr, nullptr,
+                                                   nullptr, nullptr};
+        ShaderConstants dc = c;
+        dc.timeT = nearness ? depthSpan : 0.0f;
+        const std::array<ID3D12Resource*, 6> depthIn = {nearness, nullptr, nullptr, nullptr, nullptr, nullptr};
+        const UINT gx = (width + 15) / 16, gy = (height + 15) / 16;
+        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrMotion, in, motion.Get(), c, gx, gy) ||
+            !offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrDepth, depthIn, depth.Get(), dc, gx, gy))
+            return 1;
+        const bool last = i + 1 == frames.size();
+        if (last && queries) offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
+        if (!fsr.upscale(offline.list(), textures[i].texture12.Get(), motion.Get(), depth.Get(), output.Get(), i == 0,
+                         1000.0f / 60.0f, sharpness, error)) {
+            std::cerr << "FSR upscaling: " << error << "\n";
+            return 1;
+        }
+        if (last && queries) {
+            offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
+            offline.list()->ResolveQueryData(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, times.Get(), 0);
+        }
+        if (!offline.execute(flow.fence(), flowFence)) {
+            std::cerr << "Error: FSR upscale of frame " << i << " did not complete\n";
+            return 1;
+        }
+        std::vector<uint8_t> bytes;
+        UINT pitch = 0, w = 0, h = 0;
+        if (!offline.readback(output.Get(), bytes, pitch, w, h)) return 1;
+        Image result(static_cast<int>(w), static_cast<int>(h), 3);
+        for (UINT y = 0; y < h; ++y) {
+            const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
+            for (UINT x = 0; x < w; ++x)
+                for (int ch = 0; ch < 3; ++ch)
+                    result.set(static_cast<int>(x), static_cast<int>(y), ch, static_cast<float>(row[x * 4 + ch]));
+        }
+        char name[32] = {};
+        snprintf(name, sizeof(name), "/fsr_up_%03zu.png", i);
+        if (!result.savePNG(outputFolder + name)) {
+            std::cerr << "Error: cannot write " << outputFolder << name << "\n";
+            return 1;
+        }
+    }
+    double fsrMs = 0.0;
+    if (queries) {
+        uint64_t* stamps = nullptr;
+        uint64_t frequency = 0;
+        device.presentQueue()->GetTimestampFrequency(&frequency);
+        const D3D12_RANGE range = {0, 2 * sizeof(uint64_t)};
+        if (frequency && SUCCEEDED(times->Map(0, &range, reinterpret_cast<void**>(&stamps)))) {
+            fsrMs = static_cast<double>(stamps[1] - stamps[0]) * 1000.0 / static_cast<double>(frequency);
+            const D3D12_RANGE nothing = {0, 0};
+            times->Unmap(0, &nothing);
+        }
+    }
+    std::cout << "FSR upscaling: " << frames.size() << " frames -> " << outputFolder << ", FSR " << std::fixed
+              << std::setprecision(2) << fsrMs << " ms GPU on the last frame\n";
+    return 0;
 }

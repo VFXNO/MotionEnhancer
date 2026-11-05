@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ComputeKernels.h"
+#include "FsrUpscaler.h"
 #include "GraphicsDevice.h"
 #include "UiRegions.h"
 
@@ -95,6 +96,11 @@ struct RenderJob {
     ID3D12Resource* depth1 = nullptr;
     float alpha = 0.0f;
     bool single = false;               // show frame0 (alpha < 0.5) or frame1 as-is
+    // FSR upscaling (Presenter::initialize with a display size): the share
+    // of backwardFlow's pair between the previous presented frame and this
+    // one (the motion FSR is given), and whether its history starts over.
+    float upscaleMotion = 0.0f;
+    bool upscaleReset = false;
 };
 
 struct PresentStats {
@@ -120,8 +126,17 @@ public:
     // vsyncOff: present at once (sync interval 0) with tearing allowed when
     // the system supports it, instead of on the next vsync (the default);
     // the caller then paces the frames itself (FrameTimeline::nextPresentTime).
+    // displayWidth/displayHeight (experimental, --upscale fsr4): when given
+    // and different from width x height, every frame is drawn at width x
+    // height as before and then upscaled to the display size by AMD FSR
+    // upscaling (FsrUpscaler) before it is shown; the swap chain is the
+    // display size. initialize fails with upscaleError set if FSR cannot.
     bool initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                    uint32_t width, uint32_t height, UINT maxFrameLatency = 1, bool vsyncOff = false);
+                    uint32_t width, uint32_t height, UINT maxFrameLatency = 1, bool vsyncOff = false,
+                    uint32_t displayWidth = 0, uint32_t displayHeight = 0);
+    // FSR upscaling in use: its provider, or empty when not upscaling.
+    std::string upscaler() const;
+    std::string upscaleError;
     // vsyncOff was asked for and the system allows tearing.
     bool tearing() const { return m_tearing; }
     // How the last frames reached the screen (DXGI frame statistics):
@@ -205,6 +220,13 @@ private:
     DispatchContext m_dispatch;
     uint64_t m_frameCount = 0;
     bool m_revealed = false;
+    // FSR upscaling (initialize with a display size): the upscaler, its
+    // render-size motion vectors and depth, and the display-size frame
+    // that is copied to the back buffer instead of m_output.
+    std::unique_ptr<FsrUpscaler> m_upscaler;
+    uint32_t m_displayWidth = 0, m_displayHeight = 0;
+    ComPtr<ID3D12Resource> m_upscaleMotion, m_upscaleDepth, m_upscaled;
+    bool recordUpscale(const RenderJob& job);
     bool m_tearing = false;     // initialize(vsyncOff) and supported
     bool m_vsyncOff = false;    // initialize(vsyncOff): sync interval 0
     HRESULT m_lastPresentStatus = S_OK;

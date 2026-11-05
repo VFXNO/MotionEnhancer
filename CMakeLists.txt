@@ -56,6 +56,7 @@ set(SOURCES
     src/UiDetector.cpp
     src/FsrFrameGen.cpp
     src/FsrRealtime.cpp
+    src/FsrUpscaler.cpp
     app.rc
 )
 
@@ -149,12 +150,14 @@ set(MOTION_ENHANCER_FSR_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Fidelit
 if(WIN32 AND EXISTS "${MOTION_ENHANCER_FSR_SDK_DIR}/api/include/ffx_api.h")
     target_include_directories(motion_enhancer PRIVATE
         "${MOTION_ENHANCER_FSR_SDK_DIR}/api/include"
-        "${MOTION_ENHANCER_FSR_SDK_DIR}/framegeneration/include")
+        "${MOTION_ENHANCER_FSR_SDK_DIR}/framegeneration/include"
+        "${MOTION_ENHANCER_FSR_SDK_DIR}/upscalers/include")
     target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_FSR_FG=1)
     add_custom_command(TARGET motion_enhancer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_loader_dx12.dll"
             "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_framegeneration_dx12.dll"
+            "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_upscaler_dx12.dll"
             "$<TARGET_FILE_DIR:motion_enhancer>")
 endif()
 
@@ -229,7 +232,7 @@ if(WIN32)
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
-                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl FsrCameraCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl FsrCameraCS.hlsl FsrScaledMotionCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
                                       DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl UiDetectInputCS.hlsl UiDebugViewCS.hlsl
                                       UiPersistCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)

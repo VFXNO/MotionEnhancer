@@ -36,6 +36,8 @@ static void printUsage(const char* progName) {
               << "                                        # Experimental: AMD FSR frame generation fed with this flow\n"
               << "  " << progName << " --fsr-realtime-test <f0.png> <f1.png> <f2.png>... [--ai-depth --fsr-depth-span s] [--fsr-save dir]\n"
               << "                                        # The live --fsr-fg path on frames in order\n"
+              << "  " << progName << " --fsr-upscale-test <low-res frames...> --upscale-size WxH --fsr-save <dir>\n"
+              << "        [--ai-depth] [--fsr-sharpness 0-1]   # Experimental: FSR upscaling of a sequence\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
               << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n"
@@ -89,6 +91,9 @@ static void printUsage(const char* progName) {
               << "  --frame-latency <1-2>    Frames the swap chain may hold (default: 1); 2 absorbs a slow\n"
               << "                           frame at one refresh more delay\n"
               << "  --capture-queue <2-8>    Captured frames that may wait to be processed (default: 4)\n"
+              << "  --upscale <off|fsr4>     Experimental scaling: the overlay covers the monitor and every frame\n"
+              << "                           is upscaled from the game window's size by AMD FSR 4 (run the game\n"
+              << "                           in a smaller window; clicks still reach the real window)\n"
               << "  --vsync <on|off>         off: present each frame at the time the frame queue chooses\n"
               << "                           (each k/N position with --multiplier N), tearing allowed\n"
               << "                           (default: on = the next refresh)\n"
@@ -334,6 +339,9 @@ int main(int argc, char** argv) {
     uint32_t fsrFrames = 1;
     bool fsrFrameGen = false;          // live: FSR frame generation beside the normal interpolation
     bool fsrRealtimeTest = false;      // --fsr-realtime-test <frames...>: the live FSR path offline
+    bool fsrUpscaleTest = false;       // --fsr-upscale-test <low-res frames...> --upscale-size WxH --fsr-save <dir>
+    uint32_t upscaleWidth = 0, upscaleHeight = 0;
+    float fsrSharpness = 0.0f;
     float fsrWindow = 0.1f;
     float fsrDepthSpan = 0.25f;        // RealtimeOptions::fsrDepthSpan
     FsrCameraSettings fsrCamera;       // --fsr-camera, --fsr-camera-fov, --fsr-camera-flip
@@ -447,6 +455,16 @@ int main(int argc, char** argv) {
             fsrFrameGenOffline = true;
         } else if (arg == "--fsr-realtime-test") {
             fsrRealtimeTest = true;
+        } else if (arg == "--fsr-upscale-test") {
+            fsrUpscaleTest = true;
+        } else if (arg == "--upscale-size" && i + 1 < argc) {
+            const std::string size = argv[++i];
+            const size_t x = size.find('x');
+            if (x == std::string::npos) throw std::invalid_argument("upscale size must be WxH");
+            upscaleWidth = static_cast<uint32_t>(std::clamp(std::stoi(size.substr(0, x)), 16, 7680));
+            upscaleHeight = static_cast<uint32_t>(std::clamp(std::stoi(size.substr(x + 1)), 16, 4320));
+        } else if (arg == "--fsr-sharpness" && i + 1 < argc) {
+            fsrSharpness = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--fsr-fg") {
             fsrFrameGen = true;
         } else if (arg == "--fsr-window" && i + 1 < argc) {
@@ -464,6 +482,10 @@ int main(int argc, char** argv) {
             const std::string value = argv[++i];
             if (value != "on" && value != "off") throw std::invalid_argument("vsync must be on or off");
             queues.vsync = value == "on";
+        } else if (arg == "--upscale" && i + 1 < argc) {
+            const std::string value = argv[++i];
+            if (value != "off" && value != "fsr4") throw std::invalid_argument("upscale must be off or fsr4");
+            queues.upscale = value == "fsr4";
         } else if (arg == "--capture-queue" && i + 1 < argc) {
             queues.captureQueue = std::clamp(std::stoi(argv[++i]), 2, 8);
         } else if (arg == "--fsr-camera" && i + 1 < argc) {
@@ -692,6 +714,13 @@ int main(int argc, char** argv) {
         return runFlowLevelEval(positionalArgs, gpuSettings, adapterPreference);
     }
 
+    if (fsrUpscaleTest) {
+        gpuSettings.minRefineLevel = std::clamp(
+            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
+        return runFsrUpscaleTest(positionalArgs, upscaleWidth, upscaleHeight, fsrSaveFolder, gpuSettings,
+                                 adapterPreference, fsrDepthSpan, fsrSharpness);
+    }
+
     if (fsrRealtimeTest) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
@@ -732,6 +761,7 @@ int main(int argc, char** argv) {
         options.frameLatency = queues.frameLatency;
         options.captureQueue = queues.captureQueue;
         options.vsync = queues.vsync;
+        options.upscale = queues.upscale;
         return runRealtimeSession(options);
     }
 

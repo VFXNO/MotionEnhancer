@@ -64,6 +64,7 @@ constexpr int IDC_AI_TEMPORAL_UI = 124;
 constexpr int IDC_FSR_MODE = 126;
 constexpr int IDC_LATENCY = 127;
 constexpr int IDC_VSYNC = 128;
+constexpr int IDC_UPSCALE = 129;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -161,6 +162,7 @@ struct GuiState {
     // defaults), smooth (--latency-min 12 --frame-latency 2 --capture-queue 6).
     HWND latency = nullptr;
     HWND vsync = nullptr;   // on (default) / off: --vsync off
+    HWND upscale = nullptr; // off (default) / FSR 4: --upscale fsr4
     HWND uiDetector = nullptr;
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
@@ -1224,6 +1226,8 @@ void startCapture() {
     {
         if (SendMessageA(g_state.vsync, CB_GETCURSEL, 0, 0) == 1)
             for (const char* arg : {"--vsync", "off"}) captureArgs.push_back(arg);
+        if (SendMessageA(g_state.upscale, CB_GETCURSEL, 0, 0) == 1)
+            for (const char* arg : {"--upscale", "fsr4"}) captureArgs.push_back(arg);
         const LRESULT latency = SendMessageA(g_state.latency, CB_GETCURSEL, 0, 0);
         if (latency == 0) {
             for (const char* arg : {"--latency-min", "0", "--latency-max", "60"}) captureArgs.push_back(arg);
@@ -1625,21 +1629,30 @@ void createControls() {
     // tells FSR its camera is turning (--fsr-camera spin), which measured
     // better on every test sequence. Off by default. In the panel's title
     // row, where nothing else is.
-    g_state.fsrMode = makeCombo(560, 173, 270, IDC_FSR_MODE);
-    for (const char* option : {"FSR frame gen: off", "FSR frame gen (exp., best at 2x)", "FSR + moving camera (exp.)"})
+    // The panel's title row, where nothing else is, from the left: vsync,
+    // latency, upscaling, FSR frame generation.
+    g_state.fsrMode = makeCombo(670, 173, 160, IDC_FSR_MODE);
+    for (const char* option : {"FSR FG: off", "FSR FG (best 2x)", "FSR FG + camera"})
         SendMessageA(g_state.fsrMode, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
     SendMessageA(g_state.fsrMode, CB_SETCURSEL, 0, 0);
+    // Experimental scaling (--upscale fsr4): run the game in a smaller
+    // window; the overlay covers the monitor and FSR 4 upscales every frame
+    // to its resolution. Clicks still reach the real (smaller) window.
+    g_state.upscale = makeCombo(525, 173, 140, IDC_UPSCALE);
+    for (const char* option : {"Upscale: off", "Upscale: FSR 4"})
+        SendMessageA(g_state.upscale, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.upscale, CB_SETCURSEL, 0, 0);
     // Frame queues (latency budget, swap chain, capture queue) as presets;
     // the command line sets each one (--latency-min, --latency-max,
-    // --frame-latency, --capture-queue). Same title row, left of FSR.
-    g_state.latency = makeCombo(405, 173, 150, IDC_LATENCY);
-    for (const char* option : {"Latency: low", "Latency: balanced", "Latency: smooth"})
+    // --frame-latency, --capture-queue).
+    g_state.latency = makeCombo(380, 173, 140, IDC_LATENCY);
+    for (const char* option : {"Latency: low", "Latency: normal", "Latency: smooth"})
         SendMessageA(g_state.latency, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
     SendMessageA(g_state.latency, CB_SETCURSEL, 1, 0);
     // Vsync (--vsync off): off presents each frame at the time the frame
     // queue chooses, tearing allowed; on (default) waits for the refresh.
-    g_state.vsync = makeCombo(245, 173, 150, IDC_VSYNC);
-    for (const char* option : {"Vsync: on", "Vsync: off (queue)"})
+    g_state.vsync = makeCombo(245, 173, 130, IDC_VSYNC);
+    for (const char* option : {"Vsync: on", "Vsync: off"})
         SendMessageA(g_state.vsync, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
     SendMessageA(g_state.vsync, CB_SETCURSEL, 0, 0);
 
@@ -1692,7 +1705,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, g_state.fsrMode, g_state.latency, g_state.vsync, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, g_state.fsrMode, g_state.latency, g_state.vsync, g_state.upscale, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
         g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiTemporalUi, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,

@@ -42,6 +42,12 @@ struct RealtimeOptions {
     // composed one is still shown at the display's refresh (the status line
     // says which).
     bool vsync = true;
+    // Experimental scaling (--upscale fsr4): the overlay covers the monitor
+    // the game window is on and every frame, made at the game window's size
+    // as without it, is upscaled to the monitor's resolution by AMD FSR
+    // upscaling (Presenter). Mouse clicks still reach the game window where
+    // it really is.
+    bool upscale = false;
     // Experimental, beside the normal interpolation (FsrRealtime): AMD FSR
     // frame generation's middle frame is shown on refreshes whose blend
     // position is within fsrWindow of 0.5; everything else is unchanged.
@@ -103,6 +109,12 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
                        GraphicsAdapterPreference adapter, float depthSpan = 0.0f,
                        const std::string& saveFolder = std::string(),
                        const FsrCameraSettings& camera = FsrCameraSettings());
+// Experimental: FSR upscaling of low-resolution frames (in order) to
+// displayWidth x displayHeight with this program's flow (FsrUpscaler);
+// writes <outputFolder>/fsr_up_<i>.png.
+int runFsrUpscaleTest(const std::vector<std::string>& framePaths, uint32_t displayWidth, uint32_t displayHeight,
+                      const std::string& outputFolder, const FlowSettings& settings, GraphicsAdapterPreference adapter,
+                      float depthSpan, float sharpness);
 // Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
 // the GPU: input and outputs in D3D12 buffers, one fence wait per run.
 int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);

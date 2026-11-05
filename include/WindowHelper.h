@@ -27,6 +27,9 @@ public:
     int posX = 0;
     int posY = 0;
     bool isRunning = true;
+    // Experimental scaling (--upscale fsr4): cover the whole monitor the
+    // target window is on instead of its client area. Set before create().
+    bool coverMonitor = false;
 
     OverlayWindow() = default;
     ~OverlayWindow();
