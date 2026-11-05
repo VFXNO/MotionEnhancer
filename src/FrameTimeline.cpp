@@ -35,9 +35,72 @@ void FrameTimeline::configure(uint32_t sourceFpsOverride, double refreshHz, uint
     // and had its flow computed (a couple of refreshes) before media time
     // reaches the previous one. Starvation grows it; sustained slack
     // shrinks it back toward the minimum.
-    m_minLatencyBudget = m_period + m_refreshInterval + 4 * kMs;
-    m_maxLatencyBudget = 3 * m_period + 60 * kMs;
-    m_latencyBudget = m_period + 2 * m_refreshInterval + 10 * kMs;
+    applyBudgetLimits();
+    m_latencyBudget = std::clamp(m_period + 2 * m_refreshInterval + 10 * kMs, m_minLatencyBudget, m_maxLatencyBudget);
+}
+
+void FrameTimeline::setLatencyLimits(double minExtraMs, double maxMs) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_minLatencyExtra = static_cast<int64_t>(std::max(0.0, minExtraMs) * static_cast<double>(kMs));
+    m_maxLatencyOverride = maxMs > 0.0 ? static_cast<int64_t>(maxMs * static_cast<double>(kMs)) : 0;
+}
+
+void FrameTimeline::setFreePacing(bool on) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_freePacing = on;
+}
+
+int64_t FrameTimeline::nextPresentTime(int64_t now, bool* position) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (position) *position = true;
+    const int64_t lead = m_captureOffset + m_latencyBudget;   // wall clock - media time
+    const int64_t refresh = std::max<int64_t>(kMs, m_refreshInterval);
+    if (m_outputMultiplier == 0) {
+        // One frame per refresh interval on a steady clock of our own.
+        int64_t next = m_lastScheduled + refresh;
+        if (m_lastScheduled == 0 || next < now - refresh || next > now + 2 * refresh) next = now;
+        m_lastScheduled = std::max(next, now);
+        return m_lastScheduled;
+    }
+    const int64_t n = static_cast<int64_t>(m_outputMultiplier);
+    // Asked again after a millisecond when the next position's frames have
+    // not arrived: nothing to show until then.
+    const int64_t poll = now + kMs;
+    if (m_frames.size() < 2 || !m_captureOffsetValid) {
+        if (position) *position = false;
+        return poll;
+    }
+    // The next position k/N after both the current media time and the last
+    // one given out, so each position is shown once and in order.
+    const int64_t from = std::max(now - lead, m_lastScheduledMedia);
+    if (from < m_frames.front().ts) {
+        m_lastScheduledMedia = m_frames.front().ts;
+        return m_frames.front().ts + lead;
+    }
+    for (size_t i = 0; i + 1 < m_frames.size(); ++i) {
+        const int64_t a = m_frames[i].ts, b = m_frames[i + 1].ts;
+        if (from >= b) continue;
+        const int64_t duration = std::max<int64_t>(1, b - a);
+        const int64_t k = (from - a) * n / duration + 1;
+        // Rounded up, so that (position - a) * n / duration gives k back
+        // exactly (rounded down it gave k - 1 when the duration is not a
+        // multiple of n, and the same position was handed out again).
+        const int64_t position = k >= n ? b : a + (k * duration + n - 1) / n;
+        m_lastScheduledMedia = position;
+        return position + lead;
+    }
+    // Beyond the newest frame: nothing new to show yet.
+    if (position) *position = false;
+    return poll;
+}
+
+// The minimum: the next source frame (one period) plus a refresh for its
+// flow, plus the adjustable margin (default 4 ms); the maximum: three
+// periods + 60 ms, or the adjustable cap (never below the minimum).
+void FrameTimeline::applyBudgetLimits() {
+    m_minLatencyBudget = m_period + m_refreshInterval + m_minLatencyExtra;
+    m_maxLatencyBudget = m_maxLatencyOverride > 0 ? std::max(m_minLatencyBudget, m_maxLatencyOverride)
+                                                  : 3 * m_period + 60 * kMs;
 }
 
 // ---------------------------------------------------------------- cadence
@@ -79,8 +142,7 @@ void FrameTimeline::updateCadence() {
     {
         const bool changed = std::llabs(m_period - oldPeriod) > oldPeriod / 5;
         if ((m_locked && !wasLocked) || changed) {
-            m_minLatencyBudget = m_period + m_refreshInterval + 4 * kMs;
-            m_maxLatencyBudget = 3 * m_period + 60 * kMs;
+            applyBudgetLimits();
             if (m_locked && !wasLocked) {
                 m_latencyBudget = m_period + 2 * m_refreshInterval + 10 * kMs;
             }
@@ -306,6 +368,13 @@ FrameTimeline::Selection FrameTimeline::select(int64_t displayWallTime) {
                 if (step >= m_refreshInterval) offset = (offset / step) * step;
             }
             sel.alpha = std::clamp(static_cast<float>(static_cast<double>(offset) / static_cast<double>(duration)), 0.0f, 1.0f);
+            if (m_freePacing && m_outputMultiplier > 0) {
+                // Vsync off: displayWallTime is a position nextPresentTime()
+                // chose, k/N of this pair; snap to it exactly so a small
+                // change of the capture offset in between cannot move it.
+                const float n = static_cast<float>(m_outputMultiplier);
+                sel.alpha = std::round(static_cast<float>(static_cast<double>(m - a.ts) / static_cast<double>(duration)) * n) / n;
+            }
             m_currentF1Index = b.index;
             m_holdPending = false;
             return sel;

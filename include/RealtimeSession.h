@@ -7,6 +7,16 @@
 #include <string>
 #include <vector>
 
+// FSR's camera (FsrRealtime::setCamera, --fsr-camera): 0 = fixed, 1 = from
+// the previous pair's overall motion (live), 2 = from the pair's own motion
+// (offline tests only), 3 = a constant turn (spin).
+struct FsrCameraSettings {
+    int mode = 0;
+    float fovDegrees = 60.0f;   // assumed vertical field of view of the game
+    float yawSign = 1.0f;       // -1 flips the direction of horizontal turns
+    float pitchSign = 1.0f;     // -1 flips the direction of vertical turns
+};
+
 struct RealtimeOptions {
     std::string windowTitle;
     std::string stopEventName;          // optional GUI-owned graceful stop event
@@ -14,11 +24,36 @@ struct RealtimeOptions {
     uint32_t sourceFps = 0;          // 0 = auto-detect cadence
     uint32_t outputMultiplier = 0;   // 0 = every display refresh
     GraphicsAdapterPreference adapter = GraphicsAdapterPreference::Auto;
+    // Queues (defaults = the behaviour before they were adjustable):
+    // latency budget margin above its least possible value (one source
+    // period + one refresh) and its cap (<= 0: three periods + 60 ms)
+    // (FrameTimeline::setLatencyLimits); frames the swap chain may hold
+    // (Presenter, 1-2); captured frames that may wait for the producer
+    // (CaptureEngine::setCaptureQueue, 2-8).
+    double latencyMinExtraMs = 4.0;
+    double latencyMaxMs = 0.0;
+    int frameLatency = 1;
+    int captureQueue = 4;
+    // Vsync off (--vsync off): frames are presented at once, tearing allowed
+    // where supported, at the times the frame timeline chooses
+    // (FrameTimeline::setFreePacing): each position k/N of a pair with an
+    // output multiplier, otherwise one per refresh interval. Only an overlay
+    // the system shows by independent flip can tear or follow FreeSync; a
+    // composed one is still shown at the display's refresh (the status line
+    // says which).
+    bool vsync = true;
     // Experimental, beside the normal interpolation (FsrRealtime): AMD FSR
     // frame generation's middle frame is shown on refreshes whose blend
     // position is within fsrWindow of 0.5; everything else is unchanged.
     bool fsrFrameGen = false;
     float fsrWindow = 0.1f;
+    // How far the frames' AI depth (FlowSettings::aiDepth) spreads FSR's
+    // depth (FsrDepthCS): 0 = always flat. Measured on a 1440p game capture
+    // (6 pairs): AI flow 37.40 -> 37.47 dB, DIS 37.30 -> 37.19 dB; the
+    // reversed order is worse for both, so FSR does use it. The span itself
+    // barely matters (0.1-1 within 0.01 dB).
+    float fsrDepthSpan = 0.25f;
+    FsrCameraSettings fsrCamera;
 };
 
 // runRealtimeSession's exit code when the captured window changed size
@@ -65,7 +100,9 @@ int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& fram
 // The live FSR path (FsrRealtime) on saved frames in order: pairs i, i+2 against
 // the true middle i+1, two sequences (from frame 0 and frame 1).
 int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
-                       GraphicsAdapterPreference adapter);
+                       GraphicsAdapterPreference adapter, float depthSpan = 0.0f,
+                       const std::string& saveFolder = std::string(),
+                       const FsrCameraSettings& camera = FsrCameraSettings());
 // Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
 // the GPU: input and outputs in D3D12 buffers, one fence wait per run.
 int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);

@@ -115,8 +115,22 @@ public:
 
     ~Presenter();
 
+    // maxFrameLatency: frames the swap chain may hold before the compositor
+    // takes them (1, the default, or 2; kBackBuffers allows at most 2).
+    // vsyncOff: present at once (sync interval 0) with tearing allowed when
+    // the system supports it, instead of on the next vsync (the default);
+    // the caller then paces the frames itself (FrameTimeline::nextPresentTime).
     bool initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                    uint32_t width, uint32_t height);
+                    uint32_t width, uint32_t height, UINT maxFrameLatency = 1, bool vsyncOff = false);
+    // vsyncOff was asked for and the system allows tearing.
+    bool tearing() const { return m_tearing; }
+    // How the last frames reached the screen (DXGI frame statistics):
+    // "composed" (DWM draws the window at the display's refresh, tearing has
+    // no effect), "independent flip" (the window has the display or a plane
+    // to itself: tearing and FreeSync apply), or "unknown".
+    const char* presentationMode() const;
+    // The wake-up statistics of beginFrame() for a caller that paces itself.
+    void noteWake(int64_t wake);
 
     // Blocks until the next compositor tick (vsync) or one of the handles
     // is signaled. Returns WAIT_OBJECT_0 + count on a tick, WAIT_OBJECT_0 +
@@ -191,6 +205,8 @@ private:
     DispatchContext m_dispatch;
     uint64_t m_frameCount = 0;
     bool m_revealed = false;
+    bool m_tearing = false;     // initialize(vsyncOff) and supported
+    bool m_vsyncOff = false;    // initialize(vsyncOff): sync interval 0
     HRESULT m_lastPresentStatus = S_OK;
     // DCompositionWaitForCompositorClock (dcomp.dll, Windows 10 2004+).
     using CompositorClockWait = DWORD(WINAPI*)(UINT, const HANDLE*, DWORD);

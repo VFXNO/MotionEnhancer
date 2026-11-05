@@ -41,6 +41,7 @@ enum class Kernel : int {
     FlowMedian5,
     FsrMotion,
     FsrDepth,
+    FsrCamera,
     Count
 };
 

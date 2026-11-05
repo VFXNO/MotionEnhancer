@@ -44,6 +44,11 @@ public:
 
     bool initialize(GraphicsDevice* device, FlowEngine* flow, FrameTimeline* timeline);
     bool prepare(HWND target);
+    // How many captured frames may wait for the producer thread (2-8,
+    // default 4): the callback queue limit and the WGC frame pool size. Set
+    // before prepare(). More rides out longer producer stalls; the oldest
+    // waiting frame is dropped when it is full.
+    void setCaptureQueue(int frames) { m_captureQueue = frames < 2 ? 2 : frames > 8 ? 8 : frames; }
     // The present-queue fence gates slot recycling; bind it before start().
     void setPresentFence(ID3D12Fence* fence) { m_presentFence = fence; }
     bool start();
@@ -117,7 +122,9 @@ private:
     uint32_t m_itemWidth = 0;   // the captured window's size when capture was prepared
     uint32_t m_itemHeight = 0;
 
-    // callback -> producer queue
+    // callback -> producer queue; also the WGC frame pool's buffer count, as
+    // every queued frame holds one of them (setCaptureQueue)
+    int m_captureQueue = 4;
     std::mutex m_queueMutex;
     std::deque<QueuedFrame> m_queue;
     HANDLE m_frameEvent = nullptr;

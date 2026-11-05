@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include <cstdio>
 #include <string>
 
 #ifdef MOTION_ENHANCER_FSR_FG
@@ -20,6 +21,8 @@ struct FsrFrameGen::Impl {
     uint32_t displayWidth = 0, displayHeight = 0;
     uint32_t renderWidth = 0, renderHeight = 0;
     std::string provider;
+    std::string selected;   // the provider the context runs
+    std::string modules;    // the FSR DLLs loaded in the process
 };
 
 FsrFrameGen::FsrFrameGen() : m_impl(std::make_unique<Impl>()) {}
@@ -41,6 +44,8 @@ bool FsrFrameGen::compiledIn() {
 }
 
 const std::string& FsrFrameGen::provider() const { return m_impl->provider; }
+const std::string& FsrFrameGen::selected() const { return m_impl->selected; }
+const std::string& FsrFrameGen::modules() const { return m_impl->modules; }
 
 #ifdef MOTION_ENHANCER_FSR_FG
 namespace {
@@ -66,9 +71,10 @@ std::string returnCodeText(ffxReturnCode_t code) {
 
 bool FsrFrameGen::initialize(ID3D12Device* device, uint32_t displayWidth, uint32_t displayHeight,
                              uint32_t renderWidth, uint32_t renderHeight, DXGI_FORMAT colorFormat,
-                             std::string& error) {
+                             std::string& error, bool debugChecking) {
 #ifndef MOTION_ENHANCER_FSR_FG
     (void)device; (void)displayWidth; (void)displayHeight; (void)renderWidth; (void)renderHeight; (void)colorFormat;
+    (void)debugChecking;
     error = "this build has no FSR frame generation (FSR SDK 2.4 not found at build time)";
     return false;
 #else
@@ -125,7 +131,7 @@ bool FsrFrameGen::initialize(ID3D12Device* device, uint32_t displayWidth, uint32
     version.version = FFX_FRAMEGENERATION_VERSION;
     ffxCreateContextDescFrameGeneration create = {};
     create.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION;
-    create.flags = FFX_FRAMEGENERATION_ENABLE_DEBUG_CHECKING;
+    create.flags = debugChecking ? FFX_FRAMEGENERATION_ENABLE_DEBUG_CHECKING : 0u;
     create.displaySize = {displayWidth, displayHeight};
     create.maxRenderSize = {renderWidth, renderHeight};
     create.backBufferFormat = ffxApiGetSurfaceFormatDX12(colorFormat);
@@ -138,16 +144,42 @@ bool FsrFrameGen::initialize(ID3D12Device* device, uint32_t displayWidth, uint32
                 " (it needs Windows 11, an RX 9000 GPU for the ML version, and Shader Model 6.6)";
         return false;
     }
+
+    // Which provider the created context really runs (not only what is
+    // offered), and which DLLs it came from: ours next to the executable, or
+    // a newer one the AMD driver supplies.
+    ffxQueryGetProviderVersion used = {};
+    used.header.type = FFX_API_QUERY_DESC_TYPE_GET_PROVIDER_VERSION;
+    if (m.api.Query(&m.context, &used.header) == FFX_API_RETURN_OK && used.versionName)
+        m.selected = std::string(used.versionName) + " (id 0x" + [&] {
+            char hex[17] = {};
+            snprintf(hex, sizeof(hex), "%llx", static_cast<unsigned long long>(used.versionId));
+            return std::string(hex);
+        }() + ")";
+    else
+        m.selected = "unknown (the provider query failed)";
+    for (const wchar_t* name : {L"amd_fidelityfx_loader_dx12.dll", L"amd_fidelityfx_framegeneration_dx12.dll",
+                                L"amdxcffx64.dll"}) {
+        HMODULE loaded = GetModuleHandleW(name);
+        if (!loaded) continue;
+        wchar_t path[MAX_PATH] = {};
+        const DWORD n = GetModuleFileNameW(loaded, path, MAX_PATH);
+        std::string narrow;
+        for (DWORD i = 0; i < n; ++i) narrow += path[i] < 128 ? static_cast<char>(path[i]) : '?';
+        if (!m.modules.empty()) m.modules += "; ";
+        m.modules += narrow;
+    }
     return true;
 #endif
 }
 
 bool FsrFrameGen::frame(ID3D12GraphicsCommandList* list, uint64_t frameId, ID3D12Resource* color,
                         ID3D12Resource* motionVectors, ID3D12Resource* depth, ID3D12Resource* const* outputs,
-                        uint32_t outputCount, bool reset, float frameTimeMs, std::string& error) {
+                        uint32_t outputCount, bool reset, float frameTimeMs, std::string& error,
+                        const FsrCamera* camera) {
 #ifndef MOTION_ENHANCER_FSR_FG
     (void)list; (void)frameId; (void)color; (void)motionVectors; (void)depth; (void)outputs; (void)outputCount;
-    (void)reset; (void)frameTimeMs;
+    (void)reset; (void)frameTimeMs; (void)camera;
     error = "this build has no FSR frame generation";
     return false;
 #else
@@ -178,9 +210,11 @@ bool FsrFrameGen::frame(ID3D12GraphicsCommandList* list, uint64_t frameId, ID3D1
         return false;
     }
 
-    // 2. Prepare: this frame's motion vectors and depth. No engine camera:
-    // a fixed camera at the origin looking down +z, a flat scene at the
-    // constant depth.
+    // 2. Prepare: this frame's motion vectors, depth and camera. No engine
+    // camera: the caller's estimate, or a fixed camera at the origin looking
+    // down +z.
+    const FsrCamera fixedCamera;
+    const FsrCamera& cam = camera ? *camera : fixedCamera;
     ffxDispatchDescFrameGenerationPrepareV2 prepare = {};
     prepare.header.type = FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_V2;
     prepare.frameID = frameId;
@@ -193,17 +227,15 @@ bool FsrFrameGen::frame(ID3D12GraphicsCommandList* list, uint64_t frameId, ID3D1
     prepare.reset = reset;
     prepare.cameraNear = 0.1f;
     prepare.cameraFar = 1000.0f;
-    prepare.cameraFovAngleVertical = 1.0f;      // about 57 degrees
+    prepare.cameraFovAngleVertical = cam.fovVertical;
     prepare.viewSpaceToMetersFactor = 1.0f;
     prepare.depth = ffxApiGetResourceDX12(depth, FFX_API_RESOURCE_STATE_COMMON);
     prepare.motionVectors = ffxApiGetResourceDX12(motionVectors, FFX_API_RESOURCE_STATE_COMMON);
-    const float position[3] = {0.0f, 0.0f, 0.0f}, up[3] = {0.0f, 1.0f, 0.0f};
-    const float right[3] = {1.0f, 0.0f, 0.0f}, forward[3] = {0.0f, 0.0f, 1.0f};
     for (int i = 0; i < 3; ++i) {
-        prepare.cameraPosition[i] = position[i];
-        prepare.cameraUp[i] = up[i];
-        prepare.cameraRight[i] = right[i];
-        prepare.cameraForward[i] = forward[i];
+        prepare.cameraPosition[i] = cam.position[i];
+        prepare.cameraUp[i] = cam.up[i];
+        prepare.cameraRight[i] = cam.right[i];
+        prepare.cameraForward[i] = cam.forward[i];
     }
     code = m.api.Dispatch(&m.context, &prepare.header);
     if (code != FFX_API_RETURN_OK) {

@@ -11,7 +11,6 @@
 #include <string>
 
 namespace {
-constexpr size_t kCallbackQueueLimit = 4;
 constexpr uint32_t kDiffStride = 4;      // sample every 4th pixel in x and y
 // Below this fraction of changed samples the frame is an identical repaint
 // (a caret or clock digit is far below it).
@@ -195,7 +194,7 @@ bool CaptureEngine::prepare(HWND target) {
 
         m_pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
             m_winrtDevice, winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized,
-            4, itemSize);
+            m_captureQueue, itemSize);
         m_revoker = m_pool.FrameArrived(winrt::auto_revoke, {this, &CaptureEngine::onFrameArrived});
         m_session = m_pool.CreateCaptureSession(m_item);
         try { m_session.IsCursorCaptureEnabled(false); } catch (...) {}
@@ -266,7 +265,7 @@ void CaptureEngine::onFrameArrived(
             std::lock_guard<std::mutex> stats(m_statsMutex);
             ++m_stats.arrivals;
         }
-        if (m_queue.size() >= kCallbackQueueLimit) {
+        if (m_queue.size() >= static_cast<size_t>(m_captureQueue)) {
             // The producer is behind by several frames; the oldest is stale.
             m_queue.front().frame.Close();
             m_queue.pop_front();

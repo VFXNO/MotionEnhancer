@@ -229,7 +229,7 @@ if(WIN32)
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
-                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl FsrCameraCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
                                       DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl UiDetectInputCS.hlsl UiDebugViewCS.hlsl
                                       UiPersistCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)

@@ -61,6 +61,9 @@ constexpr int IDC_AI_UI_REGIONS = 121;
 constexpr int IDC_UI_MASK = 122;
 constexpr int IDC_UI_DETECTOR = 123;
 constexpr int IDC_AI_TEMPORAL_UI = 124;
+constexpr int IDC_FSR_MODE = 126;
+constexpr int IDC_LATENCY = 127;
+constexpr int IDC_VSYNC = 128;
 constexpr int IDC_INPUT0 = 201;
 constexpr int IDC_BROWSE_INPUT0 = 202;
 constexpr int IDC_INPUT1 = 203;
@@ -151,7 +154,13 @@ struct GuiState {
     HWND uiMask = nullptr;
     HWND aiUiRegions = nullptr;
     HWND aiTemporalUi = nullptr;
-    HWND fsrFrameGen = nullptr;   // --fsr-fg, experimental, beside the normal interpolation
+    // Experimental, beside the normal interpolation: off, --fsr-fg, or
+    // --fsr-fg --fsr-camera spin.
+    HWND fsrMode = nullptr;
+    // Queue presets: low (--latency-min 0 --latency-max 60), balanced (the
+    // defaults), smooth (--latency-min 12 --frame-latency 2 --capture-queue 6).
+    HWND latency = nullptr;
+    HWND vsync = nullptr;   // on (default) / off: --vsync off
     HWND uiDetector = nullptr;
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
@@ -1212,7 +1221,25 @@ void startCapture() {
     if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
     if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
-    if (SendMessageA(g_state.fsrFrameGen, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--fsr-fg");
+    {
+        if (SendMessageA(g_state.vsync, CB_GETCURSEL, 0, 0) == 1)
+            for (const char* arg : {"--vsync", "off"}) captureArgs.push_back(arg);
+        const LRESULT latency = SendMessageA(g_state.latency, CB_GETCURSEL, 0, 0);
+        if (latency == 0) {
+            for (const char* arg : {"--latency-min", "0", "--latency-max", "60"}) captureArgs.push_back(arg);
+        } else if (latency == 2) {
+            for (const char* arg : {"--latency-min", "12", "--frame-latency", "2", "--capture-queue", "6"})
+                captureArgs.push_back(arg);
+        }
+    }
+    {
+        const LRESULT fsr = SendMessageA(g_state.fsrMode, CB_GETCURSEL, 0, 0);
+        if (fsr == 1 || fsr == 2) captureArgs.push_back("--fsr-fg");
+        if (fsr == 2) {
+            captureArgs.push_back("--fsr-camera");
+            captureArgs.push_back("spin");
+        }
+    }
     if (flowSelection == 4 && SendMessageA(g_state.aiBlendMask, BM_GETCHECK, 0, 0) == BST_CHECKED)
         captureArgs.push_back("--ai-blend-mask");
     const bool temporalUi = flowSelection == 4 && SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED &&
@@ -1594,9 +1621,27 @@ void createControls() {
     g_state.aiDepth = makeCheckbox("AI depth (DIS, FFX occl.)", 590, 346, 200, true);
     // Experimental (--fsr-fg): AMD FSR frame generation beside the normal
     // interpolation; its middle frame is used near the middle of each pair,
-    // every generated frame at OUTPUT MULTIPLIER 2x. Off by default. In the
-    // panel's title row, where nothing else is.
-    g_state.fsrFrameGen = makeCheckbox("FSR frame gen (exp., best at 2x)", 560, 178, 260, false);
+    // every generated frame at OUTPUT MULTIPLIER 2x. "+ moving camera" also
+    // tells FSR its camera is turning (--fsr-camera spin), which measured
+    // better on every test sequence. Off by default. In the panel's title
+    // row, where nothing else is.
+    g_state.fsrMode = makeCombo(560, 173, 270, IDC_FSR_MODE);
+    for (const char* option : {"FSR frame gen: off", "FSR frame gen (exp., best at 2x)", "FSR + moving camera (exp.)"})
+        SendMessageA(g_state.fsrMode, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.fsrMode, CB_SETCURSEL, 0, 0);
+    // Frame queues (latency budget, swap chain, capture queue) as presets;
+    // the command line sets each one (--latency-min, --latency-max,
+    // --frame-latency, --capture-queue). Same title row, left of FSR.
+    g_state.latency = makeCombo(405, 173, 150, IDC_LATENCY);
+    for (const char* option : {"Latency: low", "Latency: balanced", "Latency: smooth"})
+        SendMessageA(g_state.latency, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.latency, CB_SETCURSEL, 1, 0);
+    // Vsync (--vsync off): off presents each frame at the time the frame
+    // queue chooses, tearing allowed; on (default) waits for the refresh.
+    g_state.vsync = makeCombo(245, 173, 150, IDC_VSYNC);
+    for (const char* option : {"Vsync: on", "Vsync: off (queue)"})
+        SendMessageA(g_state.vsync, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
+    SendMessageA(g_state.vsync, CB_SETCURSEL, 0, 0);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
     g_state.aiBlendMask = makeCheckbox("AI: blending mask", 238, 396, 184, false);
@@ -1647,7 +1692,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, g_state.fsrFrameGen, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, g_state.fsrMode, g_state.latency, g_state.vsync, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
         g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiTemporalUi, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,

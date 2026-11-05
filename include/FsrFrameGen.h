@@ -19,6 +19,17 @@
 // third_party/FidelityFX-SDK-v2.4.0 (MOTION_ENHANCER_FSR_FG); its signed
 // DLLs (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_framegeneration_dx12.dll)
 // are loaded at run time from the executable's folder.
+// FSR's camera for one frame (world space, left-handed: +x right, +y up,
+// +z forward when unrotated). The default is the fixed camera at the origin
+// looking down +z.
+struct FsrCamera {
+    float position[3] = {0.0f, 0.0f, 0.0f};
+    float up[3] = {0.0f, 1.0f, 0.0f};
+    float right[3] = {1.0f, 0.0f, 0.0f};
+    float forward[3] = {0.0f, 0.0f, 1.0f};
+    float fovVertical = 1.0f;   // radians (about 57 degrees)
+};
+
 class FsrFrameGen {
 public:
     FsrFrameGen();
@@ -31,8 +42,11 @@ public:
 
     // displaySize: the colour frames and the output; renderSize: the motion
     // vectors and depth. colorFormat: the colour frames' and output's format.
+    // debugChecking: FSR's own API checks (offline tests only; not for the
+    // live overlay).
     bool initialize(ID3D12Device* device, uint32_t displayWidth, uint32_t displayHeight,
-                    uint32_t renderWidth, uint32_t renderHeight, DXGI_FORMAT colorFormat, std::string& error);
+                    uint32_t renderWidth, uint32_t renderHeight, DXGI_FORMAT colorFormat, std::string& error,
+                    bool debugChecking = false);
 
     // One source frame, in AMD's required order (configure, prepare,
     // generate), recorded into `list`. `color` is this frame, `motionVectors`
@@ -42,20 +56,27 @@ public:
     // starts a new sequence. All resources are expected in the COMMON state.
     bool frame(ID3D12GraphicsCommandList* list, uint64_t frameId, ID3D12Resource* color,
                ID3D12Resource* motionVectors, ID3D12Resource* depth, ID3D12Resource* output,
-               bool reset, float frameTimeMs, std::string& error) {
-        return frame(list, frameId, color, motionVectors, depth, &output, 1, reset, frameTimeMs, error);
+               bool reset, float frameTimeMs, std::string& error, const FsrCamera* camera = nullptr) {
+        return frame(list, frameId, color, motionVectors, depth, &output, 1, reset, frameTimeMs, error, camera);
     }
 
     // The same with outputCount (1 to 4) generated frames, written to
     // outputs[0..outputCount-1] (FSR's numGeneratedFrames; which counts above
     // 1 the runtime accepts depends on the FSR version).
+    // camera: this frame's camera (null = the fixed default camera).
     bool frame(ID3D12GraphicsCommandList* list, uint64_t frameId, ID3D12Resource* color,
                ID3D12Resource* motionVectors, ID3D12Resource* depth, ID3D12Resource* const* outputs,
-               uint32_t outputCount, bool reset, float frameTimeMs, std::string& error);
+               uint32_t outputCount, bool reset, float frameTimeMs, std::string& error,
+               const FsrCamera* camera = nullptr);
 
-    // The FSR frame generation provider the runtime selected (e.g. its
-    // version string), for reports.
+    // The FSR frame generation versions the runtime offers (first = default).
     const std::string& provider() const;
+    // The provider the created context actually runs (name and id, from
+    // FFX_API_QUERY_DESC_TYPE_GET_PROVIDER_VERSION), and the full paths of
+    // the FSR DLLs loaded in the process (the SDK's next to the executable,
+    // or amdxcffx64.dll when the AMD driver supplies its own).
+    const std::string& selected() const;
+    const std::string& modules() const;
 
 private:
     struct Impl;

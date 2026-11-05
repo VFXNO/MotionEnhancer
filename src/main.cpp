@@ -34,7 +34,8 @@ static void printUsage(const char* progName) {
               << "                                        # Run the real-time GPU shader pipeline on two PNGs\n"
               << "  " << progName << " --fsr-fg-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--gpu-offline-prev p.png] [--fsr-depth 0-1] [--fsr-frames 1-4]\n"
               << "                                        # Experimental: AMD FSR frame generation fed with this flow\n"
-              << "  " << progName << " --fsr-realtime-test <f0.png> <f1.png> <f2.png>...  # The live --fsr-fg path on frames in order\n"
+              << "  " << progName << " --fsr-realtime-test <f0.png> <f1.png> <f2.png>... [--ai-depth --fsr-depth-span s] [--fsr-save dir]\n"
+              << "                                        # The live --fsr-fg path on frames in order\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
               << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n"
@@ -75,6 +76,22 @@ static void printUsage(const char* progName) {
               << "                           its middle frame is shown near the middle of each pair (all\n"
               << "                           generated frames with --multiplier 2). Off by default.\n"
               << "  --fsr-window <0-0.5>     How near the middle FSR's frame is used (default: 0.1)\n"
+              << "  --fsr-depth-span <0-1>   Give FSR the AI depth (needs --ai-depth), spread over this much of\n"
+              << "                           its depth range (default: 0.25); 0 = flat depth\n"
+              << "  --fsr-camera <off|spin|flow>  Experimental FSR camera (default: off = fixed). spin: a constant\n"
+              << "                           turn, which FSR measured better with; flow: turned by the flow's\n"
+              << "                           overall motion; exact = flow, offline tests only\n"
+              << "  --fsr-camera-fov <deg>   The game's assumed vertical field of view for it (default: 60)\n"
+              << "  --latency-min <0-50>     Latency budget margin in ms above one source frame + one refresh\n"
+              << "                           (default: 4); lower = less delay, more stutter when the GPU is busy\n"
+              << "  --latency-max <ms|auto>  Cap on how far the budget grows after stalls, 20-300 ms\n"
+              << "                           (default: auto = 3 source frames + 60 ms)\n"
+              << "  --frame-latency <1-2>    Frames the swap chain may hold (default: 1); 2 absorbs a slow\n"
+              << "                           frame at one refresh more delay\n"
+              << "  --capture-queue <2-8>    Captured frames that may wait to be processed (default: 4)\n"
+              << "  --vsync <on|off>         off: present each frame at the time the frame queue chooses\n"
+              << "                           (each k/N position with --multiplier N), tearing allowed\n"
+              << "                           (default: on = the next refresh)\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
@@ -318,6 +335,10 @@ int main(int argc, char** argv) {
     bool fsrFrameGen = false;          // live: FSR frame generation beside the normal interpolation
     bool fsrRealtimeTest = false;      // --fsr-realtime-test <frames...>: the live FSR path offline
     float fsrWindow = 0.1f;
+    float fsrDepthSpan = 0.25f;        // RealtimeOptions::fsrDepthSpan
+    FsrCameraSettings fsrCamera;       // --fsr-camera, --fsr-camera-fov, --fsr-camera-flip
+    RealtimeOptions queues;            // --latency-min/-max, --frame-latency, --capture-queue
+    std::string fsrSaveFolder;         // --fsr-save <dir>: --fsr-realtime-test writes its middle frames there
     uint32_t sourceFps = 0;
     uint32_t outputMultiplier = 0;   // Max: present at the display refresh rate
     GraphicsAdapterPreference adapterPreference = GraphicsAdapterPreference::Auto;
@@ -430,6 +451,38 @@ int main(int argc, char** argv) {
             fsrFrameGen = true;
         } else if (arg == "--fsr-window" && i + 1 < argc) {
             fsrWindow = std::clamp(std::stof(argv[++i]), 0.0f, 0.5f);
+        } else if (arg == "--fsr-save" && i + 1 < argc) {
+            fsrSaveFolder = argv[++i];
+        } else if (arg == "--latency-min" && i + 1 < argc) {
+            queues.latencyMinExtraMs = std::clamp(std::stod(argv[++i]), 0.0, 50.0);
+        } else if (arg == "--latency-max" && i + 1 < argc) {
+            const std::string value = argv[++i];
+            queues.latencyMaxMs = value == "auto" ? 0.0 : std::clamp(std::stod(value), 20.0, 300.0);
+        } else if (arg == "--frame-latency" && i + 1 < argc) {
+            queues.frameLatency = std::clamp(std::stoi(argv[++i]), 1, 2);
+        } else if (arg == "--vsync" && i + 1 < argc) {
+            const std::string value = argv[++i];
+            if (value != "on" && value != "off") throw std::invalid_argument("vsync must be on or off");
+            queues.vsync = value == "on";
+        } else if (arg == "--capture-queue" && i + 1 < argc) {
+            queues.captureQueue = std::clamp(std::stoi(argv[++i]), 2, 8);
+        } else if (arg == "--fsr-camera" && i + 1 < argc) {
+            const std::string mode = argv[++i];
+            if (mode == "off") fsrCamera.mode = 0;
+            else if (mode == "flow") fsrCamera.mode = 1;
+            else if (mode == "exact") fsrCamera.mode = 2;
+            else if (mode == "spin") fsrCamera.mode = 3;
+            else throw std::invalid_argument("FSR camera must be off, spin, flow or exact");
+        } else if (arg == "--fsr-camera-fov" && i + 1 < argc) {
+            fsrCamera.fovDegrees = std::clamp(std::stof(argv[++i]), 20.0f, 120.0f);
+        } else if (arg == "--fsr-camera-flip" && i + 1 < argc) {
+            const std::string flip = argv[++i];
+            fsrCamera.yawSign = (flip == "yaw" || flip == "both") ? -1.0f : 1.0f;
+            fsrCamera.pitchSign = (flip == "pitch" || flip == "both") ? -1.0f : 1.0f;
+            if (flip != "none" && flip != "yaw" && flip != "pitch" && flip != "both")
+                throw std::invalid_argument("FSR camera flip must be none, yaw, pitch or both");
+        } else if (arg == "--fsr-depth-span" && i + 1 < argc) {
+            fsrDepthSpan = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--fsr-depth" && i + 1 < argc) {
             fsrDepth = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--fsr-frames" && i + 1 < argc) {
@@ -642,7 +695,8 @@ int main(int argc, char** argv) {
     if (fsrRealtimeTest) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
-        return runFsrRealtimeTest(positionalArgs, gpuSettings, adapterPreference);
+        return runFsrRealtimeTest(positionalArgs, gpuSettings, adapterPreference, fsrDepthSpan, fsrSaveFolder,
+                                  fsrCamera);
     }
 
     if (!sequencePrefix.empty()) {
@@ -671,6 +725,13 @@ int main(int argc, char** argv) {
         options.adapter = adapterPreference;
         options.fsrFrameGen = fsrFrameGen;
         options.fsrWindow = fsrWindow;
+        options.fsrDepthSpan = fsrDepthSpan;
+        options.fsrCamera = fsrCamera;
+        options.latencyMinExtraMs = queues.latencyMinExtraMs;
+        options.latencyMaxMs = queues.latencyMaxMs;
+        options.frameLatency = queues.frameLatency;
+        options.captureQueue = queues.captureQueue;
+        options.vsync = queues.vsync;
         return runRealtimeSession(options);
     }
 

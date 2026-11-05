@@ -53,7 +53,7 @@ Presenter::~Presenter() {
 }
 
 bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                           uint32_t width, uint32_t height) {
+                           uint32_t width, uint32_t height, UINT maxFrameLatency, bool vsyncOff) {
     m_device = device;
     m_kernels = kernels;
     m_window = window;
@@ -76,6 +76,22 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
     desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+    // Vsync off: tearing must be allowed on the swap chain itself, and only
+    // where the system supports it (Windows 10 1809+, a capable driver).
+    if (vsyncOff) {
+        ComPtr<IDXGIFactory5> factory5;
+        BOOL allowTearing = FALSE;
+        if (SUCCEEDED(factory.As(&factory5)) &&
+            SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing,
+                                                    sizeof(allowTearing))) &&
+            allowTearing) {
+            desc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+            m_tearing = true;
+        } else {
+            std::cerr << "Presenter: tearing not supported here; presenting without waiting for vsync anyway.\n";
+        }
+    }
+    m_vsyncOff = vsyncOff;
     ComPtr<IDXGISwapChain1> swapChain1;
     HRESULT hr = factory->CreateSwapChainForHwnd(device->presentQueue(), window, &desc, nullptr, nullptr,
                                                  swapChain1.GetAddressOf());
@@ -85,9 +101,11 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     }
     if (FAILED(swapChain1.As(&m_swapChain))) return false;
     factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
-    // Latency 1: the wait returns as soon as the compositor has taken the
-    // previous frame, leaving a full refresh to produce the next one.
-    m_swapChain->SetMaximumFrameLatency(1);
+    // Latency 1 (default): the wait returns as soon as the compositor has
+    // taken the previous frame, leaving a full refresh to produce the next
+    // one. 2 (--frame-latency 2): one more frame may queue, which absorbs a
+    // slow frame at the cost of one refresh more delay.
+    m_swapChain->SetMaximumFrameLatency(std::clamp<UINT>(maxFrameLatency, 1, kBackBuffers - 1));
     m_latencyWaitable = m_swapChain->GetFrameLatencyWaitableObject();
     if (!m_latencyWaitable) return false;
     for (UINT i = 0; i < kBackBuffers; ++i) {
@@ -168,16 +186,33 @@ bool Presenter::waitFence(uint64_t value) {
     return true;
 }
 
-int64_t Presenter::beginFrame(int64_t wake) {
-    const double nominal = static_cast<double>(m_refreshInterval);
+void Presenter::noteWake(int64_t wake) {
     if (m_lastWake != 0) {
         const double delta = static_cast<double>(wake - m_lastWake);
         m_intervalSum += delta;
         ++m_intervalCount;
         m_stats.maxIntervalMs = std::max(m_stats.maxIntervalMs, delta / 10000.0);
-        if (delta > 1.5 * nominal) ++m_stats.lateFrames;
+        if (delta > 1.5 * static_cast<double>(m_refreshInterval)) ++m_stats.lateFrames;
     }
     m_lastWake = wake;
+}
+
+const char* Presenter::presentationMode() const {
+    ComPtr<IDXGISwapChainMedia> media;
+    DXGI_FRAME_STATISTICS_MEDIA stats = {};
+    if (!m_swapChain || FAILED(m_swapChain.As(&media)) || FAILED(media->GetFrameStatisticsMedia(&stats)))
+        return "unknown";
+    switch (stats.CompositionMode) {
+        case DXGI_FRAME_PRESENTATION_MODE_COMPOSED: return "composed";
+        case DXGI_FRAME_PRESENTATION_MODE_OVERLAY: return "independent flip";
+        case DXGI_FRAME_PRESENTATION_MODE_NONE: return "independent flip";
+        default: return "unknown";
+    }
+}
+
+int64_t Presenter::beginFrame(int64_t wake) {
+    const double nominal = static_cast<double>(m_refreshInterval);
+    noteWake(wake);
 
     // The frame rendered after this wake-up is scanned out at the next
     // vsync; the exact lead only shifts latency, but the *spacing* between
@@ -643,7 +678,9 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     set.fence = presentFenceValue;
     ++m_frameCount;
 
-    const HRESULT hr = m_swapChain->Present(1, 0);
+    // Vsync on (default): the next vsync. Off: at once, tearing if allowed.
+    const HRESULT hr = m_vsyncOff ? m_swapChain->Present(0, m_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0)
+                                  : m_swapChain->Present(1, 0);
     if (FAILED(hr)) {
         std::cerr << "Presenter: Present failed (0x" << std::hex << hr << ", device removed reason 0x"
                   << m_device->device()->GetDeviceRemovedReason() << std::dec << ")\n";

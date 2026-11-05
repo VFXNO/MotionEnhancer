@@ -62,6 +62,21 @@ public:
     };
 
     void configure(uint32_t sourceFpsOverride, double refreshHz, uint32_t outputMultiplier);
+    // The latency budget's limits (call before configure): minExtraMs is the
+    // margin above the least possible budget (one source period + one
+    // refresh; default 4 ms), maxMs caps how far starvation may grow it
+    // (<= 0: three periods + 60 ms, the default).
+    void setLatencyLimits(double minExtraMs, double maxMs);
+    // Vsync off: the timeline decides when frames are shown. With an output
+    // multiplier N, nextPresentTime() returns the wall-clock time of the next
+    // position k/N of a pair (each position once, in order) and select() snaps
+    // to it exactly; without one, one frame per display refresh on its own
+    // clock. Off (the default): select() is driven by the display's vsync.
+    // position (optional) is set false when the returned time is only when
+    // to ask again (the frames for the next position have not arrived): no
+    // frame is to be shown then.
+    void setFreePacing(bool on);
+    int64_t nextPresentTime(int64_t now, bool* position = nullptr);
 
     // ---- producer -------------------------------------------------------
     IngestPlan onFrameArrived(int64_t tsRaw, int64_t arrival);
@@ -96,6 +111,7 @@ private:
     void observeInterval(int64_t interval);
     void updateCadence();
     int64_t regularize(int64_t tsRaw);
+    void applyBudgetLimits();
     bool onGrid(int64_t delta) const;
 
     mutable std::mutex m_mutex;
@@ -125,6 +141,11 @@ private:
     int64_t m_latencyBudget = 0;
     int64_t m_minLatencyBudget = 0;
     int64_t m_maxLatencyBudget = 0;
+    int64_t m_minLatencyExtra = 40000;   // setLatencyLimits: 4 ms
+    int64_t m_maxLatencyOverride = 0;    // setLatencyLimits: 0 = three periods + 60 ms
+    bool m_freePacing = false;           // setFreePacing
+    int64_t m_lastScheduledMedia = INT64_MIN;   // nextPresentTime: the last position given out
+    int64_t m_lastScheduled = 0;                // nextPresentTime without a multiplier
     int64_t m_minSlack = INT64_MAX;
     int64_t m_lastBudgetReview = 0;
     int64_t m_holdSince = 0;         // media time when the current hold began, 0 if not holding

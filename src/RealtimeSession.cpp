@@ -331,12 +331,14 @@ int runRealtimeSession(const RealtimeOptions& options) {
         CaptureEngine capture;
         Presenter presenter;
         if (!capture.initialize(&device, &flow, &timeline)) { exitCode = 1; return; }
+        capture.setCaptureQueue(options.captureQueue);
         if (!capture.prepare(target)) { exitCode = 1; return; }
         const uint32_t width = capture.width();
         const uint32_t height = capture.height();
 
         std::cout << "[4/5] Creating presentation surface (" << width << "x" << height << ")...\n" << std::flush;
-        if (!presenter.initialize(&device, &kernels, overlay.hwnd, width, height)) { exitCode = 1; return; }
+        if (!presenter.initialize(&device, &kernels, overlay.hwnd, width, height,
+                                  static_cast<UINT>(options.frameLatency), !options.vsync)) { exitCode = 1; return; }
         // The present fence gates slot and flow-ring recycling.
         capture.setPresentFence(presenter.fence());
 
@@ -346,17 +348,43 @@ int runRealtimeSession(const RealtimeOptions& options) {
             exitCode = 1;
             return;
         }
+        timeline.setLatencyLimits(options.latencyMinExtraMs, options.latencyMaxMs);
+        timeline.setFreePacing(!options.vsync);
         timeline.configure(options.sourceFps, presenter.refreshRate(), options.outputMultiplier);
 
         // Experimental FSR frame generation beside the normal interpolation:
         // when it cannot start, the session runs exactly as without it.
         std::unique_ptr<FsrRealtime> fsr;
-        if (options.fsrFrameGen) {
+        // With a fixed multiplier the blend positions are k/N: when none is
+        // within the window of the middle (3x: 1/3, 2/3), FSR's frame would
+        // never be shown, so it is not run at all.
+        bool fsrReachable = true;
+        if (options.fsrFrameGen && options.outputMultiplier > 1) {
+            fsrReachable = false;
+            for (uint32_t k = 1; k < options.outputMultiplier; ++k)
+                if (std::abs(static_cast<float>(k) / static_cast<float>(options.outputMultiplier) - 0.5f) <=
+                    options.fsrWindow + 1e-4f)
+                    fsrReachable = true;
+            if (!fsrReachable)
+                std::cerr << "FSR frame generation not started: at " << options.outputMultiplier
+                          << "x no frame is within " << options.fsrWindow
+                          << " of the middle of a pair (use 2x or a wider --fsr-window).\n";
+        }
+        if (options.fsrFrameGen && fsrReachable) {
             fsr = std::make_unique<FsrRealtime>();
             std::string fsrError;
             if (!fsr->initialize(&device, &kernels, width, height, fsrError)) {
                 std::cerr << "FSR frame generation unavailable: " << fsrError << " (continuing without it)\n";
                 fsr.reset();
+            } else {
+                fsr->setDepthSpan(options.fsrDepthSpan);
+                // Live the camera never waits for the GPU: the exact mode is
+                // for offline tests, the previous pair's motion is used here.
+                const FsrCameraSettings& cam = options.fsrCamera;
+                fsr->setCamera(cam.mode == 0   ? FsrRealtime::CameraMode::Fixed
+                               : cam.mode == 3 ? FsrRealtime::CameraMode::Spin
+                                               : FsrRealtime::CameraMode::FromFlow,
+                               cam.fovDegrees * 0.01745329f, cam.yawSign, cam.pitchSign);
             }
         }
 
@@ -371,10 +399,37 @@ int runRealtimeSession(const RealtimeOptions& options) {
                   << "  Adapter:        " << device.adapterName() << "\n"
                   << "  Flow Engine:    " << engine << ", " << flow.searchedLevels() << " pyramid levels\n"
                   << "  Source Cadence: " << (options.sourceFps ? std::to_string(options.sourceFps) + " fps" : "auto") << "\n"
+                  << "  Queues:         latency margin " << options.latencyMinExtraMs << " ms, cap "
+                  << (options.latencyMaxMs > 0.0 ? std::to_string(static_cast<int>(options.latencyMaxMs)) + " ms"
+                                                  : std::string("auto (3 frames + 60 ms)"))
+                  << ", frame latency " << options.frameLatency << ", capture queue " << options.captureQueue << "\n"
+                  << "  Vsync:          "
+                  << (options.vsync ? "on (each frame on the next refresh)"
+                                    : std::string("off, paced by the frame queue") +
+                                          (options.outputMultiplier ? " (each k/" + std::to_string(options.outputMultiplier) +
+                                                                          " position at its own time)"
+                                                                    : " (one frame per refresh interval)") +
+                                          (presenter.tearing() ? ", tearing allowed" : ", tearing unsupported"))
+                  << "\n"
                   << "  Output:         " << std::fixed << std::setprecision(2) << presenter.refreshRate() << " Hz display"
                   << (options.outputMultiplier ? ", quantized to " + std::to_string(options.outputMultiplier) + "x source" : ", every refresh") << "\n"
-                  << (fsr ? "  FSR frame gen:  on (experimental), middle frames within +/- " + std::to_string(options.fsrWindow) +
-                                " of 0.5; " + (options.outputMultiplier == 2 ? "all generated frames\n" : "use --multiplier 2 for all generated frames\n")
+                  << (fsr ? "  FSR frame gen:  on (experimental), middle frames within +/- " +
+                                std::to_string(static_cast<int>(options.fsrWindow * 100.0f + 0.5f)) + "% of a pair from the middle" +
+                                "; " + (options.outputMultiplier == 2 ? "all generated frames\n" : "use --multiplier 2 for all generated frames\n") +
+                                "  FSR provider:   " + fsr->frameGen().selected() + " (offered: " + fsr->frameGen().provider() + ")\n" +
+                                "  FSR DLLs:       " + fsr->frameGen().modules() + "\n" +
+                                "  FSR motion:     the flow engine above (not FSR's own optical flow)\n" +
+                                "  FSR depth:      " +
+                                (options.flow.aiDepth && options.fsrDepthSpan > 0.0f
+                                     ? "AI depth (span " + std::to_string(options.fsrDepthSpan).substr(0, 4) +
+                                           "), flat for a frame whose depth is not ready\n"
+                                     : std::string("flat (") +
+                                           (options.flow.aiDepth ? "--fsr-depth-span 0" : "AI depth off") + ")\n") +
+                                "  FSR camera:     " +
+                                (options.fsrCamera.mode == 0   ? std::string("fixed\n")
+                                 : options.fsrCamera.mode == 3 ? std::string("spinning (constant turn, --fsr-camera spin)\n")
+                                     : "turned by the flow's overall motion (previous pair), assumed FOV " +
+                                           std::to_string(static_cast<int>(options.fsrCamera.fovDegrees + 0.5f)) + " deg\n")
                           : std::string())
                   << "  Hotkeys:       [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
                   << "============================================================\n\n" << std::flush;
@@ -406,10 +461,19 @@ int runRealtimeSession(const RealtimeOptions& options) {
         double renderCpuMs = 0.0;
         uint64_t renderCount = 0;
 
+        // Vsync off: the time the frame queue chose for this frame
+        // (FrameTimeline::nextPresentTime); 0 with vsync on.
+        int64_t scheduledDisplay = 0;
         auto renderTick = [&]() -> bool {
             const auto cpu0 = std::chrono::steady_clock::now();
             const int64_t wake = wallClock100ns();
-            const int64_t display = presenter.beginFrame(wake);
+            int64_t display = 0;
+            if (scheduledDisplay != 0) {
+                presenter.noteWake(wake);
+                display = scheduledDisplay;
+            } else {
+                display = presenter.beginFrame(wake);
+            }
             const FrameTimeline::Selection sel = timeline.select(display);
             if (!sel.valid) return true;
 
@@ -499,8 +563,10 @@ int runRealtimeSession(const RealtimeOptions& options) {
             if (fsr && !job.single && entry.valid) {
                 const float periodMs = sel.f1.arrival > sel.f0.arrival
                     ? static_cast<float>(sel.f1.arrival - sel.f0.arrival) / 10000.0f : 1000.0f / 60.0f;
+                // The frames' AI depth where complete (job.depth0/1, never
+                // a wait); FSR gets the flat depth for a frame without it.
                 ID3D12Resource* middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
-                                                          sel.f1.flowFence, periodMs);
+                                                          sel.f1.flowFence, periodMs, job.depth0, job.depth1);
                 if (middle && std::abs(job.alpha - 0.5f) <= options.fsrWindow) {
                     // Shown as a finished frame: FSR's list, submitted on
                     // the same queue just before, already waited for the
@@ -549,12 +615,51 @@ int runRealtimeSession(const RealtimeOptions& options) {
         // timeout of 1.5 refreshes then stands in for the tick: our own
         // present wakes the compositor and real ticks resume.
         const DWORD tickTimeoutMs = static_cast<DWORD>(std::max<int64_t>(4, presenter.refreshInterval() * 3 / 20000));
+        // Vsync off: a high-resolution timer (about 0.5 ms) wakes the loop at
+        // the frame queue's chosen times; a plain Sleep if unavailable.
+        HANDLE pacingTimer = options.vsync ? nullptr
+                                           : CreateWaitableTimerExW(nullptr, nullptr,
+                                                                    CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+                                                                    TIMER_ALL_ACCESS);
+        int64_t pendingTarget = 0;
         while (true) {
             if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
             // One iteration per compositor tick (or per accepted frame while
             // nothing is on screen yet). Messages are only hotkeys and
             // window tracking, pumped once per tick.
-            DWORD wait = presenter.waitForVsync(1, handles, presenting ? tickTimeoutMs : 250);
+            DWORD wait = WAIT_TIMEOUT;
+            scheduledDisplay = 0;
+            if (!options.vsync && presenting) {
+                // Vsync off: sleep until the time the frame queue chose for
+                // the next frame (at most 50 ms, so messages keep flowing),
+                // then present it at once.
+                const int64_t now = wallClock100ns();
+                // A target not yet reached is kept: nextPresentTime() gives
+                // each position out once.
+                bool position = true;
+                const int64_t target = pendingTarget ? pendingTarget : timeline.nextPresentTime(now, &position);
+                pendingTarget = 0;
+                const int64_t wait100ns = std::min<int64_t>(target - now, 500000);
+                if (wait100ns > 0 && pacingTimer) {
+                    LARGE_INTEGER due = {};
+                    due.QuadPart = -wait100ns;
+                    if (SetWaitableTimer(pacingTimer, &due, 0, nullptr, nullptr, FALSE))
+                        WaitForSingleObject(pacingTimer, 100);
+                } else if (wait100ns > 0) {
+                    Sleep(static_cast<DWORD>(wait100ns / 10000));
+                }
+                if (!position) {
+                    wait = WAIT_OBJECT_0;   // the next frames have not arrived: ask again
+                } else if (target - now <= 500000) {
+                    scheduledDisplay = target;
+                    wait = WAIT_OBJECT_0 + 1;
+                } else {
+                    pendingTarget = target;
+                    wait = WAIT_OBJECT_0;   // nothing due yet: messages only
+                }
+            } else {
+                wait = presenter.waitForVsync(1, handles, presenting ? tickTimeoutMs : 250);
+            }
             if (!overlay.processMessages()) break;
             overlay.updateTracking();
 
@@ -608,9 +713,13 @@ int runRealtimeSession(const RealtimeOptions& options) {
                            << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames;
+                // Vsync off: whether the overlay can tear / follow FreeSync
+                // (independent flip) or is drawn by DWM at the refresh.
+                if (!options.vsync) status << " | flip " << presenter.presentationMode();
                 if (fsr) {
                     const FsrRealtime::Stats fs = fsr->takeStats();
-                    status << " | fsr made " << fs.generated << " shown " << fsrShown << " reset " << fs.resets
+                    status << " | fsr made " << fs.generated << " depth " << fs.aiDepth << " shown " << fsrShown
+                           << " reset " << fs.resets
                            << " fail " << fs.failures;
                     fsrShown = 0;
                 }
@@ -639,6 +748,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
             }
         }
 
+        if (pacingTimer) CloseHandle(pacingTimer);
         if (mmcss) AvRevertMmThreadCharacteristics(mmcss);
         capture.stop();
         std::cout << "Real-time GPU frame interpolation terminated.\n";
@@ -2829,13 +2939,15 @@ int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& fram
     const uint32_t renderHeight = (height + 1) / 2;
     FsrFrameGen fsr;
     std::string error;
-    if (!fsr.initialize(device.device(), width, height, renderWidth, renderHeight, DXGI_FORMAT_R8G8B8A8_UNORM, error)) {
+    if (!fsr.initialize(device.device(), width, height, renderWidth, renderHeight, DXGI_FORMAT_R8G8B8A8_UNORM, error,
+                        true)) {
         std::cerr << "FSR frame generation: " << error << "\n";
         return 1;
     }
     std::cout << "FSR frame generation: " << width << "x" << height << ", motion/depth " << renderWidth << "x"
               << renderHeight << ", depth " << depthValue << "; versions offered: "
-              << (fsr.provider().empty() ? std::string("?") : fsr.provider()) << "\n";
+              << (fsr.provider().empty() ? std::string("?") : fsr.provider()) << "\n"
+              << "  FSR provider in use: " << fsr.selected() << "\n  FSR DLLs loaded: " << fsr.modules() << "\n";
 
     std::vector<SharedTexture> textures(frames.size());
     std::vector<FlowInput> inputs(frames.size());
@@ -2976,7 +3088,8 @@ int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& fram
 // which FsrRealtime must notice and restart FSR for. Prints each middle
 // frame's PSNR against the truth and FSR's counters.
 int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
-                       GraphicsAdapterPreference adapter) {
+                       GraphicsAdapterPreference adapter, float depthSpan, const std::string& saveFolder,
+                       const FsrCameraSettings& camera) {
     if (framePaths.size() < 3) {
         std::cerr << "--fsr-realtime-test needs at least three frames in order\n";
         return 1;
@@ -3008,6 +3121,14 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
         std::cerr << "FSR frame generation: " << error << "\n";
         return 1;
     }
+    fsr.setDepthSpan(depthSpan);
+    fsr.setCamera(camera.mode == 0   ? FsrRealtime::CameraMode::Fixed
+                  : camera.mode == 1 ? FsrRealtime::CameraMode::FromFlow
+                  : camera.mode == 3 ? FsrRealtime::CameraMode::Spin
+                                     : FsrRealtime::CameraMode::FromFlowExact,
+                  camera.fovDegrees * 0.01745329f, camera.yawSign, camera.pitchSign);
+    std::cout << "FSR provider in use: " << fsr.frameGen().selected() << " (offered: " << fsr.frameGen().provider()
+              << ")\nFSR DLLs loaded: " << fsr.frameGen().modules() << "\n";
     std::vector<SharedTexture> textures(frames.size());
     std::vector<FlowInput> inputs(frames.size());
     for (size_t i = 0; i < frames.size(); ++i) {
@@ -3029,9 +3150,14 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
             return 1;
         }
         const FlowEngine::Entry entry = flow.entry(r.entry);
+        // The frames' AI depth (with --ai-depth), waited for here; live, a
+        // frame without finished depth gets the flat depth instead.
+        ID3D12Resource* depth0 = settings.aiDepth ? flow.waitDepth(inputs[i], 5000) : nullptr;
+        ID3D12Resource* depth1 = settings.aiDepth ? flow.waitDepth(inputs[i + 2], 5000) : nullptr;
+        if (settings.aiDepth && (!depth0 || !depth1)) std::cout << "  (no AI depth for pair " << i << ")\n";
         // Timeline indices are the frame numbers + 1, as in the live loop.
         ID3D12Resource* middle = fsr.middleFrame(inputs[i], i + 1, inputs[i + 2], i + 3, entry, flow.fence(), r.fence,
-                                                 1000.0f / 30.0f);
+                                                 1000.0f / 30.0f, depth0, depth1);
         // A second call for the same pair must return the same frame
         // without running FSR again (the render loop asks every refresh).
         if (middle != fsr.middleFrame(inputs[i], i + 1, inputs[i + 2], i + 3, entry, flow.fence(), r.fence, 33.3f)) {
@@ -3056,18 +3182,28 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
                                       frames[i + 2].get(static_cast<int>(x), static_cast<int>(y), ch)));
                 }
         }
+        if (!saveFolder.empty()) {
+            const std::string path = saveFolder + "/fsr_middle_" + std::to_string(i) + "_" + std::to_string(i + 2) + ".png";
+            if (!result.savePNG(path)) std::cerr << "Error: cannot write " << path << "\n";
+        }
         const double p = computePsnr(result, frames[i + 1]), b = computePsnr(blend, frames[i + 1]);
         sumFsr += p;
         sumBlend += b;
         ++count;
         std::cout << "  pair " << i << "-" << i + 2 << ": FSR middle " << std::fixed << std::setprecision(2) << p
-                  << " dB (naive blend " << b << " dB)\n";
+                  << " dB (naive blend " << b << " dB)";
+        if (camera.mode == 1 || camera.mode == 2)
+            std::cout << ", camera turned by motion (" << fsr.motionX() << ", " << fsr.motionY() << ") px";
+        std::cout << "\n";
     }
     const FsrRealtime::Stats s = fsr.takeStats();
-    std::cout << "FSR realtime path: " << s.generated << " pairs made, " << s.resets << " sequence starts, "
+    std::cout << "FSR realtime path: " << s.generated << " pairs made, " << s.aiDepth << " frames with AI depth, "
+              << s.resets << " sequence starts, "
               << s.failures << " failures";
     if (count) std::cout << "; mean " << std::setprecision(2) << sumFsr / count << " dB (blend " << sumBlend / count << " dB)";
     std::cout << "\n";
-    // Two sequences, every pair made, nothing failed.
-    return s.failures == 0 && s.resets == 2 && s.generated == starts.size() ? 0 : 1;
+    // One start per sequence that has a pair (the one from frame 1 has none
+    // with three frames), every pair made, nothing failed.
+    const uint64_t sequences = frames.size() >= 4 ? 2 : 1;
+    return s.failures == 0 && s.resets == sequences && s.generated == starts.size() ? 0 : 1;
 }
