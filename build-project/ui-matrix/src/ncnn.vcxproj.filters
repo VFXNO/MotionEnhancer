@@ -1,0 +1,811 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\allocator.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\benchmark.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\blob.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\c_api.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\command.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\cpu.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\datareader.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\expression.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\gpu.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_affine.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_drawing.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_resize.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_rotate.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\modelbin.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\net.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\option.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\paramdict.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\pipeline.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\pipelinecache.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simpleocv.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simpleomp.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplestl.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplemath.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplevk.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\absval.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\absval_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\absval_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\batchnorm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\batchnorm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\batchnorm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\bias.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\bias_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\bnll.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\bnll_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\concat.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\concat_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\concat_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolution_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolution_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\crop.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\crop_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\crop_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deconvolution_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deconvolution_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\dropout.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\dropout_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\dropout_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\eltwise.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\eltwise_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\eltwise_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\elu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\elu_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\elu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\embed.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\exp.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\flatten.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\flatten_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\flatten_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\innerproduct.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\innerproduct_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\innerproduct_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\input.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\log.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\lrn.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\lrn_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\lrn_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\memorydata.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\memorydata_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\mvn.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\pooling_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\pooling_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\power.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\prelu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\prelu_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\prelu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\proposal.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reduction.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\reduction_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reduction_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\relu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\relu_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\relu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reshape.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\reshape_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reshape_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\roipooling.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\scale.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\scale_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\scale_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\sigmoid.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\sigmoid_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\sigmoid_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\slice.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\slice_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\slice_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\softmax.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\softmax_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\softmax_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\split.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\split_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\tanh.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\tanh_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\tanh_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\threshold.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\tile.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\tile_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rnn.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\lstm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\lstm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\binaryop.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\binaryop_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\binaryop_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\unaryop.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\unaryop_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\unaryop_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolutiondepthwise_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolutiondepthwise_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\padding.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\padding_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\padding_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\squeeze.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\expanddims.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\normalize.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\normalize_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\normalize_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\permute.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\permute_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\permute_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\priorbox.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\priorbox_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\detectionoutput.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\interp.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\interp_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\interp_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deconvolutiondepthwise_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deconvolutiondepthwise_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\shufflechannel.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\shufflechannel_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\shufflechannel_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\instancenorm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\instancenorm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\instancenorm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\clip.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\clip_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\clip_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reorg.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reorg_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\yolodetectionoutput.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\quantize.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\quantize_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\quantize_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\dequantize.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\dequantize_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\dequantize_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\yolov3detectionoutput.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\yolov3detectionoutput_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\psroipooling.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\roialign.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\roialign_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\packing.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\packing_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\packing_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\requantize.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\requantize_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\requantize_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\cast.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\cast_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\cast_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\hardsigmoid.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\hardsigmoid_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\hardsigmoid_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\selu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\selu_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\selu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\hardswish.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\hardswish_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\hardswish_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\noop.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\noop_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pixelshuffle.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\pixelshuffle_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\pixelshuffle_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deepcopy.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deepcopy_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\mish.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\mish_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\mish_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\statisticspooling.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\swish.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\swish_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\swish_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gemm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gemm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\gemm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\groupnorm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\groupnorm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\groupnorm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\layernorm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\layernorm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\layernorm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\softplus.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\softplus_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gru.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\multiheadattention.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\multiheadattention_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\multiheadattention_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gelu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gelu_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\gelu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution1d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolution1d_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolution1d_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling1d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise1d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution3d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise3d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling3d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\matmul.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\matmul_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution1d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise1d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution3d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise3d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\einsum.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deformableconv2d.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deformableconv2d_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\glu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\fold.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\unfold.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\unfold_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gridsample.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gridsample_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\cumulativesum.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\cumulativesum_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\copyto.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\erf.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\erf_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\erf_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\diag.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\celu.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\celu_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\shrink.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\shrink_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rmsnorm.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\rmsnorm_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\rmsnorm_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\spectrogram.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\inversespectrogram.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\flip.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\sdpa.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\sdpa_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\sdpa_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rotaryembed.cpp">
+      <Filter>sources\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\rotaryembed_x86.cpp">
+      <Filter>sources\layers\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\rotaryembed_vulkan.cpp">
+      <Filter>sources\layers\vulkan</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sources">
+      <UniqueIdentifier>{B248C120-95F6-32C6-BEAC-37F9F0251201}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\layers">
+      <UniqueIdentifier>{D3D56D5A-76A6-341D-9AC1-0203DA8FF2A5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\layers\vulkan">
+      <UniqueIdentifier>{7DD9F306-88D8-3D9C-8ADC-D9ADA3F12A0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\layers\x86">
+      <UniqueIdentifier>{20133A7D-AE6E-3CA7-AF1A-AACC9F61BA1A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

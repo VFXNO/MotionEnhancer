@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\ResourceLimits\ResourceLimits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\ResourceLimits\resource_limits_c.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Public\ResourceLimits.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Public\resource_limits_c.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Public">
+      <UniqueIdentifier>{997043B3-3A9F-3D9B-9817-7602AA809C7A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{5EE6B835-2E79-364D-ADC3-5119F3D1A5E2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

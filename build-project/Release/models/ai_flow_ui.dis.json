@@ -1,0 +1,50 @@
+{
+ "format": "mefi-pyramid-ui-1",
+ "arch": "pyramid-v2",
+ "head_format": "me-ui-pair-temporal-1",
+ "head_arch": "pair-ui-dw-v1",
+ "width": 832,
+ "height": 480,
+ "state_channels": 8,
+ "state_width": 416,
+ "state_height": 240,
+ "ui_threshold": 0.5,
+ "levels": 7,
+ "preset": "medium",
+ "integrated_refiner": false,
+ "bundle_id": "9fede64f8ecb4c95a8c86f213bc8b528",
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\ui2\\best_ui.pt",
+ "ui_updates": 668,
+ "flow_updates": 0,
+ "validation": {
+  "loss": 0.5850573270758496,
+  "threshold": 0.5,
+  "binary_coverage_threshold": 0.5,
+  "total": {
+   "tp": 13594,
+   "fp": 18134,
+   "fn": 146252,
+   "known": 3640320,
+   "precision": 0.42845436207766013,
+   "recall": 0.08504435519187217,
+   "iou": 0.07637936846836724
+  },
+  "by_source": {
+   "video:Wuthering Waves 11 Minutes of Exclusive Gameplay.mp4:529738203": {
+    "tp": 13594,
+    "fp": 18134,
+    "fn": 146252,
+    "known": 3640320,
+    "precision": 0.42845436207766013,
+    "recall": 0.08504435519187217,
+    "iou": 0.07637936846836724
+   }
+  }
+ },
+ "psnr": null,
+ "experimental": true,
+ "onnx_sha256": "6f15a7be2408d61f19354f9c45eec2fcc036d95097cd1b5f02c832182d08d4ae",
+ "native_evidence_required": true,
+ "dis_model": "ai_flow_ui.dis.onnx",
+ "refined_model": "ai_flow_ui.onnx"
+}

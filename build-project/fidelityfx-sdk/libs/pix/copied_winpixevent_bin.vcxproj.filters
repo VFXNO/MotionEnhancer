@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\bin\x64\WinPixEventRuntime.dll" />
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\c2703af6102596ec0c62b369178ed2bc\copied_winpixevent_bin.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\FidelityFX-SDK-v1.1.4\libs\pix\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\fidelityfx-sdk\libs\pix\CMakeFiles\copied_winpixevent_bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{FA07F693-7518-3F8D-935E-1802435355A4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

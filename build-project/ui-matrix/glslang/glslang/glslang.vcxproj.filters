@@ -1,0 +1,335 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\CInterface\glslang_c_interface.cpp">
+      <Filter>CInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\GenericCodeGen\CodeGen.cpp">
+      <Filter>GenericCodeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\GenericCodeGen\Link.cpp">
+      <Filter>GenericCodeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\OSDependent\Windows\ossource.cpp">
+      <Filter>OSDependent\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\glslang_tab.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\attribute.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Constant.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\iomapper.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\InfoSink.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Initialize.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\IntermTraverse.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Intermediate.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\ParseContextBase.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\ParseHelper.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\PoolAlloc.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\RemoveTree.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Scan.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\ShaderLang.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\SpirvIntrinsics.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\SymbolTable.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Versions.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\intermOut.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\limits.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\linkValidate.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\parseConst.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\reflection.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\Pp.cpp">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpAtom.cpp">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpContext.cpp">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpScanner.cpp">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpTokens.cpp">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\propagateNoContraction.cpp">
+      <Filter>MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GlslangToSpv.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\InReadableOrder.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\Logger.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\SpvBuilder.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\SpvPostProcess.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\doc.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\SpvTools.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\disassemble.cpp">
+      <Filter>SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\CInterface\spirv_c_interface.cpp">
+      <Filter>SPIRV\CInterface</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Public\ShaderLang.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\arrays.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\BaseTypes.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\Common.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\ConstantUnion.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\glslang_c_interface.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\glslang_c_shader_types.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\InfoSink.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\InitializeGlobals.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\intermediate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\PoolAlloc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\ResourceLimits.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\ShHandle.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\SpirvIntrinsics.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\Types.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\Include\visibility.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\OSDependent\osinclude.h">
+      <Filter>OSDependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\attribute.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\glslang_tab.cpp.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\gl_types.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Initialize.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\iomapper.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\LiveTraverser.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\localintermediate.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\ParseHelper.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\reflection.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\RemoveTree.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Scan.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\ScanContext.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\SymbolTable.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\Versions.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\parseVersions.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\propagateNoContraction.h">
+      <Filter>MachineIndependent</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpContext.h">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\preprocessor\PpTokens.h">
+      <Filter>MachineIndependent\Preprocessor</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\bitutils.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.std.450.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.EXT.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.KHR.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GlslangToSpv.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\hex_float.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\Logger.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\SpvBuilder.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\spvIR.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\spvUtil.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\doc.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\SpvTools.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\disassemble.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.AMD.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.NV.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.ARM.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\GLSL.ext.QCOM.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\NonSemanticDebugPrintf.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\NonSemanticShaderDebugInfo.h">
+      <Filter>SPIRV</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\MachineIndependent\glslang.y">
+      <Filter>MachineIndependent</Filter>
+    </None>
+    <None Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\spirv.hpp11">
+      <Filter>SPIRV</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CInterface">
+      <UniqueIdentifier>{E0D99F6B-D2AC-31DC-AEA4-87178CAC95BC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GenericCodeGen">
+      <UniqueIdentifier>{8B804833-9B8B-3720-9A25-DE9587D5DF7B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{5154AA78-E682-39E6-A0AF-840C39417256}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MachineIndependent">
+      <UniqueIdentifier>{DA4EF5F3-4326-37CE-85BF-C4D6DCAFBFE0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MachineIndependent\Preprocessor">
+      <UniqueIdentifier>{EB8E5310-034D-3F0E-BBB4-F62680D4AF6F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OSDependent">
+      <UniqueIdentifier>{7532CCBF-2C7F-34C1-B142-DB03AC91FA7E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OSDependent\Windows">
+      <UniqueIdentifier>{D8C396E6-EAAE-30E8-B2FC-24660D609170}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public">
+      <UniqueIdentifier>{997043B3-3A9F-3D9B-9817-7602AA809C7A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SPIRV">
+      <UniqueIdentifier>{C7965739-B709-3891-BE8D-BC16140D3998}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SPIRV\CInterface">
+      <UniqueIdentifier>{8A361607-BCFF-3C74-8EC4-F50F4D9707E1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

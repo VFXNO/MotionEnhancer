@@ -1,0 +1,8 @@
+{
+  "url": "https://huggingface.co/onnx-community/OmniParser-icon_detect_640x640/resolve/799bd041b5d053ed44651c2237ced04d8fdb2777/onnx/model_fp16.onnx",
+  "revision": "799bd041b5d053ed44651c2237ced04d8fdb2777",
+  "sha256": "cbc393231545eee6155291c7e2527db3eca86ed54935f4155556113344e24d00",
+  "licence": "AGPL-3.0",
+  "licence_url": "https://huggingface.co/microsoft/OmniParser/raw/main/icon_detect/LICENSE",
+  "purpose": "UI region detection only; NOT a segmentation mask or motion model"
+}

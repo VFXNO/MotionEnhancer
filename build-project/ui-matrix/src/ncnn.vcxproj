@@ -1,0 +1,597 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{97376320-9A1A-3939-92CB-BA85CA46104A}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ncnn</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ncnn.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ncnnd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ncnn.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ncnn</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">ncnn.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">ncnn</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ncnn.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">ncnn</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;NDEBUG;NCNN_STATIC_DEFINE;NOMINMAX;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\glslang\..;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\include;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\glslang\SPIRV\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCommon.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\exportheader.cmake.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_layer.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_shader.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_declaration.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_spv_data.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\platform.h.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCommon.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\exportheader.cmake.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_layer.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_shader.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_declaration.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_spv_data.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\platform.h.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCommon.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\exportheader.cmake.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_layer.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_shader.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_declaration.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_spv_data.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\platform.h.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bsher/Documents/GitHub/MotionEnhancer2 -BC:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project --check-stamp-file C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCommon.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-4.4\Modules\exportheader.cmake.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_layer.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\cmake\ncnn_add_shader.cmake;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_declaration.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_registry.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_spv_data.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_shader_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer_type_enum.h.in;C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\platform.h.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\allocator.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\benchmark.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\blob.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\c_api.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\command.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\cpu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\datareader.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\expression.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\gpu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_affine.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_drawing.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_resize.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\mat_pixel_rotate.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\modelbin.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\net.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\option.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\paramdict.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\pipeline.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\pipelinecache.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simpleocv.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simpleomp.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplestl.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplemath.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\simplevk.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\absval.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\absval_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\absval_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\batchnorm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\batchnorm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\batchnorm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\bias.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\bias_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\bnll.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\bnll_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\concat.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\concat_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\concat_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolution_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolution_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\crop.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\crop_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\crop_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deconvolution_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deconvolution_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\dropout.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\dropout_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\dropout_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\eltwise.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\eltwise_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\eltwise_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\elu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\elu_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\elu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\embed.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\exp.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\flatten.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\flatten_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\flatten_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\innerproduct.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\innerproduct_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\innerproduct_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\input.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\log.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\lrn.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\lrn_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\lrn_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\memorydata.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\memorydata_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\mvn.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\pooling_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\pooling_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\power.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\prelu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\prelu_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\prelu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\proposal.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reduction.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\reduction_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reduction_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\relu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\relu_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\relu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reshape.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\reshape_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reshape_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\roipooling.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\scale.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\scale_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\scale_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\sigmoid.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\sigmoid_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\sigmoid_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\slice.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\slice_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\slice_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\softmax.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\softmax_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\softmax_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\split.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\split_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\tanh.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\tanh_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\tanh_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\threshold.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\tile.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\tile_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rnn.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\lstm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\lstm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\binaryop.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\binaryop_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\binaryop_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\unaryop.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\unaryop_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\unaryop_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolutiondepthwise_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolutiondepthwise_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\padding.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\padding_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\padding_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\squeeze.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\expanddims.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\normalize.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\normalize_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\normalize_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\permute.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\permute_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\permute_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\priorbox.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\priorbox_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\detectionoutput.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\interp.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\interp_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\interp_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deconvolutiondepthwise_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deconvolutiondepthwise_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\shufflechannel.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\shufflechannel_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\shufflechannel_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\instancenorm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\instancenorm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\instancenorm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\clip.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\clip_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\clip_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\reorg.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\reorg_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\yolodetectionoutput.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\quantize.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\quantize_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\quantize_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\dequantize.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\dequantize_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\dequantize_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\yolov3detectionoutput.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\yolov3detectionoutput_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\psroipooling.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\roialign.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\roialign_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\packing.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\packing_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\packing_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\requantize.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\requantize_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\requantize_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\cast.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\cast_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\cast_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\hardsigmoid.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\hardsigmoid_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\hardsigmoid_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\selu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\selu_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\selu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\hardswish.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\hardswish_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\hardswish_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\noop.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\noop_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pixelshuffle.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\pixelshuffle_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\pixelshuffle_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deepcopy.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\deepcopy_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\mish.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\mish_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\mish_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\statisticspooling.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\swish.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\swish_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\swish_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gemm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gemm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\gemm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\groupnorm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\groupnorm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\groupnorm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\layernorm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\layernorm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\layernorm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\softplus.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\softplus_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gru.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\multiheadattention.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\multiheadattention_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\multiheadattention_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gelu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gelu_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\gelu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution1d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\convolution1d_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\convolution1d_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling1d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise1d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolution3d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\convolutiondepthwise3d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\pooling3d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\matmul.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\matmul_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution1d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise1d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolution3d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deconvolutiondepthwise3d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\einsum.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\deformableconv2d.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\deformableconv2d_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\glu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\fold.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\unfold.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\unfold_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\gridsample.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\gridsample_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\cumulativesum.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\cumulativesum_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\copyto.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\erf.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\erf_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\erf_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\diag.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\celu.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\celu_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\shrink.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\shrink_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rmsnorm.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\rmsnorm_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\rmsnorm_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\spectrogram.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\inversespectrogram.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\flip.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\sdpa.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\sdpa_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\sdpa_vulkan.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\rotaryembed.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\x86\rotaryembed_x86.cpp" />
+    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\layer\vulkan\rotaryembed_vulkan.cpp" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ZERO_CHECK.vcxproj">
+      <Project>{ADAD4A0D-CD56-3C66-9FA8-94EAC708EC2A}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\glslang\SPIRV\SPIRV.vcxproj">
+      <Project>{269770E4-05AB-3214-AB94-5774E7DB0D05}</Project>
+      <Name>SPIRV</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\glslang\glslang\glslang.vcxproj">
+      <Project>{2FCB9DC6-D2A7-3BD7-ACC6-ACBFEA901367}</Project>
+      <Name>glslang</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\ncnn-generate-spirv.vcxproj">
+      <Project>{0E01D021-B889-382D-8245-0E3DC0EB3A25}</Project>
+      <Name>ncnn-generate-spirv</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

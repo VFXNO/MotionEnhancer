@@ -1,0 +1,15 @@
+{
+  "source_sha256": "0432face5e01e085eb3fc1b2b64ca706cc7916cd18a48baa5fdc55a4bfe88ef4",
+  "source_url": "https://huggingface.co/onnx-community/OmniParser-icon_detect_640x640/resolve/799bd041b5d053ed44651c2237ced04d8fdb2777/onnx/model.onnx",
+  "pnnx_version": "20261020",
+  "pnnx_exe_sha256": "b8c56a0b0319e6ce4d229e9a339e4ee377fb0c42f7f3e66eec235ed00cd71b18",
+  "param_sha256": "f34941eb6a82d67a84b1aa469ee76e1faea97cf4f17de0447f5d84fd6d8760e6",
+  "bin_sha256": "c4245eb498c431aa18bb4e26e41926df3f3305eddc22829251cf790514536822",
+  "licence": "AGPL-3.0",
+  "purpose": "UI regions only, not pixel masking or motion",
+  "precision": "FP16 weights/storage, FP32 matrix accumulation",
+  "training": false,
+  "runtime_verification_required": true,
+  "staged_for_optional_gui_selection": true,
+  "default_selected": false
+}

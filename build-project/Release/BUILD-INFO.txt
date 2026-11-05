@@ -1,0 +1,115 @@
+Motion Enhancer - main build
+
+This is the only active build location: build-project\Release\motion_enhancer.exe.
+Includes the celestial-character sidebar/splash animation at native 24 FPS.
+Includes the restored AI flow refinement (off: DIS) control on Live Capture.
+Select AI pyramid (trained model) to enable it; choose before starting capture.
+Checked selects integrated AI only; unchecked selects AI backbone plus DIS.
+The blending-mask checkbox is separate. DIS remains the default.
+
+The four active AI model files are byte-identical copies of the user's
+ai_flow.onnx, ai_flow.json, ai_flow.dis.onnx and ai_flow.dis.json in Documents.
+They are the completed six-epoch Medium/refiner model at 832x480.
+Previous models and this runtime before restoration are backed up under:
+backup\2026-10-30_single-build-archive-mzb1slcg\refinement-restoration\
+The AI trainer's saved export destination now points to this models\ folder.
+
+Other build folders and their models/captures were moved intact to:
+backup\2026-10-30_single-build-archive-mzb1slcg\
+That archive also contains the previous main runtime and trainer settings.
+
+The installation at C:\MotionEnhancer and all training runs/datasets remain
+untouched. Restart the main EXE (and trainer if already open) after consolidation.
+
+2026-10-31: Optional AI UI-region gating added, OFF by default.
+AI detects candidate areas; the existing native per-pixel UI mask runs only
+inside them. Detection boxes are not solid masks. Requires Keep static UI sharp.
+The separate ui_detect.onnx is OmniParser V1 (AGPL-3.0); licence/provenance
+are alongside it. It detected desktop controls but MISSED both tested game
+HUD frames. Experimental only; no game-HUD quality or 4 ms guarantee.
+See tools/ui-detect/README.md and docs/validation/ai-ui-regions-2026-10-31.md.
+The original runtime flow quartet/checkpoints/data/installation were hash-verified.
+Ordinary builds no longer automatically overwrite the runtime flow model.
+Previous EXE/shaders: backup/2026-10-31_ui-regions-before-2rt43nz1/.
+
+UI debug output: Ctrl+Alt+F3 now cycles through view 7, AI UI regions/mask.
+Cyan outlines = detection boxes, yellow = evidence, green = protected pixels.
+The top-left legend distinguishes MASK OFF, AI OFF, NO PAIR, NO RESULT and
+valid REGIONS: 00-32. Ctrl+Alt+F2 also saves this diagnostic view.
+Boxes/status belong to the same pair as the native mask; no extra inference.
+Restart this EXE to use the new view. Models/default settings remain unchanged.
+Before-debug runtime: backup/2026-10-31_ui-debug-before-af086_s3/.
+
+2026-11-01: UI model execution now forbids silent CPU fallback; optional ORT
+placement profiling is available for offline UI-detector diagnostics.
+GPU-only static INT8 variants were tested, but were slower than FP16, so the
+original FP16 ui_detect.onnx remains selected and byte-identical. DirectML
+controls matrix kernel selection; actual WMMA instructions are NOT verified.
+No flow models, masks, default checkboxes, training data or installation changed.
+See docs/validation/ai-ui-int8-2026-11-01.md for results and limitations.
+Previous EXE/shaders/models: backup/2026-11-01_ui-int8-before-gitunyph/.
+
+2026-11-01: Added an optional, explicit Vulkan UI matrix backend (ncnn 20261020).
+RX 9070 XT shader ISA contains v_wmma_f32_16x16x16_f16; 60 verified matrix
+dispatches per detector inference. FP16 weights, FP32 matrix accumulation.
+Reusable command-graph tests verify fresh results across changing inputs.
+NOT selected by default: its 3.63-3.76 ms worker means were slower than
+DirectML FP16 (1.54-1.59 ms), with 171/744 measured jobs above 4 ms and
+21-27 ms first-worker time. No 4 ms deadline guarantee under gaming load.
+The candidate stays in the separate diagnostic directory, not runtime models.
+Original FP16/flow files and the native per-pixel mask remain unchanged.
+See docs/validation/ai-ui-matrix-2026-11-01.md for opt-in use and evidence.
+Before-matrix runtime: backup/2026-11-01_ui-matrix-before-ahxmwg8g/.
+
+2026-11-01: UI detector choices are now explicit in the GUI beside
+AI: UI regions (exp.): DirectML icons (default), DirectML text / HUD,
+and Matrix icons (WMMA). Check Keep static UI sharp and AI: UI regions,
+then choose before capture. Detection remains OFF by default.
+The optional matrix graph and pooled text graph are staged as NEW files;
+neither overwrites an original or auto-selects itself merely by being present.
+Matrix input now shares GPU memory between D3D12 and Vulkan, removing the
+CPU input readback/copy/upload. Warm worker means: 2.17-2.24 ms versus the
+earlier 3.63-3.76 ms; output bytes match the earlier matrix path exactly.
+DirectML icons remain fastest (~1.6 ms). Text / HUD finds quest-text areas
+missed by icons on the two saved game frames; it is NOT general HUD detection.
+Its pooled output averages 2.23-2.31 ms. FP16 / Apache-2.0 text weights,
+licence and provenance are separate from OmniParser's AGPL-3.0 weights.
+These are warm offline worker averages, not 4 ms gaming-load guarantees:
+matrix cold worker calls reached 34.23 ms, pooled text reached 5.65 ms.
+32 safety/numeric/native tests, native pipeline, debug and GUI checks passed.
+All 20 protected original hashes and 31 shader binaries remain unchanged.
+No flow models, training data/checkpoints, branding or installation changed.
+See docs/validation/ai-ui-improve-2026-11-01.md.
+Before-work runtime/source: backup/2026-11-01_ui-improve-before-s253_il7/.
+
+2026-11-01: Removed Text/HUD at the user's request because of random
+detections. The GUI now offers ONLY DirectML icons and Matrix icons (WMMA).
+Text-map inference/decoding and the text CLI choice have also been removed.
+The former ui_text model/licence/provenance are preserved outside the runtime
+under backup/2026-11-01_ui-icons-only-before-vgkfer40/removed-runtime-text/.
+The original icon model, confidence/NMS/padding and native per-pixel mask are
+unchanged. No new smoothing, detector, training or stale-box persistence.
+96 same-image detector calls across fresh DirectML/matrix instances were
+stable within each backend; output boxes match those before text removal.
+This is same-input repeatability, not a guarantee against changing-scene flicker.
+28 safety/native unit tests plus native/debug/GUI regressions passed.
+All 20 protected originals and 31 shader binaries remain unchanged.
+Restart this canonical EXE; the installed C:\MotionEnhancer remains untouched.
+See docs/validation/ai-ui-icons-only-2026-11-01.md.
+
+2026-11-01 (current): Added CURRENT-PROPOSAL icon continuity for reported
+appear/disappear flicker, shared by DirectML and Matrix icon backends.
+New icons still need confidence >=0.10. A fresh existing icon may continue
+with a current proposal >=0.075 and IoU >=0.60, one weak match per prior icon.
+Current-supported existing icons get priority at the unchanged 32-box limit.
+Missing/below-floor proposals still drop immediately; no stale-box holding,
+geometry smoothing, native-mask change, model change or additional inference.
+Expiry/generation/gap safety and the at-most-5Hz asynchronous worker remain.
+33/33 safety/native unit tests passed, including 5 changing-input GPU fixtures;
+native mask/AI-DIS routing/debug/GUI regressions passed. Same-input icon boxes
+and raw outputs match the previous build for both backends (96 calls).
+All 20 protected original hashes, all 12 runtime model/licence/metadata files
+and all 31 shader binaries remain unchanged. No training/installation/push.
+Live game stability is not yet established; full detector misses still drop.
+See docs/validation/ai-ui-continuity-2026-11-01.md.
+Before-change archive: backup/2026-11-01_ui-continuity-before-um10ip5i/.

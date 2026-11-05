@@ -1,0 +1,21 @@
+{
+ "format": "mefi-pyramid-flow-1",
+ "arch": "pyramid-v2",
+ "width": 640,
+ "height": 352,
+ "levels": 7,
+ "preset": "large",
+ "psnr": null,
+ "epoch": 19,
+ "train_height": 352,
+ "validation": {
+  "protocol": "temporal-balanced-v1",
+  "selection": "b82e2d60261338057e6ff3e42c89e8a2d333b1258a5b747c2be0fb817ab2e4ff"
+ },
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\720p\\last.pt",
+ "trained_arch": "pyramid-refine-v1",
+ "integrated_refiner": false,
+ "bundle_id": "d387f7a0bb3d4497806ea6f5d03b9487",
+ "dis_model": "ai_flow.dis.onnx",
+ "refined_model": "ai_flow.onnx"
+}

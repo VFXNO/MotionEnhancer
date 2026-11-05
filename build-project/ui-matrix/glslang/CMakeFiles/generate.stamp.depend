@@ -1,0 +1,11 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.4/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeDependentOption.cmake
+C:/Program Files/CMake/share/cmake-4.4/Modules/CMakePackageConfigHelpers.cmake
+C:/Program Files/CMake/share/cmake-4.4/Modules/GNUInstallDirs.cmake
+C:/Program Files/CMake/share/cmake-4.4/Modules/WriteBasicConfigVersionFile.cmake
+C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/ui-matrix/glslang/glslang-config.cmake.in
+C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang/CHANGES.md
+C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang/CMakeLists.txt
+C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang/build_info.h.tmpl
+C:/Users/bsher/Documents/GitHub/MotionEnhancer2/third_party/ui-matrix/ncnn/glslang/parse_version.cmake

@@ -7,6 +7,10 @@ tools/ai-train/runs/
 # Generated builds, packages and local diagnostics (keep SDK sources).
 /build/
 /build-*/
+# build-project is kept in git (the runnable build), but not its screen
+# captures (Ctrl+Alt+F2 dumps, local only).
+!/build-project/
+/build-project/Release/captures/
 /bin/ffx_sdk/
 /dist/
 /.packaging/

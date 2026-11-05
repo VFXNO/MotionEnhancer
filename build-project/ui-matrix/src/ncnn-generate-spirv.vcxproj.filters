@@ -1,0 +1,953 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\absval.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\batchnorm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\batchnorm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\binaryop.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\binaryop_broadcast.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\binaryop_broadcast_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\binaryop_broadcast_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\binaryop_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\cast_fp16_to_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\cast_fp16_to_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\cast_fp32_to_fp16.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\cast_fp32_to_fp16_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\celu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\clip.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\concat.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\concat_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\concat_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convert_ycbcr.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution1d_1x1s1d1_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution1d_gemm_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution1d_packed.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution1d_packed_1x1s1d1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution1d_packed_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_1x1s1d1_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_1x1s1d1_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd23_transform_input.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd23_transform_input_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd23_transform_input_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd23_transform_output.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd23_transform_output_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd43_transform_input.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd43_transform_input_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd43_transform_input_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd43_transform_output.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd43_transform_output_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd_gemm_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_3x3s1d1_winograd_gemm_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_gemm_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_gemm_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack1to4_3x3s1d1_winograd_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd23_transform_input.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd23_transform_input_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd23_transform_input_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd23_transform_output.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd23_transform_output_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd43_transform_input.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd43_transform_input_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd43_transform_input_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd43_transform_output.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd43_transform_output_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4_3x3s1d1_winograd_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_pack4to1_3x3s1d1_winograd_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed_1x1s1d1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed_1x1s1d1_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed_gemm_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_packed_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolution_winograd_gemm_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_group.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_group_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_group_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_group_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_group_packed_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\convolutiondepthwise_pack4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\crop.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\crop_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\crop_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\crop_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolution_col2im.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolution_gemm_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolution_gemm_packed.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolution_pack4_col2im.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolution_packed.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise_group.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise_group_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise_group_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise_group_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deconvolutiondepthwise_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deepcopy.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\deepcopy_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\dequantize.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\dequantize_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\dropout.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\eltwise.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\elu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\erf.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten_pack1to4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\flatten_pack4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gelu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_int8_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_A_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_A_packed_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_B_absmax_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_B_descale_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_B_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_quantize_B_packed_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\gemm_sg.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_coeffs_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_norm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_mean.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_mean_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_subgroup.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_subgroup_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_sum4_fp16_to_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_sum4_fp16_to_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_sum4_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_reduce_sum4_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_sub_mean_square.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\groupnorm_sub_mean_square_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\hardsigmoid.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\hardswish.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_gemm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_gemm_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_gemm_wp1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_gemm_wp4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_gemm_wp4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_reduce_sum8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_reduce_sum8_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_reduce_sum8_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_sum8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_sum8_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_sum8_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_sum8_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\innerproduct_sum8_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_coeffs_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_norm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_mean.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_mean_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_subgroup.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_subgroup_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_sum4_fp16_to_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_sum4_fp16_to_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_sum4_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_reduce_sum4_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_sub_mean_square.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\instancenorm_sub_mean_square_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\interp.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\interp_bicubic.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\interp_bicubic_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\interp_bicubic_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\interp_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_coeffs_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_norm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_mean.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_mean_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_subgroup.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_subgroup_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_sum4_fp16_to_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_sum4_fp16_to_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_sum4_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_reduce_sum4_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_sub_mean_square.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\layernorm_sub_mean_square_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_norm_across_channel_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_norm_within_channel_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_square_pad.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_square_pad_across_channel_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\lrn_square_pad_within_channel_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\mish.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_kvcache_append.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_kvcache_copy.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_kvcache_qk.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_kvcache_qkv.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qk_cross.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qk_cross_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qk_cross_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qk_cross_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qkv_cross.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qkv_cross_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qkv_cross_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\multiheadattention_qkv_cross_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\ncnn_glsl_ext.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_coeffs_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_norm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_reduce_sum4_fp16_to_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_reduce_sum4_fp16_to_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_reduce_sum4_fp32.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\normalize_reduce_sum4_fp32_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing_pack1to4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\packing_pack4to1_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_3d.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_3d_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_3d_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_3d_pack4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack1to4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack4_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\padding_pack4to1_int8.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\permute.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\permute_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\permute_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\permute_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pixelshuffle.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pixelshuffle_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pixelshuffle_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_adaptive.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_adaptive_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max_first.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max_first_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max_last.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max_last_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_max_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum_first.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum_first_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum_last.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum_last_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_global_reduce_sum_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\pooling_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\prelu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\prelu_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\priorbox.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\priorbox_mxnet.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\quantize.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\quantize_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reduction.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\relu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reorg.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reorg_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reorg_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\requantize.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\requantize_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_batch_reorder.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_batch_reorder_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_batch_reorder_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_batch_reorder_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\reshape_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_coeffs.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_coeffs_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_norm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_norm_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_reduce_subgroup.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_reduce_subgroup_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_square.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rmsnorm_square_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rotaryembed.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\rotaryembed_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\scale.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\scale_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_cross.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_cross_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_fa.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_fa_cm.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_kvcache_append.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sdpa_kvcache_copy.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\selu.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\shrink.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\shufflechannel.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\shufflechannel_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\sigmoid.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\slice.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\slice_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\slice_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_div_sum.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_div_sum_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_exp_sub_max.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_exp_sub_max_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_reduce_max.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_reduce_max_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_reduce_sum.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softmax_reduce_sum_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\softplus.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\swish.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\tanh.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\tile.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\tile_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\unaryop.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\unfold_im2col.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\unfold_im2col_pack1to4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\unfold_im2col_pack4.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\unfold_im2col_pack4to1.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\1a73b6f9b7cad085eafd87af44af63ab\vulkan_activation.comp.hex.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\a57cb899b6e72c984d1b3714e977578a\ncnn-generate-spirv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\third_party\ui-matrix\ncnn\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\ui-matrix\src\CMakeFiles\ncnn-generate-spirv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{FA07F693-7518-3F8D-935E-1802435355A4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

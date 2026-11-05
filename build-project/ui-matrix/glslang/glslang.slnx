@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Folder Name="/cmake/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c3d50c37-30c6-33f5-a828-e76e5cca5995" DefaultStartup="true">
+			<BuildDependency Project="glslang/GenericCodeGen.vcxproj"/>
+			<BuildDependency Project="glslang/MachineIndependent.vcxproj"/>
+			<BuildDependency Project="glslang/OSDependent/Windows/OSDependent.vcxproj"/>
+			<BuildDependency Project="SPIRV/SPIRV.vcxproj"/>
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="glslang/glslang.vcxproj"/>
+			<BuildDependency Project="glslang/glslang-default-resource-limits.vcxproj"/>
+		</Project>
+		<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8dd454bc-851e-3cb3-bb23-9d8bbd90889e">
+			<BuildDependency Project="ALL_BUILD.vcxproj"/>
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="PACKAGE.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e6e67fbb-aefd-3c5e-8048-8a66a8466d54">
+			<BuildDependency Project="ALL_BUILD.vcxproj"/>
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="../../ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="adad4a0d-cd56-3c66-9fa8-94eac708ec2a"/>
+	</Folder>
+	<Folder Name="/glslang/">
+		<Project Path="glslang/GenericCodeGen.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d6f526af-e2b3-3639-b038-e6d43e0ab108">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="glslang/MachineIndependent.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0244d968-5e1e-3625-bb8b-d8db80bb8ada">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="glslang/OSDependent/Windows/OSDependent.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2af3afb7-a0bc-33bc-81b1-37305afb4b95">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SPIRV/SPIRV.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="269770e4-05ab-3214-ab94-5774e7db0d05">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="glslang/glslang.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2fcb9dc6-d2a7-3bd7-acc6-acbfea901367">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="glslang/glslang-default-resource-limits.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ab965db9-dcfd-3055-aca6-77f27490e79a">
+			<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+</Solution>
