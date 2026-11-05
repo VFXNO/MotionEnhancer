@@ -32,6 +32,9 @@ static void printUsage(const char* progName) {
               << "  " << progName << " <frame0.png> <frame1.png> <out.png> # Offline 2-frame interpolation\n"
               << "  " << progName << " --gpu-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--save-flow f.png] [--gpu-offline-prev p.png]\n"
               << "                                        # Run the real-time GPU shader pipeline on two PNGs\n"
+              << "  " << progName << " --fsr-fg-offline <f0.png> <f1.png> <out.png> [--ground-truth gt.png] [--gpu-offline-prev p.png] [--fsr-depth 0-1] [--fsr-frames 1-4]\n"
+              << "                                        # Experimental: AMD FSR frame generation fed with this flow\n"
+              << "  " << progName << " --fsr-realtime-test <f0.png> <f1.png> <f2.png>...  # The live --fsr-fg path on frames in order\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
               << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n"
@@ -68,6 +71,10 @@ static void printUsage(const char* progName) {
               << "  --ui-detector <type>     auto|icons|matrix; icon detection only, not flow\n"
               << "  --ui-detect-test <in.png> <out.json>  Test UI boxes and worker latency; no capture\n"
               << "  --ui-regions-self-test   Verify native ROI gating, decoder and expiry rules\n"
+              << "  --fsr-fg                 Experimental: AMD FSR frame generation beside the normal interpolation;\n"
+              << "                           its middle frame is shown near the middle of each pair (all\n"
+              << "                           generated frames with --multiplier 2). Off by default.\n"
+              << "  --fsr-window <0-0.5>     How near the middle FSR's frame is used (default: 0.1)\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
@@ -305,6 +312,12 @@ int main(int argc, char** argv) {
     std::string previousFramePath;
     std::string stopEventName;
     bool gpuOffline = false;
+    bool fsrFrameGenOffline = false;   // experimental: AMD FSR frame generation instead of InterpolateCS
+    float fsrDepth = 0.5f;
+    uint32_t fsrFrames = 1;
+    bool fsrFrameGen = false;          // live: FSR frame generation beside the normal interpolation
+    bool fsrRealtimeTest = false;      // --fsr-realtime-test <frames...>: the live FSR path offline
+    float fsrWindow = 0.1f;
     uint32_t sourceFps = 0;
     uint32_t outputMultiplier = 0;   // Max: present at the display refresh rate
     GraphicsAdapterPreference adapterPreference = GraphicsAdapterPreference::Auto;
@@ -409,6 +422,18 @@ int main(int argc, char** argv) {
             }
         } else if (arg == "--gpu-offline") {
             gpuOffline = true;
+        } else if (arg == "--fsr-fg-offline") {
+            fsrFrameGenOffline = true;
+        } else if (arg == "--fsr-realtime-test") {
+            fsrRealtimeTest = true;
+        } else if (arg == "--fsr-fg") {
+            fsrFrameGen = true;
+        } else if (arg == "--fsr-window" && i + 1 < argc) {
+            fsrWindow = std::clamp(std::stof(argv[++i]), 0.0f, 0.5f);
+        } else if (arg == "--fsr-depth" && i + 1 < argc) {
+            fsrDepth = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
+        } else if (arg == "--fsr-frames" && i + 1 < argc) {
+            fsrFrames = static_cast<uint32_t>(std::clamp(std::stoi(argv[++i]), 1, 4));
         } else if (arg == "--ground-truth" && i + 1 < argc) {
             groundTruthPath = argv[++i];
         } else if (arg == "--gpu-offline-prev" && i + 1 < argc) {
@@ -614,6 +639,12 @@ int main(int argc, char** argv) {
         return runFlowLevelEval(positionalArgs, gpuSettings, adapterPreference);
     }
 
+    if (fsrRealtimeTest) {
+        gpuSettings.minRefineLevel = std::clamp(
+            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
+        return runFsrRealtimeTest(positionalArgs, gpuSettings, adapterPreference);
+    }
+
     if (!sequencePrefix.empty()) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
@@ -638,6 +669,8 @@ int main(int argc, char** argv) {
         options.sourceFps = sourceFps;
         options.outputMultiplier = outputMultiplier;
         options.adapter = adapterPreference;
+        options.fsrFrameGen = fsrFrameGen;
+        options.fsrWindow = fsrWindow;
         return runRealtimeSession(options);
     }
 
@@ -653,6 +686,13 @@ int main(int argc, char** argv) {
         std::cerr << "Error: missing required positional arguments <frame0.png> <frame1.png> <output.png>\n";
         printUsage(argv[0]);
         return 1;
+    }
+
+    if (fsrFrameGenOffline) {
+        gpuSettings.minRefineLevel = std::clamp(
+            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
+        return runFsrFrameGenOffline(input0Path, input1Path, outputPath, groundTruthPath, gpuSettings,
+                                     adapterPreference, previousFramePath, fsrDepth, fsrFrames);
     }
 
     if (gpuOffline) {

@@ -39,6 +39,8 @@ enum class Kernel : int {
     UiDebugView,
     UiPersist,
     FlowMedian5,
+    FsrMotion,
+    FsrDepth,
     Count
 };
 

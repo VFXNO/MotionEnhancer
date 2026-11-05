@@ -14,6 +14,11 @@ struct RealtimeOptions {
     uint32_t sourceFps = 0;          // 0 = auto-detect cadence
     uint32_t outputMultiplier = 0;   // 0 = every display refresh
     GraphicsAdapterPreference adapter = GraphicsAdapterPreference::Auto;
+    // Experimental, beside the normal interpolation (FsrRealtime): AMD FSR
+    // frame generation's middle frame is shown on refreshes whose blend
+    // position is within fsrWindow of 0.5; everything else is unchanged.
+    bool fsrFrameGen = false;
+    float fsrWindow = 0.1f;
 };
 
 // runRealtimeSession's exit code when the captured window changed size
@@ -50,6 +55,17 @@ int runUiDetectTest(const std::string& input, const std::string& output, Graphic
 // AI depth on one image (DepthEstimator): average time over 20 runs, and the
 // nearness map written to `output` as an 8-bit PNG (white = near).
 int runDepthTest(const std::string& input, const std::string& output, GraphicsAdapterPreference adapter);
+
+// Experimental: the frame between frame0 and frame1 from AMD FSR frame
+// generation fed with this program's optical flow (see FsrFrameGen.h).
+int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& frame1Path,
+                          const std::string& outputPath, const std::string& groundTruthPath,
+                          const FlowSettings& settings, GraphicsAdapterPreference adapter,
+                          const std::string& previousPath, float depthValue, uint32_t generatedFrames = 1);
+// The live FSR path (FsrRealtime) on saved frames in order: pairs i, i+2 against
+// the true middle i+1, two sequences (from frame 0 and frame 1).
+int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
+                       GraphicsAdapterPreference adapter);
 // Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
 // the GPU: input and outputs in D3D12 buffers, one fence wait per run.
 int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);

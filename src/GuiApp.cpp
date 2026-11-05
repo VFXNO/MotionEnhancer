@@ -151,6 +151,7 @@ struct GuiState {
     HWND uiMask = nullptr;
     HWND aiUiRegions = nullptr;
     HWND aiTemporalUi = nullptr;
+    HWND fsrFrameGen = nullptr;   // --fsr-fg, experimental, beside the normal interpolation
     HWND uiDetector = nullptr;
     HWND ffxRefine = nullptr;
     HWND occlusionFill = nullptr;
@@ -1211,6 +1212,7 @@ void startCapture() {
     if (SendMessageA(g_state.occlusionFill, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-occlusion-fill");
     if (SendMessageA(g_state.ffxRefine, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ffx-refine");
     if (SendMessageA(g_state.ffxOcclusion, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--ffx-occlusion");
+    if (SendMessageA(g_state.fsrFrameGen, BM_GETCHECK, 0, 0) == BST_CHECKED) captureArgs.push_back("--fsr-fg");
     if (flowSelection == 4 && SendMessageA(g_state.aiBlendMask, BM_GETCHECK, 0, 0) == BST_CHECKED)
         captureArgs.push_back("--ai-blend-mask");
     const bool temporalUi = flowSelection == 4 && SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) == BST_CHECKED &&
@@ -1590,6 +1592,11 @@ void createControls() {
     // AI depth (FlowSettings::aiDepth): the nearer surface wins where two fit
     // equally well. Two-field modes only (DIS, FFX occlusion handling).
     g_state.aiDepth = makeCheckbox("AI depth (DIS, FFX occl.)", 590, 346, 200, true);
+    // Experimental (--fsr-fg): AMD FSR frame generation beside the normal
+    // interpolation; its middle frame is used near the middle of each pair,
+    // every generated frame at OUTPUT MULTIPLIER 2x. Off by default. In the
+    // panel's title row, where nothing else is.
+    g_state.fsrFrameGen = makeCheckbox("FSR frame gen (exp., best at 2x)", 560, 178, 260, false);
 
     g_state.captureButton = makeButton("START CAPTURE", 36, 388, 180, 40, IDC_START_CAPTURE);
     g_state.aiBlendMask = makeCheckbox("AI: blending mask", 238, 396, 184, false);
@@ -1640,7 +1647,7 @@ void createControls() {
         gpuLevelsLabel, g_state.gpuLevels, gpuMinRefineLabel, g_state.gpuMinRefine,
         gpuCoarseLabel, g_state.gpuCoarseRadius, gpuRefineLabel, g_state.gpuRefineRadius,
         gpuSmoothnessLabel, g_state.gpuSmoothness, flowEngineLabel, g_state.liveFlowEngine,
-        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
+        g_state.uiMask, g_state.occlusionFill, g_state.ffxRefine, g_state.ffxOcclusion, g_state.aiDepth, g_state.fsrFrameGen, aiDepthRateLabel, g_state.aiDepthRate, g_state.aiBlendMask,
         g_state.aiRefinement, g_state.aiRefinementHelp, g_state.aiTemporalUi, g_state.aiUiRegions, g_state.uiDetector, g_state.captureButton, g_state.liveStatus,
         trainHelp, selectImages, g_state.trainingImagesLabel, modelLabel,
         g_state.trainingModel, saveModel, openModel, g_state.trainButton,

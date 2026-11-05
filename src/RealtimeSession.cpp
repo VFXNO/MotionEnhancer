@@ -6,6 +6,8 @@
 #include "CaptureEngine.h"
 #include "ComputeKernels.h"
 #include "FrameTimeline.h"
+#include "FsrFrameGen.h"
+#include "FsrRealtime.h"
 #include "Image.h"
 #include "MotionVector.h"
 #include "NeuralFlow.h"
@@ -346,6 +348,18 @@ int runRealtimeSession(const RealtimeOptions& options) {
         }
         timeline.configure(options.sourceFps, presenter.refreshRate(), options.outputMultiplier);
 
+        // Experimental FSR frame generation beside the normal interpolation:
+        // when it cannot start, the session runs exactly as without it.
+        std::unique_ptr<FsrRealtime> fsr;
+        if (options.fsrFrameGen) {
+            fsr = std::make_unique<FsrRealtime>();
+            std::string fsrError;
+            if (!fsr->initialize(&device, &kernels, width, height, fsrError)) {
+                std::cerr << "FSR frame generation unavailable: " << fsrError << " (continuing without it)\n";
+                fsr.reset();
+            }
+        }
+
         const char* engine = options.flow.neuralFlow ? "neural learned-feature flow"
             : options.flow.disFlow ? "DIS (Dense Inverse Search) optical flow" : options.flow.preferFfxOpticalFlow
             ? (flow.ffxAvailable() ? "AMD FidelityFX Optical Flow (SAD fallback on failure)"
@@ -359,7 +373,10 @@ int runRealtimeSession(const RealtimeOptions& options) {
                   << "  Source Cadence: " << (options.sourceFps ? std::to_string(options.sourceFps) + " fps" : "auto") << "\n"
                   << "  Output:         " << std::fixed << std::setprecision(2) << presenter.refreshRate() << " Hz display"
                   << (options.outputMultiplier ? ", quantized to " + std::to_string(options.outputMultiplier) + "x source" : ", every refresh") << "\n"
-                  << "  Hotkeys:        [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
+                  << (fsr ? "  FSR frame gen:  on (experimental), middle frames within +/- " + std::to_string(options.fsrWindow) +
+                                " of 0.5; " + (options.outputMultiplier == 2 ? "all generated frames\n" : "use --multiplier 2 for all generated frames\n")
+                          : std::string())
+                  << "  Hotkeys:       [Ctrl+Alt+F1] Toggle | [Ctrl+Alt+Esc] Exit\n"
                   << "============================================================\n\n" << std::flush;
 
         if (!capture.start()) { exitCode = 1; return; }
@@ -384,6 +401,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
         uint64_t starvedPairIndex = 0;
         uint64_t starvationTicks = 0;
         uint64_t holdTicks = 0;
+        uint64_t fsrShown = 0;
         auto statusTime = std::chrono::steady_clock::now();
         double renderCpuMs = 0.0;
         uint64_t renderCount = 0;
@@ -472,6 +490,30 @@ int runRealtimeSession(const RealtimeOptions& options) {
                         const int64_t flowTime = static_cast<int64_t>(flow.lastGpuTimeMs() * 10000.0);
                         timeline.reportSlack(wake - sel.f1.arrival - flowTime);
                     }
+                }
+            }
+            // Experimental FSR, beside the normal path (off unless --fsr-fg):
+            // every interpolated pair is given to FSR so its sequence stays
+            // continuous, and its middle frame is shown instead of the normal
+            // interpolation only on refreshes near the middle of the pair.
+            if (fsr && !job.single && entry.valid) {
+                const float periodMs = sel.f1.arrival > sel.f0.arrival
+                    ? static_cast<float>(sel.f1.arrival - sel.f0.arrival) / 10000.0f : 1000.0f / 60.0f;
+                ID3D12Resource* middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
+                                                          sel.f1.flowFence, periodMs);
+                if (middle && std::abs(job.alpha - 0.5f) <= options.fsrWindow) {
+                    // Shown as a finished frame: FSR's list, submitted on
+                    // the same queue just before, already waited for the
+                    // capture copies and the flow.
+                    job.frame0 = middle;
+                    job.ready0 = 0;
+                    job.frame1 = nullptr;
+                    job.ready1 = 0;
+                    job.depth0 = job.depth1 = nullptr;
+                    job.single = true;
+                    job.alpha = 0.0f;
+                    mode = "F";
+                    ++fsrShown;
                 }
             }
             lastPairIndex = sel.f1.index;
@@ -565,7 +607,14 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << " cut " << cs.sceneCuts << " resized " << cs.sizeMismatch
                            << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
-                          << " | q " << ts.frames << "\n";
+                          << " | q " << ts.frames;
+                if (fsr) {
+                    const FsrRealtime::Stats fs = fsr->takeStats();
+                    status << " | fsr made " << fs.generated << " shown " << fsrShown << " reset " << fs.resets
+                           << " fail " << fs.failures;
+                    fsrShown = 0;
+                }
+                status << "\n";
                 log.write(status.str());
                 if (device.debugLayerEnabled()) device.dumpInfoQueue("live");
                 // Every resource is sized for the window as it was at the
@@ -2735,4 +2784,290 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
                                                 flow.usingNeural() ? "neural" : flow.usingDis() ? "DIS" : "SAD") << ", "
               << std::fixed << std::setprecision(2) << flow.lastGpuTimeMs() << " ms flow)\n";
     return 0;
+}
+
+// ======================================================================
+// Experimental: AMD FSR frame generation, offline
+// ======================================================================
+
+// The frame halfway between frame0 and frame1 made by AMD FSR frame
+// generation (FsrFrameGen) instead of InterpolateCS, for comparing the two on
+// the same frames. FSR gets this program's own optical flow as its motion
+// vectors (the backward field of each pair, FsrMotionCS), a constant depth
+// (FsrDepthCS) and a fixed camera. The frames go through FSR as a sequence
+// - previous (optional), frame0, frame1 - and the frame generated with
+// frame1 is the result. Nothing here is used by the live overlay.
+int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& frame1Path,
+                          const std::string& outputPath, const std::string& groundTruthPath,
+                          const FlowSettings& settings, GraphicsAdapterPreference adapter,
+                          const std::string& previousPath, float depthValue, uint32_t generatedFrames) {
+    generatedFrames = std::clamp<uint32_t>(generatedFrames, 1, 4);
+    std::vector<Image> frames;
+    for (const std::string& path : {previousPath, frame0Path, frame1Path}) {
+        if (path.empty()) continue;
+        frames.push_back(Image::load(path));
+        if (frames.back().empty()) return 1;
+        if (frames.back().width != frames.front().width || frames.back().height != frames.front().height) {
+            std::cerr << "Error: frame dimensions mismatch\n";
+            return 1;
+        }
+    }
+    const uint32_t width = static_cast<uint32_t>(frames.front().width);
+    const uint32_t height = static_cast<uint32_t>(frames.front().height);
+
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+    FlowEngine flow;
+    if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, 3)) return 1;
+
+    // FSR's render size: the flow ring's grid (half resolution).
+    const uint32_t renderWidth = (width + 1) / 2;
+    const uint32_t renderHeight = (height + 1) / 2;
+    FsrFrameGen fsr;
+    std::string error;
+    if (!fsr.initialize(device.device(), width, height, renderWidth, renderHeight, DXGI_FORMAT_R8G8B8A8_UNORM, error)) {
+        std::cerr << "FSR frame generation: " << error << "\n";
+        return 1;
+    }
+    std::cout << "FSR frame generation: " << width << "x" << height << ", motion/depth " << renderWidth << "x"
+              << renderHeight << ", depth " << depthValue << "; versions offered: "
+              << (fsr.provider().empty() ? std::string("?") : fsr.provider()) << "\n";
+
+    std::vector<SharedTexture> textures(frames.size());
+    std::vector<FlowInput> inputs(frames.size());
+    for (size_t i = 0; i < frames.size(); ++i) {
+        uint64_t ready = 0;
+        if (!uploadFrame(device, frames[i], textures[i], ready)) return 1;
+        inputs[i] = {textures[i].texture12.Get(), ready, static_cast<uint64_t>(i + 1), static_cast<int>(i)};
+    }
+    std::vector<SharedTexture> outputTextures(generatedFrames);
+    std::vector<ID3D12Resource*> outputs;
+    for (SharedTexture& t : outputTextures) {
+        if (!device.createSharedTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, t)) return 1;
+        outputs.push_back(t.texture12.Get());
+    }
+    ComPtr<ID3D12Resource> motion, depth;
+    if (FAILED(device.createTexture2D(renderWidth, renderHeight, DXGI_FORMAT_R16G16_FLOAT,
+                                      D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON,
+                                      motion, L"FsrMotionVectors")) ||
+        FAILED(device.createTexture2D(renderWidth, renderHeight, DXGI_FORMAT_R32_FLOAT,
+                                      D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON,
+                                      depth, L"FsrDepth"))) return 1;
+
+    // GPU time of FSR's own work on the last frame.
+    ComPtr<ID3D12QueryHeap> queries;
+    ComPtr<ID3D12Resource> times;
+    D3D12_QUERY_HEAP_DESC queryDesc = {};
+    queryDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+    queryDesc.Count = 2;
+    if (FAILED(device.device()->CreateQueryHeap(&queryDesc, IID_PPV_ARGS(&queries))) ||
+        FAILED(device.createBuffer(2 * sizeof(uint64_t), D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
+                                   D3D12_RESOURCE_FLAG_NONE, times))) queries.Reset();
+
+    const auto start = std::chrono::steady_clock::now();
+    for (size_t i = 0; i < frames.size(); ++i) {
+        FlowEngine::Entry entry;
+        uint64_t flowFence = 0;
+        if (i > 0) {
+            const FlowEngine::Result r = flow.submitPair(inputs[i - 1], inputs[i]);
+            if (r.entry < 0 || !flow.waitFence(r.fence)) {
+                std::cerr << "Error: flow submission failed\n";
+                return 1;
+            }
+            entry = flow.entry(r.entry);
+            flowFence = r.fence;
+        }
+        if (!offline.begin()) return 1;
+        ShaderConstants c = {};
+        c.width = width;
+        c.height = height;
+        c.levelWidth = renderWidth;
+        c.levelHeight = renderHeight;
+        c.blockSize = c.parentBlockSize = static_cast<int32_t>(i > 0 ? entry.blockSize : 2);
+        c.flowScale = depthValue;
+        std::array<ID3D12Resource*, 6> in = {i > 0 ? entry.backward.Get() : nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        const UINT gx = (renderWidth + 15) / 16, gy = (renderHeight + 15) / 16;
+        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrMotion, in, motion.Get(), c, gx, gy) ||
+            !offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrDepth, none, depth.Get(), c, gx, gy)) return 1;
+        const bool last = i + 1 == frames.size();
+        if (last && queries) offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
+        if (!fsr.frame(offline.list(), i + 1, textures[i].texture12.Get(), motion.Get(), depth.Get(),
+                       outputs.data(), generatedFrames, i == 0, 1000.0f / 60.0f, error)) {
+            std::cerr << "FSR frame generation: " << error << "\n";
+            return 1;
+        }
+        if (last && queries) {
+            offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
+            offline.list()->ResolveQueryData(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, times.Get(), 0);
+        }
+        if (!offline.execute(flow.fence(), flowFence)) {
+            std::cerr << "Error: FSR frame " << i + 1 << " did not complete\n";
+            return 1;
+        }
+    }
+    const double wallMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+
+    // With several generated frames, output k goes to <out>_<k>.png; the
+    // PSNR is of the middle one when the count is odd.
+    Image result;
+    for (uint32_t k = 0; k < generatedFrames; ++k) {
+        std::vector<uint8_t> bytes;
+        UINT pitch = 0, w = 0, h = 0;
+        if (!offline.readback(outputs[k], bytes, pitch, w, h)) return 1;
+        Image image(static_cast<int>(w), static_cast<int>(h), 3);
+        for (UINT y = 0; y < h; ++y) {
+            const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
+            for (UINT x = 0; x < w; ++x)
+                for (int ch = 0; ch < 3; ++ch)
+                    image.set(static_cast<int>(x), static_cast<int>(y), ch, static_cast<float>(row[x * 4 + ch]));
+        }
+        std::string path = outputPath;
+        if (generatedFrames > 1) {
+            const size_t dot = path.find_last_of('.');
+            path = path.substr(0, dot) + "_" + std::to_string(k) + (dot == std::string::npos ? "" : path.substr(dot));
+        }
+        if (!image.savePNG(path)) {
+            std::cerr << "Error: cannot write " << path << "\n";
+            return 1;
+        }
+        if (generatedFrames % 2 == 1 && k == generatedFrames / 2) result = image;
+    }
+    double fsrMs = 0.0;
+    if (queries) {
+        uint64_t* stamps = nullptr;
+        uint64_t frequency = 0;
+        device.presentQueue()->GetTimestampFrequency(&frequency);
+        const D3D12_RANGE range = {0, 2 * sizeof(uint64_t)};
+        if (frequency && SUCCEEDED(times->Map(0, &range, reinterpret_cast<void**>(&stamps)))) {
+            fsrMs = static_cast<double>(stamps[1] - stamps[0]) * 1000.0 / static_cast<double>(frequency);
+            const D3D12_RANGE nothing = {0, 0};
+            times->Unmap(0, &nothing);
+        }
+    }
+    std::cout << "FSR offline frame generation: FSR " << std::fixed << std::setprecision(2) << fsrMs
+              << " ms GPU (prepare + generate), " << wallMs << " ms wall for " << frames.size()
+              << " frames incl. flow -> " << outputPath << "\n";
+    if (!groundTruthPath.empty() && !result.empty()) {
+        const Image truth = Image::load(groundTruthPath);
+        const Image& a = frames[frames.size() - 2];
+        const Image& b = frames.back();
+        if (!truth.empty() && truth.width == result.width && truth.height == result.height) {
+            Image blend(a.width, a.height, 3);
+            for (int y = 0; y < blend.height; ++y)
+                for (int x = 0; x < blend.width; ++x)
+                    for (int ch = 0; ch < 3; ++ch)
+                        blend.set(x, y, ch, 0.5f * (a.get(x, y, ch) + b.get(x, y, ch)));
+            std::cout << "  PSNR vs ground truth: " << std::fixed << std::setprecision(2) << computePsnr(result, truth)
+                      << " dB (naive blend: " << computePsnr(blend, truth) << " dB)\n";
+        }
+    }
+    return 0;
+}
+
+// The live overlay's FSR path (FsrRealtime, --fsr-fg) on saved frames, with
+// the same calls the render loop makes: frames[i] and frames[i + 2] are a
+// pair and frames[i + 1] its true middle. The pairs run as one continuous
+// sequence (0-2, 2-4, ...), then a second one from frame 1 (1-3, 3-5, ...),
+// which FsrRealtime must notice and restart FSR for. Prints each middle
+// frame's PSNR against the truth and FSR's counters.
+int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
+                       GraphicsAdapterPreference adapter) {
+    if (framePaths.size() < 3) {
+        std::cerr << "--fsr-realtime-test needs at least three frames in order\n";
+        return 1;
+    }
+    std::vector<Image> frames;
+    for (const std::string& path : framePaths) {
+        frames.push_back(Image::load(path));
+        if (frames.back().empty() || frames.back().width != frames.front().width ||
+            frames.back().height != frames.front().height) {
+            std::cerr << "Error: cannot use " << path << "\n";
+            return 1;
+        }
+    }
+    const uint32_t width = static_cast<uint32_t>(frames.front().width);
+    const uint32_t height = static_cast<uint32_t>(frames.front().height);
+    GraphicsDevice device;
+    if (!device.initialize(adapter)) return 1;
+    ComputeKernels kernels;
+    if (!kernels.load(device.device())) return 1;
+    OfflineContext offline;
+    if (!offline.initialize(&device, &kernels)) return 1;
+    FlowEngine flow;
+    // One capture slot per frame where possible, as in the sequence test.
+    const int slots = std::min<int>(FlowEngine::kMaxSlots, static_cast<int>(frames.size()));
+    if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, slots)) return 1;
+    FsrRealtime fsr;
+    std::string error;
+    if (!fsr.initialize(&device, &kernels, width, height, error)) {
+        std::cerr << "FSR frame generation: " << error << "\n";
+        return 1;
+    }
+    std::vector<SharedTexture> textures(frames.size());
+    std::vector<FlowInput> inputs(frames.size());
+    for (size_t i = 0; i < frames.size(); ++i) {
+        uint64_t ready = 0;
+        if (!uploadFrame(device, frames[i], textures[i], ready)) return 1;
+        inputs[i] = {textures[i].texture12.Get(), ready, static_cast<uint64_t>(i + 1),
+                     static_cast<int>(i % static_cast<size_t>(slots))};
+    }
+
+    std::vector<size_t> starts;
+    for (size_t first : {size_t(0), size_t(1)})
+        for (size_t i = first; i + 2 < frames.size(); i += 2) starts.push_back(i);
+    double sumFsr = 0.0, sumBlend = 0.0;
+    int count = 0;
+    for (const size_t i : starts) {
+        const FlowEngine::Result r = flow.submitPair(inputs[i], inputs[i + 2]);
+        if (r.entry < 0) {
+            std::cerr << "Error: flow submission failed\n";
+            return 1;
+        }
+        const FlowEngine::Entry entry = flow.entry(r.entry);
+        // Timeline indices are the frame numbers + 1, as in the live loop.
+        ID3D12Resource* middle = fsr.middleFrame(inputs[i], i + 1, inputs[i + 2], i + 3, entry, flow.fence(), r.fence,
+                                                 1000.0f / 30.0f);
+        // A second call for the same pair must return the same frame
+        // without running FSR again (the render loop asks every refresh).
+        if (middle != fsr.middleFrame(inputs[i], i + 1, inputs[i + 2], i + 3, entry, flow.fence(), r.fence, 33.3f)) {
+            std::cerr << "Error: the same pair gave a different frame\n";
+            return 1;
+        }
+        if (!middle) {
+            std::cout << "  pair " << i << "-" << i + 2 << ": no FSR frame\n";
+            continue;
+        }
+        std::vector<uint8_t> bytes;
+        UINT pitch = 0, w = 0, h = 0;
+        if (!offline.readback(middle, bytes, pitch, w, h)) return 1;
+        Image result(static_cast<int>(w), static_cast<int>(h), 3), blend(static_cast<int>(w), static_cast<int>(h), 3);
+        for (UINT y = 0; y < h; ++y) {
+            const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
+            for (UINT x = 0; x < w; ++x)
+                for (int ch = 0; ch < 3; ++ch) {
+                    result.set(static_cast<int>(x), static_cast<int>(y), ch, static_cast<float>(row[x * 4 + ch]));
+                    blend.set(static_cast<int>(x), static_cast<int>(y), ch,
+                              0.5f * (frames[i].get(static_cast<int>(x), static_cast<int>(y), ch) +
+                                      frames[i + 2].get(static_cast<int>(x), static_cast<int>(y), ch)));
+                }
+        }
+        const double p = computePsnr(result, frames[i + 1]), b = computePsnr(blend, frames[i + 1]);
+        sumFsr += p;
+        sumBlend += b;
+        ++count;
+        std::cout << "  pair " << i << "-" << i + 2 << ": FSR middle " << std::fixed << std::setprecision(2) << p
+                  << " dB (naive blend " << b << " dB)\n";
+    }
+    const FsrRealtime::Stats s = fsr.takeStats();
+    std::cout << "FSR realtime path: " << s.generated << " pairs made, " << s.resets << " sequence starts, "
+              << s.failures << " failures";
+    if (count) std::cout << "; mean " << std::setprecision(2) << sumFsr / count << " dB (blend " << sumBlend / count << " dB)";
+    std::cout << "\n";
+    // Two sequences, every pair made, nothing failed.
+    return s.failures == 0 && s.resets == 2 && s.generated == starts.size() ? 0 : 1;
 }
