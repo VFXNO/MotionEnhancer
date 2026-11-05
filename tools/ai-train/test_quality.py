@@ -322,6 +322,48 @@ class TrainingTests(unittest.TestCase):
         self.assertEqual(best['pure_warp'], 1.0)
         self.assertEqual(best['psnr'], scored['pure_psnr'])
 
+    def test_subpixel_trains_and_is_recorded_and_restored(self):
+        result, events = self.run_training(['--subpixel'])
+        self.assertEqual(result, 0)
+        scored = next(e for e in events if e['event'] == 'epoch')
+        self.assertTrue(scored['subpixel'])
+        self.assertTrue(torch.load(self.run / 'best.pt', map_location='cpu')['subpixel'])
+        # Continuing keeps the option even when the command line omits it.
+        result, events = self.run_training(['--resume', '--epochs', '2'])
+        self.assertEqual(result, 0)
+        self.assertTrue(next(e for e in events if e['event'] == 'epoch')['subpixel'])
+
+    def test_neutral_smoothness_keeps_value_and_drops_length_pull(self):
+        # A square moving 1.5 px over a still, nearly flat background: the
+        # plain term is lowered by shortening the motion, the neutral one not.
+        torch.manual_seed(0)
+        img = torch.rand(1, 3, 64, 96) * 0.05 + 0.5
+        flow = torch.zeros(1, 2, 64, 96)
+        flow[:, 0, 16:48, 24:72] = 1.5
+        pulls = []
+        for fn in (train.smoothness, train.neutral_smoothness):
+            s = torch.tensor(1.0, requires_grad=True)
+            value = fn(flow * s, img)
+            grad, = torch.autograd.grad(value, s)
+            pulls.append((float(value), float(grad) / float(value)))
+        self.assertAlmostEqual(pulls[0][0], pulls[1][0], places=6)
+        self.assertGreater(pulls[0][1], 0.9)
+        # Only the plain share (NEUTRAL_KEEP) still pulls.
+        self.assertLess(abs(pulls[1][1]), train.NEUTRAL_KEEP * 1.5)
+
+    def test_neutral_smoothness_never_rewards_a_huge_stray_vector(self):
+        # The first version divided by the item's RMS motion: one huge wrong
+        # vector lowered the whole item's penalty, and training grew them
+        # (40 px -> 3965 px). It must be pulled back instead.
+        img = torch.full((1, 3, 64, 96), 0.5)
+        flow = torch.zeros(1, 2, 64, 96)
+        flow[:, 0, 16:48, 24:72] = 1.5
+        stray = torch.zeros_like(flow)
+        stray[:, 0, 2:4, 2:4] = 200.0
+        a = torch.tensor(1.0, requires_grad=True)
+        grad, = torch.autograd.grad(train.neutral_smoothness(flow + a * stray, img), a)
+        self.assertGreater(float(grad), 0.0)
+
     def test_max_steps_ends_the_run_validated_and_not_as_a_stop(self):
         result, events = self.run_training(['--epochs', '3', '--max-steps', '1'])
         self.assertEqual(result, 0)

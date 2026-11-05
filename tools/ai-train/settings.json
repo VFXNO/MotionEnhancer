@@ -1,10 +1,10 @@
 {
- "page": 1,
+ "page": 2,
  "videos": [
   "C:/Users/bsher/Videos/2026-11-04 20-51-06.mp4"
  ],
  "dataset": "C:/Users/bsher/Downloads/Video",
- "height": 720,
+ "height": 352,
  "max_per_video": 10000,
  "gap": 3,
  "min_motion": 1.0,
@@ -18,26 +18,27 @@
  "train_datasets": [
   "C:/Users/bsher/Downloads/Video"
  ],
- "preset": "small",
- "epochs": 20,
- "batch": 4,
+ "preset": "large",
+ "epochs": 10,
+ "batch": 8,
  "lr": 0.0001,
- "crop": 720,
- "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\720p",
- "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/last.pt",
+ "crop": 352,
+ "run": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\refiner",
+ "checkpoint": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/720p/last.pt",
  "export": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\build-project\\Release\\models\\ai_flow.onnx",
  "ui_mode": "frozen",
  "ui_labels": "C:\\Users\\bsher\\Downloads\\New folder\\frames\\labels.json",
- "ui_init_sha": "",
+ "ui_init_sha": "5d1677267710b1a75e81921e45b497d68d0ce4bcfbfef4034c4825c6eaeb4bba",
  "ui_batch": 16,
  "ui_crop": 464,
  "ui_lr": 0.0003,
  "ui_max_steps": 2000,
  "ui_max_minutes": 50.0,
- "init_from": "",
+ "init_from": "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/tools/ai-train/runs/720p/last.pt",
  "refiner": true,
  "label_video": "C:/Users/bsher/Downloads/Video/Wuthering Waves 11 Minutes of Exclusive Gameplay.mp4",
  "label_project": "C:\\Users\\bsher\\Downloads\\New folder\\frames",
  "label_frames": 20,
- "pure_warp": true
+ "pure_warp": true,
+ "subpixel": true
 }

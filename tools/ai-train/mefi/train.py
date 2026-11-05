@@ -14,6 +14,12 @@ blend). A blended middle rewards hedged, slightly short motion - two
 half-way samples average out - which pure warping shows as a jump at the
 switch from frame0 to frame2. With W > 0 best.pt is chosen by that score.
 
+--subpixel trains for motions of a pixel or two at the network size (a few
+pixels on a 1440p screen), which the model found only 40-75% of. Two
+changes: the smoothness term is made neutral to the motion's length (see
+neutral_smoothness), and level 0 - the only level where such motion is more
+than a fraction of a pixel - counts SUBPIXEL_LEVEL0 times as much.
+
 Progress goes to stdout as JSON lines (the trainer app reads them). Writing
 a file named STOP into the run folder ends the run after the current step,
 keeping the checkpoints. --resume continues from the run's last checkpoint.
@@ -64,13 +70,63 @@ def census(a, b, size=7, weight=None):
     return (d * w).sum() / (w.sum() * d.shape[1] + 1.0)
 
 
-def smoothness(flow, image, weight=10.0):
-    """First-order smoothness, relaxed across picture edges."""
+def smoothness(flow, image, weight=10.0, per_sample=False):
+    """First-order smoothness, relaxed across picture edges. per_sample:
+    one value per batch item ([N]) instead of the batch mean."""
     dx_f = flow[:, :, :, 1:] - flow[:, :, :, :-1]
     dy_f = flow[:, :, 1:] - flow[:, :, :-1]
     dx_i = (image[:, :, :, 1:] - image[:, :, :, :-1]).abs().mean(1, keepdim=True)
     dy_i = (image[:, :, 1:] - image[:, :, :-1]).abs().mean(1, keepdim=True)
+    if per_sample:
+        return ((dx_f.abs() * torch.exp(-weight * dx_i)).mean((1, 2, 3))
+                + (dy_f.abs() * torch.exp(-weight * dy_i)).mean((1, 2, 3)))
     return (dx_f.abs() * torch.exp(-weight * dx_i)).mean() + (dy_f.abs() * torch.exp(-weight * dy_i)).mean()
+
+
+# --subpixel: level 0's weight; the share of the plain smoothness term
+# neutral_smoothness keeps; and the motion (network pixels) below which a
+# step is no longer measured relative to it.
+SUBPIXEL_LEVEL0 = 2.0
+NEUTRAL_KEEP = 0.1
+NEUTRAL_FLOOR = 0.02
+
+
+def neutral_smoothness(flow, image, weight=10.0):
+    """smoothness() without its pull towards shorter motion.
+
+    |grad flow| grows with the motion's length - across an object's outline
+    the field steps from the object's motion to the background's - so the
+    plain term is lowered by shortening every motion. Where a motion is a
+    pixel or two the image terms barely change with its length, and that
+    pull won: the model found 40-75% of such motion (training's own loss had
+    its optimum there).
+
+    Here each step between neighbours is divided by the two vectors' mean
+    length (plus NEUTRAL_FLOOR): an outline costs about the same whatever
+    the motion's length, so shortening it gains nothing. Each item's result
+    is scaled to the plain term's value by a factor held fixed (no
+    gradient), so the loss balance is unchanged. NEUTRAL_KEEP of the plain
+    term stays, which keeps a tenth of the old pull.
+
+    Two earlier versions normalised by the whole item instead - its RMS
+    motion, then the gradient along its whole field. Both let one huge
+    wrong vector (in a hidden or flat region, where the image terms do not
+    object) lower or offset the penalty of every other vector, so training
+    grew such vectors (largest motion 40 px -> 3965 px in two epochs, until
+    validation went non-finite in FP16). Divided per step, a stray vector
+    only ever raises its own neighbours' cost."""
+    mag = (flow.pow(2).sum(1, keepdim=True) + 1e-8).sqrt()
+    dx_f = (flow[:, :, :, 1:] - flow[:, :, :, :-1]).abs().sum(1, keepdim=True)
+    dy_f = (flow[:, :, 1:] - flow[:, :, :-1]).abs().sum(1, keepdim=True)
+    dx_n = 0.5 * (mag[:, :, :, 1:] + mag[:, :, :, :-1]) + NEUTRAL_FLOOR
+    dy_n = 0.5 * (mag[:, :, 1:] + mag[:, :, :-1]) + NEUTRAL_FLOOR
+    dx_i = (image[:, :, :, 1:] - image[:, :, :, :-1]).abs().mean(1, keepdim=True)
+    dy_i = (image[:, :, 1:] - image[:, :, :-1]).abs().mean(1, keepdim=True)
+    relative = ((dx_f / dx_n * torch.exp(-weight * dx_i)).mean((1, 2, 3))
+                + (dy_f / dy_n * torch.exp(-weight * dy_i)).mean((1, 2, 3)))
+    plain = smoothness(flow, image, weight, per_sample=True)
+    scale = (plain / (relative + 1e-8)).detach()
+    return (NEUTRAL_KEEP * plain + (1.0 - NEUTRAL_KEEP) * relative * scale).mean()
 
 
 def visible(f01, f10):
@@ -144,7 +200,7 @@ MIN_SCORED = 8
 DIRECT_WEIGHT = 0.25
 
 
-def losses(net, batch, occlusion=1.0, pure=0.0):
+def losses(net, batch, occlusion=1.0, pure=0.0, subpixel=False):
     """`occlusion` (0..1) fades in the occlusion masking: with it on from the
     start, the untrained model's two directions disagreed everywhere, the
     check marked almost every point hidden, the main motion signal vanished
@@ -152,6 +208,7 @@ def losses(net, batch, occlusion=1.0, pure=0.0):
     on the synthetic test, after 15 epochs). UnFlow, likewise, adds it only
     after training without it."""
     f0, f1, f2 = batch[:, 0:3], batch[:, 3:6], batch[:, 6:9]
+    field_smooth = neutral_smoothness if subpixel else smoothness
     levels = net(f0, f2, all_levels=True)
     # The integrated refiner's own correction of the finest flow (network
     # pixels), from this forward pass.
@@ -203,11 +260,13 @@ def losses(net, batch, occlusion=1.0, pure=0.0):
             # the backbone alone exact - which pure warping shows as a jump
             # at the switch from frame0 to frame2.
             base = flow - correction
-            smooth = (smoothness(base[:, 0:2], a) + smoothness(base[:, 2:4], b)
+            smooth = (field_smooth(base[:, 0:2], a) + field_smooth(base[:, 2:4], b)
                       + smoothness(correction[:, 0:2], a) + smoothness(correction[:, 2:4], b))
         else:
-            smooth = smoothness(flow[:, 0:2], a) + smoothness(flow[:, 2:4], b)
+            smooth = field_smooth(flow[:, 0:2], a) + field_smooth(flow[:, 2:4], b)
         weight = LEVEL_WEIGHT ** level
+        if subpixel and level == 0:
+            weight = weight * SUBPIXEL_LEVEL0
         total = total + weight * (rec + DIRECT_WEIGHT * direct + 0.02 * consistent + 0.02 * smooth)
         if level == 0:
             # Kept on the GPU: reading them back every step made the CPU wait
@@ -320,7 +379,7 @@ def read_resume(path, args):
     # Continue means the same experiment, not a silent change of batch size,
     # crop, seed, initial LR or model because the UI still has other defaults.
     for name in ('data', 'batch', 'crop', 'lr', 'val', 'pan', 'warmup', 'occlusion_start', 'seed', 'pure_warp',
-                 'max_steps'):
+                 'max_steps', 'subpixel'):
         if name in config:
             setattr(args, name, config[name])
     args.preset = ck['preset']
@@ -376,6 +435,9 @@ def main(argv=None):
     p.add_argument('--pure-warp', type=float, default=0.0,
                    help='share (0..1) of the middle-frame score taken by each frame warped alone instead of '
                         'their blend; > 0 also selects best.pt by that score')
+    p.add_argument('--subpixel', action='store_true',
+                   help='train for motions of a pixel or two: smoothness neutral to motion length, '
+                        'level 0 weighted more')
     start = p.add_mutually_exclusive_group()
     start.add_argument('--resume', action='store_true')
     start.add_argument('--init-from', help='weights-only initialization in a new run; preserves the source checkpoint')
@@ -594,7 +656,7 @@ def main(argv=None):
             # Occlusion masking fades in between 40% and 60% of the run.
             occlusion = min(1.0, max(0.0, (step / steps - args.occlusion_start) / 0.2))
             with torch.autocast('cuda', dtype=torch.float16, enabled=device.type == 'cuda'):
-                loss, parts, _ = losses(net, batch, occlusion, args.pure_warp)
+                loss, parts, _ = losses(net, batch, occlusion, args.pure_warp, args.subpixel)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
@@ -658,7 +720,7 @@ def main(argv=None):
             best = psnr
             save_checkpoint({'arch': net.arch, 'model': net.state_dict(), 'preset': args.preset, 'psnr': psnr,
                              'epoch': epoch, 'train_height': train_height, 'validation': validation,
-                             'pure_warp': args.pure_warp}, best_path)
+                             'pure_warp': args.pure_warp, 'subpixel': args.subpixel}, best_path)
         complete = consumed == per_epoch
         write_last(epoch, epoch + 1 if complete else epoch, 0 if complete else consumed,
                    0.0 if complete else running, 0 if complete else count)
@@ -666,7 +728,8 @@ def main(argv=None):
              blend_psnr=blend, best=best, improved=improved, preview=preview_path, scored=group,
              scored_count=scores[group][2], complete=complete, step=step, steps=steps, batch=consumed,
              moving=scores['moving'][2], psnr_all=scores['all'][0], blend_all=scores['all'][1],
-             mask_psnr=scores[group][0], pure_psnr=scores[group][3], pure_warp=args.pure_warp)
+             mask_psnr=scores[group][0], pure_psnr=scores[group][3], pure_warp=args.pure_warp,
+             subpixel=args.subpixel)
         if stopped or step >= steps:
             break
     emit(event='done', best=best, stopped=stopped, step=step, steps=steps, seconds=round(time.time() - started))

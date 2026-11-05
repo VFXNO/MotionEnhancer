@@ -105,6 +105,7 @@ Training uses mixed precision on the GPU, AdamW (learning rate 1e-3) and a cosin
 
 - **A synthetic camera pan** (`--pan`, off by default). The three crops are taken from shifted windows, so the clip moves linearly on top of its own motion. It measured worse: with pans, training fell back to a plain blend (29.98 dB against 32.64), and gentler pans still cost 0.7–1.8 dB. A model learns large motion from footage that has it.
 - **Pure-warp scoring** (`--pure-warp 0..1`, off by default). The program shows no cross-fade: frame0 warped forward before the middle of a pair, frame2 warped backward after it. The default loss scores their blend instead, and a blend rewards slightly short motion (two half-way samples average out). Pure warping shows that shortfall as a jump at the switch: the integrated refiner trained this way undershot a 40 px move by about 7%, so at the switch the character jumped 0.23 of the pair instead of 0.17. With `--pure-warp W` the middle-frame score is `(1 - W)` blend plus `W` times each side warped alone (each excused only where the model's own occlusion mask says it is hidden), and `best.pt` is chosen by that pure-warp PSNR. To retrain existing weights for it: `--init-from runsest.pt --pure-warp 1` into a new run folder. A fine-tune like that does not need whole epochs (one is about 10,000 steps, about 6 hours on an RX 9070 XT at 480 px crops): `--max-steps N` ends the run after N steps with the learning-rate schedule fitted to them, then validates and saves `best.pt` as usual.
+- **Sub-pixel motion** (`--subpixel`, or the trainer's "Sub-pixel motion" checkbox; off by default). The model found only 40-75% of motions under 2 px at its 832x480 size (moves under about 6 px on a 1440p screen); 2 px and up it was exact. In the program that is a 3x jump at the middle of each pair with integrated AI refinement (AI + DIS refinement: 1.10x). The cause is the smoothness term: across an object's outline `|grad flow|` grows with the motion's length, so shortening every motion lowers it, and where a motion is a pixel or two the image terms barely change with its length, so that pull wins (training's own loss had its optimum at the short motion; a fine-tune on new 1440p recordings changed it by +0.02). With `--subpixel` each step between neighbouring vectors is divided by the two vectors' mean length, so an outline costs about the same whatever the motion's length; each item's result is scaled to the plain term's value (a fixed factor), and a tenth of the plain term stays. The pull towards shorter motion falls to 0.10-0.17 of the old one (squares moving 0.5-8 px), and level 0, the only level where such motion is more than a fraction of a pixel, counts twice. A first version divided by each clip's RMS motion instead: one huge wrong vector in a hidden or flat region then lowered the whole clip's penalty, training grew such vectors (largest motion 40 px -> 3965 px in two epochs) and validation went non-finite. Divided per step, a stray vector only raises its own neighbours' cost and is always pulled back. Use it for a fine-tune: `--init-from runs/last.pt --subpixel --pure-warp 1 --lr 1e-4` into a new run folder, same model size.
 - **Optional occlusion masking** (`--occlusion-start`, off by default). The "map one frame onto the other" loss skips points hidden in the other frame (UnFlow's forward–backward check). It measured no better, and fading it in early stalled training.
 - **A zoom** of 0.6× to 1.6×, which scales every motion with it.
 
@@ -428,3 +429,21 @@ zero DIS patch passes in AI mode, positive DIS passes in unchecked mode, static
 UI protection, independent mask enable/disable, finite fields and ring reuse.
 Run it with a new `--out`, `--executable`, a refined `--checkpoint`, and the
 `--cases` folder from `benchmark_refiner.py`. It performs **no training**.
+
+## Training on Google Colab
+
+Training needs only PyTorch, NumPy and OpenCV, which Colab has, and its NVIDIA GPUs run it on CUDA. Build the dataset and export on your PC as usual; only the training runs on Colab.
+
+1. On your PC (PowerShell, in `tools\ai-train`), pack the code, the dataset and the starting model:
+
+   ```powershell
+   Compress-Archive -Path mefi -DestinationPath mefi.zip -Force
+   Compress-Archive -Path C:\Users\you\Downloads\Video\* -DestinationPath dataset.zip -Force
+   Copy-Item runs\last.pt init.pt
+   ```
+
+2. Upload `mefi.zip`, `dataset.zip` and `init.pt` to Google Drive, folder `MyDrive/MotionEnhancer/`.
+3. Open `colab_train.ipynb` in Colab (File -> Upload notebook), choose a GPU runtime and run the cells. Runs are saved to `MyDrive/MotionEnhancer/runs/`; after a disconnect, run the first cells again and then **Continue**.
+4. Download `best.pt` into `tools\ai-train\runs\<name>\` and export it on the Export page.
+
+Batch for the `large` model at crop 480: T4 (16 GB) 4, L4 (24 GB) 6, A100 8-12. On Colab, running out of memory only stops the cell.

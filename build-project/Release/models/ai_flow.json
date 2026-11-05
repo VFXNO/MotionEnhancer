@@ -1,21 +1,21 @@
 {
  "format": "mefi-pyramid-flow-1",
  "arch": "pyramid-refine-v1",
- "width": 832,
- "height": 480,
+ "width": 640,
+ "height": 352,
  "levels": 7,
  "preset": "large",
  "psnr": null,
- "epoch": 7,
- "train_height": 480,
+ "epoch": 19,
+ "train_height": 352,
  "validation": {
   "protocol": "temporal-balanced-v1",
-  "selection": "bb0371698a2e65648271467d57123d63b8e181f2867f385e033e0714bfb0d9ad"
+  "selection": "b82e2d60261338057e6ff3e42c89e8a2d333b1258a5b747c2be0fb817ab2e4ff"
  },
- "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\last.pt",
+ "checkpoint": "C:\\Users\\bsher\\Documents\\GitHub\\MotionEnhancer2\\tools\\ai-train\\runs\\720p\\last.pt",
  "trained_arch": "pyramid-refine-v1",
  "integrated_refiner": true,
- "bundle_id": "087f92acabbb4890983b411ffd8981a4",
+ "bundle_id": "01576832999045c6b93d19581f1b4f3a",
  "dis_model": "ai_flow.dis.onnx",
  "refined_model": "ai_flow.onnx"
 }

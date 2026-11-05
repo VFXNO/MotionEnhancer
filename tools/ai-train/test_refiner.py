@@ -181,6 +181,8 @@ class InterfaceTests(unittest.TestCase):
                 page.run.setText(str(Path(scratch) / 'run'))
                 page.refiner.setChecked(True)
                 page.init_from.setText('initial.pt')
+                self.assertFalse(page.subpixel.isChecked())   # off unless chosen
+                page.subpixel.setChecked(True)
                 with patch.object(page.job, 'start') as start:
                     page.start()
                 args = start.call_args.args[1]
@@ -188,6 +190,8 @@ class InterfaceTests(unittest.TestCase):
                 self.assertIn('--init-from', args)
                 # Pure-warp scoring is on by default for a new run.
                 self.assertEqual(args[args.index('--pure-warp') + 1], '1')
+                self.assertIn('--subpixel', args)
+                self.assertFalse(page.subpixel.isEnabled())
                 self.assertFalse(page.refiner.isEnabled())
                 self.assertFalse(page.pure_warp.isEnabled())
                 page.finished(0)
@@ -199,12 +203,14 @@ class InterfaceTests(unittest.TestCase):
                 self.assertNotIn('--init-from', args)
                 self.assertNotIn('--refiner', args)
                 self.assertNotIn('--pure-warp', args)  # restored from the run's config instead
+                self.assertNotIn('--subpixel', args)
                 config = {'preset': 'small', 'refiner': False, 'batch': 4, 'crop': 64,
                           'lr': 0.001, 'data': [str(data)]}
                 page.on_job({'event': 'resumed', 'config': config, 'epoch': 0, 'batch': 1,
                              'step': 1, 'steps': 4, 'best': 20})
                 self.assertFalse(page.refiner.isChecked())
                 self.assertFalse(page.pure_warp.isChecked())  # an old run without it
+                self.assertFalse(page.subpixel.isChecked())
                 self.assertEqual(page.init_from.text(), '')
             finally:
                 window.close()

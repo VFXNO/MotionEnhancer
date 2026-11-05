@@ -676,6 +676,11 @@ class TrainPage(Page):
         self.pure_warp.setToolTip('Scores frame0 warped alone and frame2 warped alone against the true middle, '
                                   'instead of their blend, and keeps the best checkpoint by that score. A blended '
                                   'score rewards slightly short motion, which pure warping shows as a jump.')
+        self.subpixel = QCheckBox('Sub-pixel motion (small moves to full length; for fine-tuning)')
+        self.subpixel.setChecked(s.get('subpixel', False))
+        self.subpixel.setToolTip('Smoothness no longer rewards shortening motion, and the finest level counts twice. '
+                                 'Moves of a pixel or two at the network size were found only 40-75% long, '
+                                 'which shows as a jump in the middle of each frame pair.')
         self.init_from = QLineEdit(s.get('init_from', ''))
         grid.addWidget(label('Size'), 0, 0)
         grid.addWidget(self.preset, 0, 1, 1, 2)
@@ -687,6 +692,7 @@ class TrainPage(Page):
         ml.addLayout(grid)
         ml.addWidget(self.refiner)
         ml.addWidget(self.pure_warp)
+        ml.addWidget(self.subpixel)
         ml.addWidget(label('Initial weights (optional; same size, NEW run only)', 'dim'))
         ml.addLayout(path_row(self.init_from, 'Browse', self.pick_initial))
         self.ui_mode = QComboBox()
@@ -1057,7 +1063,8 @@ class TrainPage(Page):
         v = {'train_datasets': sets, 'preset': self.preset.currentData(), 'epochs': self.epochs.value(),
              'batch': self.batch.value(), 'lr': self.lr.value(), 'crop': self.crop.value(), 'run': self.active_run,
              'refiner': self.refiner.isChecked(), 'init_from': self.init_from.text().strip(),
-             'ui_init_sha': self.ui_init_sha.text().strip(), 'pure_warp': self.pure_warp.isChecked()}
+             'ui_init_sha': self.ui_init_sha.text().strip(), 'pure_warp': self.pure_warp.isChecked(),
+             'subpixel': self.subpixel.isChecked()}
         self.app.store(v)
         args = ['--run', v['run'], '--preset', v['preset'], '--epochs', str(v['epochs']),
                 '--batch', str(v['batch']), '--lr', str(v['lr']), '--crop', str(v['crop']),
@@ -1071,6 +1078,8 @@ class TrainPage(Page):
                 args.append('--refiner')
             if v['pure_warp']:
                 args += ['--pure-warp', '1']
+            if v['subpixel']:
+                args.append('--subpixel')
             if v['init_from']:
                 args += ['--init-from', v['init_from']]
             self.loss_chart.clear()
@@ -1080,6 +1089,7 @@ class TrainPage(Page):
         self.run.setEnabled(False)
         self.refiner.setEnabled(False)
         self.pure_warp.setEnabled(False)
+        self.subpixel.setEnabled(False)
         self.init_from.setEnabled(False)
         self.ui_controls_enabled(False)
         self.bar.setRange(0, 1)
@@ -1108,6 +1118,7 @@ class TrainPage(Page):
             self.preset.setCurrentIndex(list(PRESET_TEXT).index(config['preset']))
             self.refiner.setChecked(config.get('refiner', False))
             self.pure_warp.setChecked(config.get('pure_warp', 0.0) > 0)
+            self.subpixel.setChecked(bool(config.get('subpixel', False)))
             self.init_from.clear()
             for name in ('batch', 'crop', 'lr'):
                 widget = getattr(self, name)
@@ -1241,6 +1252,7 @@ class TrainPage(Page):
         self.run.setEnabled(True)
         self.refiner.setEnabled(True)
         self.pure_warp.setEnabled(True)
+        self.subpixel.setEnabled(True)
         self.init_from.setEnabled(True)
         self.ui_controls_enabled(True)
         self.app.set_busy(None)
