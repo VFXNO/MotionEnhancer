@@ -1185,9 +1185,9 @@ void startCapture() {
     };
     {
         static const char* const widths[] = {"0", "0.15", "0.25", "1"};
-        const LRESULT selection = SendMessageA(g_state.switchWidth, CB_GETCURSEL, 0, 0);
+        const LRESULT width = SendMessageA(g_state.switchWidth, CB_GETCURSEL, 0, 0);
         captureArgs.push_back("--switch-width");
-        captureArgs.push_back(widths[selection >= 0 && selection < 4 ? selection : 0]);
+        captureArgs.push_back(widths[width >= 0 && width < 4 ? width : 0]);
     }
     if (SendMessageA(g_state.uiMask, BM_GETCHECK, 0, 0) != BST_CHECKED) captureArgs.push_back("--no-ui-mask");
     else if (SendMessageA(g_state.aiUiRegions, BM_GETCHECK, 0, 0) == BST_CHECKED) {

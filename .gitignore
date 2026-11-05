@@ -37,3 +37,17 @@ tools/ai-train/setup-*.log
 /backup/2026-11-01_ui-icons-only-before-*/
 /backup/2026-11-01_ui-continuity-before-*/
 /third_party/ui-matrix/
+
+# Google Colab uploads made from the trainer (see tools/ai-train/README.md)
+tools/ai-train/init.pt
+tools/ai-train/mefi.zip
+tools/ai-train/*.log
+/dataset*.zip
+
+# Local backups made before changes (kept on disk, not in git)
+/backup/
+
+# Written by `motion_enhancer --test` (tools/make_flow_tests.ps1 makes them when missing)
+/test_frame0.png
+/test_frame1.png
+/test_groundtruth.png
