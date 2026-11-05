@@ -234,7 +234,8 @@ bool Presenter::recordUpscale(const RenderJob& job) {
         return false;
     std::string error;
     if (!m_upscaler->upscale(m_list.Get(), m_output.Get(), m_upscaleMotion.Get(), m_upscaleDepth.Get(), m_upscaled.Get(),
-                             job.upscaleReset, static_cast<float>(m_refreshInterval) / 10000.0f, 0.0f, error)) {
+                             job.upscaleReset, static_cast<float>(m_refreshInterval) / 10000.0f, m_upscaleSharpness,
+                             error)) {
         static bool reported = false;
         if (!reported) {
             reported = true;

@@ -48,6 +48,10 @@ struct RealtimeOptions {
     // upscaling (Presenter). Mouse clicks still reach the game window where
     // it really is.
     bool upscale = false;
+    // FSR's sharpening of the upscaled frames (--upscale-sharpness, 0-1;
+    // 0 = off). Offline at 2x, 0.3 raised the sharpness from 0.71 to 0.77 of
+    // native at the same PSNR.
+    float upscaleSharpness = 0.0f;
     // Experimental, beside the normal interpolation (FsrRealtime): AMD FSR
     // frame generation's middle frame is shown on refreshes whose blend
     // position is within fsrWindow of 0.5; everything else is unchanged.

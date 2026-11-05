@@ -350,6 +350,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
             exitCode = 1;
             return;
         }
+        presenter.setUpscaleSharpness(options.upscaleSharpness);
         // The present fence gates slot and flow-ring recycling.
         capture.setPresentFence(presenter.fence());
 
@@ -415,7 +416,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           ? std::string(options.upscale ? "none (the game window is already the monitor's size)" : "off")
                           : "FSR " + presenter.upscaler() + ", " + std::to_string(width) + "x" + std::to_string(height) +
                                 " -> " + std::to_string(overlay.width) + "x" + std::to_string(overlay.height) +
-                                " (mouse clicks reach the game window where it really is, not where it is shown)")
+                                ", sharpening " + std::to_string(static_cast<int>(options.upscaleSharpness * 100.0f + 0.5f)) +
+                                "% (mouse clicks reach the game window where it really is, not where it is shown)")
                   << "\n"
                   << "  Queues:         latency margin " << options.latencyMinExtraMs << " ms, cap "
                   << (options.latencyMaxMs > 0.0 ? std::to_string(static_cast<int>(options.latencyMaxMs)) + " ms"

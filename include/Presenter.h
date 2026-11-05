@@ -136,6 +136,8 @@ public:
                     uint32_t displayWidth = 0, uint32_t displayHeight = 0);
     // FSR upscaling in use: its provider, or empty when not upscaling.
     std::string upscaler() const;
+    // FSR's own sharpening of the upscaled frames (RCAS), 0 = off.
+    void setUpscaleSharpness(float sharpness) { m_upscaleSharpness = sharpness; }
     std::string upscaleError;
     // vsyncOff was asked for and the system allows tearing.
     bool tearing() const { return m_tearing; }
@@ -225,6 +227,7 @@ private:
     // that is copied to the back buffer instead of m_output.
     std::unique_ptr<FsrUpscaler> m_upscaler;
     uint32_t m_displayWidth = 0, m_displayHeight = 0;
+    float m_upscaleSharpness = 0.0f;
     ComPtr<ID3D12Resource> m_upscaleMotion, m_upscaleDepth, m_upscaled;
     bool recordUpscale(const RenderJob& job);
     bool m_tearing = false;     // initialize(vsyncOff) and supported

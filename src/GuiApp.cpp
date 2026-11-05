@@ -1226,8 +1226,12 @@ void startCapture() {
     {
         if (SendMessageA(g_state.vsync, CB_GETCURSEL, 0, 0) == 1)
             for (const char* arg : {"--vsync", "off"}) captureArgs.push_back(arg);
-        if (SendMessageA(g_state.upscale, CB_GETCURSEL, 0, 0) == 1)
-            for (const char* arg : {"--upscale", "fsr4"}) captureArgs.push_back(arg);
+        const LRESULT upscale = SendMessageA(g_state.upscale, CB_GETCURSEL, 0, 0);
+        if (upscale >= 1 && upscale <= 4) {
+            static const char* const sharpness[] = {"0", "0.3", "0.6", "0.9"};
+            for (const char* arg : {"--upscale", "fsr4", "--upscale-sharpness", sharpness[upscale - 1]})
+                captureArgs.push_back(arg);
+        }
         const LRESULT latency = SendMessageA(g_state.latency, CB_GETCURSEL, 0, 0);
         if (latency == 0) {
             for (const char* arg : {"--latency-min", "0", "--latency-max", "60"}) captureArgs.push_back(arg);
@@ -1639,7 +1643,9 @@ void createControls() {
     // window; the overlay covers the monitor and FSR 4 upscales every frame
     // to its resolution. Clicks still reach the real (smaller) window.
     g_state.upscale = makeCombo(525, 173, 140, IDC_UPSCALE);
-    for (const char* option : {"Upscale: off", "Upscale: FSR 4"})
+    // With FSR's own sharpening (--upscale-sharpness): FSR 4 alone is soft
+    // on captured frames (no camera jitter to rebuild detail from).
+    for (const char* option : {"Upscale: off", "FSR 4", "FSR 4 sharp 30%", "FSR 4 sharp 60%", "FSR 4 sharp 90%"})
         SendMessageA(g_state.upscale, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(option));
     SendMessageA(g_state.upscale, CB_SETCURSEL, 0, 0);
     // Frame queues (latency budget, swap chain, capture queue) as presets;

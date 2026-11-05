@@ -94,6 +94,7 @@ static void printUsage(const char* progName) {
               << "  --upscale <off|fsr4>     Experimental scaling: the overlay covers the monitor and every frame\n"
               << "                           is upscaled from the game window's size by AMD FSR 4 (run the game\n"
               << "                           in a smaller window; clicks still reach the real window)\n"
+              << "  --upscale-sharpness <0-1>  FSR's sharpening of the upscaled frames (default: 0 = off)\n"
               << "  --vsync <on|off>         off: present each frame at the time the frame queue chooses\n"
               << "                           (each k/N position with --multiplier N), tearing allowed\n"
               << "                           (default: on = the next refresh)\n"
@@ -486,6 +487,8 @@ int main(int argc, char** argv) {
             const std::string value = argv[++i];
             if (value != "off" && value != "fsr4") throw std::invalid_argument("upscale must be off or fsr4");
             queues.upscale = value == "fsr4";
+        } else if (arg == "--upscale-sharpness" && i + 1 < argc) {
+            queues.upscaleSharpness = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--capture-queue" && i + 1 < argc) {
             queues.captureQueue = std::clamp(std::stoi(argv[++i]), 2, 8);
         } else if (arg == "--fsr-camera" && i + 1 < argc) {
@@ -762,6 +765,7 @@ int main(int argc, char** argv) {
         options.captureQueue = queues.captureQueue;
         options.vsync = queues.vsync;
         options.upscale = queues.upscale;
+        options.upscaleSharpness = queues.upscaleSharpness;
         return runRealtimeSession(options);
     }
 
