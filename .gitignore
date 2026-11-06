@@ -40,7 +40,6 @@ tools/ai-train/setup-*.log
 /backup/2026-11-01_ui-improve-before-*/
 /backup/2026-11-01_ui-icons-only-before-*/
 /backup/2026-11-01_ui-continuity-before-*/
-/third_party/ui-matrix/
 
 # Google Colab uploads made from the trainer (see tools/ai-train/README.md)
 tools/ai-train/init.pt
@@ -55,6 +54,3 @@ tools/ai-train/*.log
 /test_frame0.png
 /test_frame1.png
 /test_groundtruth.png
-
-# AMD FSR SDK 2.4.0 (downloaded from github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK, tag v2.4.0)
-/third_party/FidelityFX-SDK-v2.4.0/
