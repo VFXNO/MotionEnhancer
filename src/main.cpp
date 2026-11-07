@@ -8,6 +8,7 @@
 #include "WindowHelper.h"
 #include "GuiApp.h"
 #include "FrameTimeline.h"
+#include "FrameOutputPlan.h"
 
 #include <iostream>
 #include <fstream>
@@ -243,6 +244,119 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
 // the screen, and WGC's timestamps, after 2, 4, 3... refreshes) while its
 // content advances evenly. Every displayed frame's position along the
 // source (pair index + alpha) should advance by the same step.
+static bool runFsrOutputPlanTests() {
+    constexpr int64_t ms = 10000, second = 10000000, start = 1000000000;
+    bool pass = true;
+    FrameTimeline::Selection sample;
+    sample.valid = true;
+    sample.f0.index = 1;
+    sample.f1.index = 2;
+    sample.f0.ts = start;
+    sample.f1.ts = start + second / 60;
+    sample.f1.flowEntry = 0;
+    // Capture delivery can jitter wildly; FSR must see source time instead.
+    sample.f0.arrival = start + 2 * ms;
+    sample.f1.arrival = sample.f1.ts + 12 * ms;
+    for (uint32_t n : {2u, 3u, 4u}) {
+        for (uint32_t k = 0; k < n; ++k) {
+            sample.alpha = static_cast<float>(k) / n;
+            const auto plan = FrameOutputPlan::make(sample, n, 0.5f, second / 60);
+            const bool supported = n % 2 == 0;
+            const bool middle = sample.alpha == 0.5f;
+            pass = pass && plan.fsrBeforePresent == (supported && middle) &&
+                   plan.fsrAfterPresent == (supported && !middle) &&
+                   std::fabs(plan.sourceDeltaMs - 16.6666f) < 0.001f;
+        }
+    }
+    sample.fixedCadence = false;
+    for (float alpha : {0.0f, 0.4f, 0.5f, 0.6f, 1.0f}) {
+        sample.alpha = alpha;
+        const auto plan = FrameOutputPlan::make(sample, 0, 0.11f, second / 60);
+        pass = pass && plan.fsrBeforePresent == sample.canUseMidpoint(0.11f) &&
+               plan.fsrAfterPresent != plan.fsrBeforePresent;
+    }
+    sample.fixedCadence = true;
+    sample.alpha = 0.5f;
+    for (int condition = 0; condition < 4; ++condition) {
+        auto invalid = sample;
+        if (condition == 0) invalid.valid = false;
+        if (condition == 1) invalid.f1 = invalid.f0;
+        if (condition == 2) invalid.f1.sceneCut = true;
+        if (condition == 3) invalid.f1.flowEntry = -1;
+        const auto plan = FrameOutputPlan::make(invalid, 2, 0.5f, second / 60);
+        pass = pass && !plan.fsrBeforePresent && !plan.fsrAfterPresent;
+    }
+    std::cout << "Timeline self-test: FSR ordering, 3x bypass, cuts, Max, source-time delta: "
+              << (pass ? "PASS" : "FAIL") << "\n";
+
+    // CPU model of a single ordered queue, using the LIVE work-order plan.
+    // FSR takes a varying 2-5 ms; copy/synthesis takes 0.3 ms. A real frame
+    // must be prepared before its deadline, and Presented before its pair's
+    // generation. This is a scheduling regression, NOT GPU/scanout timing.
+    for (double hz : {60.0, 120.0, 144.0, 165.0, 240.0}) {
+        for (bool busyFallback : {false, true}) {
+            FrameTimeline timeline;
+            timeline.configure(60, hz, 2);
+            for (int k = 0; k < 302; ++k) {
+                TimelineFrame f;
+                f.slot = k;
+                f.tsRaw = start + static_cast<int64_t>(static_cast<double>(k) * second / 60);
+                f.arrival = f.tsRaw + 3 * ms;
+                f.flowEntry = 0;
+                timeline.push(f);
+            }
+            double cpu = start, gpu = start, worst = 0.0;
+            uint64_t cachedPair = 0;
+            int generated = 0, fallback = 0;
+            bool ordered = true;
+            for (int k = 0; k < 600; ++k) {
+                const auto sel = timeline.nextOutput(static_cast<int64_t>(cpu));
+                const auto plan = FrameOutputPlan::make(sel, 2, 0.5f, timeline.sourcePeriod());
+                const auto generate = [&] {
+                    if (cachedPair == sel.f1.index) return;
+                    if (busyFallback && sel.f0.slot % 9 == 0) return; // nonblocking native fallback
+                    cpu += 0.2 * ms; // FSR CPU recording, not a GPU wait
+                    const double flowReady = sel.f1.ts + 6.0 * ms;
+                    gpu = std::max(gpu, std::max(cpu, flowReady)) + (2.0 + sel.f0.slot % 4) * ms;
+                    cachedPair = sel.f1.index;
+                    ++generated;
+                };
+                if (plan.fsrBeforePresent) generate(); // normally cached; skipped real is supported too
+                cpu += 0.1 * ms; // record the presentation copy before sleeping
+                gpu = std::max(gpu, cpu) + 0.3 * ms;
+                const double preparedAt = cpu;
+                cpu = std::max(cpu, static_cast<double>(sel.presentTime));
+                const double visible = std::max(cpu, gpu); // simulated Present queue marker
+                worst = std::max(worst, std::fabs(visible - sel.presentTime) / ms);
+                ordered = ordered && sel.valid && preparedAt < sel.presentTime &&
+                          sel.alpha == (k % 2 ? 0.5f : 0.0f);
+                if (k % 2) fallback += cachedPair != sel.f1.index;
+                // Regression: this must be AFTER the simulated real Present,
+                // not merely after recording/submitting its copy commands.
+                if (plan.fsrAfterPresent) generate();
+                timeline.retireBefore(sel.f0.index);
+            }
+            const bool scenePass = ordered && worst < 0.001 && timeline.stats().missedOutputs == 0 &&
+                                   generated == (busyFallback ? 266 : 300) &&
+                                   fallback == (busyFallback ? 34 : 0);
+            std::cout << "Timeline self-test: early 60->120 preparation / " << hz << " Hz"
+                      << (busyFallback ? " with busy FSR fallback" : "") << ": "
+                      << generated << " generated, " << fallback << " fallback, " << worst << " ms model lateness: "
+                      << (scenePass ? "PASS" : "FAIL") << "\n";
+            pass = pass && scenePass;
+        }
+    }
+    // Missing a real output must allow preparation of that pair's midpoint,
+    // while a subsequent real frame still defers generation until after Present.
+    sample.alpha = 0.5f;
+    const auto skipped = FrameOutputPlan::make(sample, 2, 0.5f, second / 60);
+    sample.alpha = 0.0f;
+    const auto real = FrameOutputPlan::make(sample, 2, 0.5f, second / 60);
+    pass = pass && skipped.fsrBeforePresent && !skipped.fsrAfterPresent &&
+           !real.fsrBeforePresent && real.fsrAfterPresent;
+    return pass;
+}
+
 static int runTimelineSelfTest() {
     constexpr int64_t second = 10000000, ms = 10000, start = 1000000000;
     bool ok = true;
@@ -436,6 +550,7 @@ static int runTimelineSelfTest() {
                              << " alpha=" << resumed.alpha << "\n";
         ok = ok && pass;
     }
+    ok = runFsrOutputPlanTests() && ok;
     std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL") << "\n";
     return ok ? 0 : 1;
 }

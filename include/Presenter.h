@@ -99,8 +99,17 @@ struct RenderJob {
 
 struct PresentStats {
     uint64_t presented = 0;
+    uint64_t prepared = 0;
     double maxIntervalMs = 0.0;
     double meanIntervalMs = 0.0;
+    double capacityWaitMs = 0.0;      // total CPU time in swap-chain back-pressure
+    double maxCapacityWaitMs = 0.0;
+    double allocatorWaitMs = 0.0;
+    double maxAllocatorWaitMs = 0.0;
+    double presentCallMs = 0.0;       // CPU time inside DXGI Present, not scanout
+    double maxPresentCallMs = 0.0;
+    uint64_t gpuPendingAtPresent = 0; // prepared list not complete when Present was called
+    double maxDeadlineLateMs = 0.0;   // CPU call start vs output deadline, not scanout
 };
 
 // Native D3D12 flip-model presentation. The caller supplies FPS-clocked
@@ -127,9 +136,15 @@ public:
     ID3D12Fence* fence() const { return m_fence.Get(); }
     double refreshRate() const { return m_refreshHz; }
 
-    // Records, submits and presents. presentFenceValue completes the GPU
-    // reads of every resource in the job.
-    bool render(const RenderJob& job, uint64_t& presentFenceValue);
+    // Prepare immediately after reserving an output, BEFORE its deadline.
+    // Records/submits GPU work and acquires queue capacity. Only present()
+    // runs at the deadline. One prepared output at a time; its fence covers
+    // all GPU reads, even if shutdown occurs before it is presented.
+    bool prepare(const RenderJob& job, uint64_t& presentFenceValue);
+    bool present(int64_t deadline);
+    // FSR may submit on this same queue AFTER a real frame was presented.
+    // Publish a later fence covering those reads before input is retired.
+    bool protectQueuedWork(uint64_t& fenceValue);
 
     PresentStats takeStats();
 
@@ -182,6 +197,8 @@ private:
     uint64_t m_frameCount = 0;
     bool m_revealed = false;
     bool m_tearing = false;
+    bool m_prepared = false;
+    uint64_t m_preparedFence = 0;
     HRESULT m_lastPresentStatus = S_OK;
 
     double m_refreshHz = 60.0;  // diagnostics and explicit Max mode only

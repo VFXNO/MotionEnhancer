@@ -24,10 +24,11 @@
 // (--multiplier 2), regardless of monitor Hz. Other fixed multipliers use
 // native interpolation wherever the requested time is not exactly 0.5.
 //
-// All work is recorded into this class's own command list and submitted on
-// the present queue before the presenter's list, so the presenter sees the
-// finished frame through queue order. The GPU waits for the capture copies
-// and the pair's flow; the CPU never does.
+// Work uses the present queue for ordering/resource safety. Live 2x submits
+// a real frame's Present BEFORE generating its pair's midpoint, which is
+// prepared ahead of the next output deadline. Never queue generation ahead
+// of that real frame's Present. The caller pins source/flow reads through a
+// later present-queue fence, including when the midpoint is skipped.
 class FsrRealtime {
 public:
     struct Stats {
@@ -35,6 +36,10 @@ public:
         uint64_t resets = 0;      // pairs that restarted FSR's sequence
         uint64_t failures = 0;
         uint64_t aiDepth = 0;     // frames given to FSR with their AI depth (the rest: flat)
+        uint64_t busy = 0;        // live allocator reuse would block: native fallback instead
+        uint64_t gpuSamples = 0;  // completed GPU queries only, no CPU waits
+        double gpuTotalMs = 0.0;  // conversions + FSR + optional camera; excludes queue waits
+        double gpuMaxMs = 0.0;
         float panX = 0.0f;        // the last measured overall motion (full-resolution pixels per
         float panY = 0.0f;        // frame, current -> previous), when the camera is on
     };
@@ -71,7 +76,11 @@ public:
     FsrRealtime& operator=(const FsrRealtime&) = delete;
 
     bool initialize(GraphicsDevice* device, const ComputeKernels* kernels, uint32_t width, uint32_t height,
-                    std::string& error);
+                     std::string& error);
+    // Live never waits for an allocator still in flight. Offline tests retain
+    // their blocking behavior unless explicitly changed.
+    void setNonBlocking(bool on) { m_nonBlocking = on; }
+    uint64_t submittedFenceValue() const { return m_fenceValue; }
 
     // The middle frame of the pair (in0, in1), made the first time a pair is
     // seen and returned again for the same pair. index0/index1 are the
@@ -109,6 +118,7 @@ private:
     // Next command list from the ring (waits only if it is still in flight).
     bool beginList(uint32_t& slot);
     bool waitFence(uint64_t value);
+    void collectGpuTimes();
     // The pair's overall motion (FsrCameraCS) into m_cameraReadback[slot].
     bool recordCamera(ID3D12Resource* backward, uint32_t blockSize, uint32_t slot);
     bool readCamera(uint32_t slot);
@@ -127,6 +137,11 @@ private:
     ComPtr<ID3D12Fence> m_fence;
     uint64_t m_fenceValue = 0;
     uint32_t m_submits = 0;
+    bool m_nonBlocking = false;
+    ComPtr<ID3D12QueryHeap> m_queryHeap;
+    ComPtr<ID3D12Resource> m_queryReadback;
+    uint64_t m_timestampFrequency = 0;
+    std::array<uint64_t, kLists> m_timestampFence = {};
     // FSR's inputs: the game frame as RGBA (two, alternating, so the one FSR
     // holds as its previous frame is never overwritten), motion, depth.
     std::array<ComPtr<ID3D12Resource>, 2> m_color;

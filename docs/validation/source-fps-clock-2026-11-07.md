@@ -15,8 +15,9 @@ Fixed 2x must mean 60 -> 120 FPS, not 60 -> 144 FPS on a 144 Hz monitor.
 ## Replacement
 
 `FrameTimeline::nextOutput(now)` reserves the source pair, exact k/N alpha,
-and an absolute output deadline. A high-resolution waitable timer sleeps
-until that deadline. The reservation is not recomputed after capture events
+and an absolute output deadline. GPU work is now prepared/submitted before
+the timer wait, with only `Present(0)` at the deadline. See the follow-up
+[FSR preparation fix](fsr-output-preparation-2026-11-07.md). The reservation is not recomputed after capture events
 or timer wakes. Fractional 100 ns ticks are retained rather than accumulated
 as rounded sleeps: 60 FPS 2x schedules 120 FPS / 8.333333 ms on every monitor.
 

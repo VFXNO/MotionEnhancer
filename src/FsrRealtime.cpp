@@ -77,6 +77,19 @@ bool FsrRealtime::initialize(GraphicsDevice* device, const ComputeKernels* kerne
             error = "camera readback";
             return false;
         }
+    // Optional instrumentation. Read only fence-complete slots, before reuse;
+    // failure to create it must not disable frame generation.
+    D3D12_QUERY_HEAP_DESC query = {};
+    query.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+    query.Count = kLists * 2;
+    if (FAILED(d3d->CreateQueryHeap(&query, IID_PPV_ARGS(&m_queryHeap))) ||
+        FAILED(device->createBuffer(sizeof(uint64_t) * kLists * 2, D3D12_HEAP_TYPE_READBACK,
+                                     D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_FLAG_NONE, m_queryReadback)) ||
+        FAILED(device->presentQueue()->GetTimestampFrequency(&m_timestampFrequency))) {
+        m_queryHeap.Reset();
+        m_queryReadback.Reset();
+        m_timestampFrequency = 0;
+    }
     return true;
 }
 
@@ -91,8 +104,14 @@ bool FsrRealtime::waitFence(uint64_t value) {
 
 bool FsrRealtime::beginList(uint32_t& slot) {
     slot = m_submits % kLists;
-    // Three lists deep: normally long finished.
+    // Three lists deep: normally long finished. Live must not lose an output
+    // deadline by sleeping here behind earlier FSR/GPU work.
+    if (m_nonBlocking && m_fence->GetCompletedValue() < m_allocatorFence[slot]) {
+        ++m_stats.busy;
+        return false;
+    }
     if (!waitFence(m_allocatorFence[slot])) return false;
+    collectGpuTimes();
     if (FAILED(m_allocators[slot]->Reset()) || FAILED(m_list->Reset(m_allocators[slot].Get(), nullptr))) return false;
     m_dispatch.beginRegion(slot);
     return true;
@@ -240,6 +259,7 @@ ID3D12Resource* FsrRealtime::middleFrame(const FlowInput& in0, uint64_t index0, 
         if (!waitFence(m_fenceValue) || !readCamera(slot)) return nullptr;
     }
     if (!beginList(slot)) return nullptr;
+    if (m_queryHeap) m_list->EndQuery(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot * 2);
 
     // FSR makes the frame between the previous frame it was given and this
     // one. When frame0 is that previous frame the sequence continues;
@@ -260,6 +280,14 @@ ID3D12Resource* FsrRealtime::middleFrame(const FlowInput& in0, uint64_t index0, 
     ok = ok && feed(in1, entry.backward.Get(), entry.blockSize, depth1, false, output, frameTimeMs);
     const bool measure = m_cameraMode == CameraMode::FromFlow;
     if (ok && measure) ok = recordCamera(entry.backward.Get(), entry.blockSize, slot);
+    if (ok && m_queryHeap) {
+        D3D12_RESOURCE_BARRIER flush = {};
+        flush.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        m_list->ResourceBarrier(1, &flush);
+        m_list->EndQuery(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot * 2 + 1);
+        m_list->ResolveQueryData(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot * 2, 2,
+                                 m_queryReadback.Get(), static_cast<UINT64>(slot) * 2 * sizeof(uint64_t));
+    }
     if (FAILED(m_list->Close())) ok = false;
     if (!ok) {
         ++m_stats.failures;
@@ -277,7 +305,12 @@ ID3D12Resource* FsrRealtime::middleFrame(const FlowInput& in0, uint64_t index0, 
     ID3D12CommandList* lists[] = {m_list.Get()};
     queue->ExecuteCommandLists(1, lists);
     m_allocatorFence[slot] = ++m_fenceValue;
-    queue->Signal(m_fence.Get(), m_fenceValue);
+    if (FAILED(queue->Signal(m_fence.Get(), m_fenceValue))) {
+        ++m_stats.failures;
+        m_fedIndex = 0;
+        return nullptr;
+    }
+    if (m_queryHeap) m_timestampFence[slot] = m_fenceValue;
     ++m_submits;
     if (measure) {
         m_cameraPendingFence = m_fenceValue;
@@ -291,7 +324,28 @@ ID3D12Resource* FsrRealtime::middleFrame(const FlowInput& in0, uint64_t index0, 
     return m_outputs[m_current].Get();
 }
 
+void FsrRealtime::collectGpuTimes() {
+    if (!m_queryReadback || !m_timestampFrequency) return;
+    const uint64_t completed = m_fence->GetCompletedValue();
+    for (uint32_t slot = 0; slot < kLists; ++slot) {
+        if (!m_timestampFence[slot] || m_timestampFence[slot] > completed) continue;
+        const D3D12_RANGE range = {slot * 2 * sizeof(uint64_t), (slot + 1) * 2 * sizeof(uint64_t)};
+        uint64_t* data = nullptr;
+        if (FAILED(m_queryReadback->Map(0, &range, reinterpret_cast<void**>(&data)))) continue;
+        const uint64_t begin = data[slot * 2], end = data[slot * 2 + 1];
+        const D3D12_RANGE nothing = {0, 0};
+        m_queryReadback->Unmap(0, &nothing);
+        m_timestampFence[slot] = 0;
+        if (end <= begin) continue;
+        const double ms = static_cast<double>(end - begin) * 1000.0 / m_timestampFrequency;
+        ++m_stats.gpuSamples;
+        m_stats.gpuTotalMs += ms;
+        m_stats.gpuMaxMs = std::max(m_stats.gpuMaxMs, ms);
+    }
+}
+
 FsrRealtime::Stats FsrRealtime::takeStats() {
+    collectGpuTimes();
     const Stats s = m_stats;
     m_stats = {};
     return s;

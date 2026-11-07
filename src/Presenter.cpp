@@ -537,22 +537,32 @@ int debugView() {
     return g_debugView.load();
 }
 
-bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
+bool Presenter::prepare(const RenderJob& job, uint64_t& presentFenceValue) {
+    presentFenceValue = 0;
+    if (m_prepared || !job.frame0) return false;
     // Queue capacity is back-pressure only, never a display tick or a reason
     // to replace this selection with a different blend. A slow display can
     // still limit delivery; report that honestly via actual Present times.
-    if (m_latencyWaitable && WaitForSingleObject(m_latencyWaitable, 1000) != WAIT_OBJECT_0) {
+    const int64_t capacityStart = wallClock100ns();
+    const DWORD capacity = m_latencyWaitable ? WaitForSingleObject(m_latencyWaitable, 1000) : WAIT_OBJECT_0;
+    const double capacityMs = static_cast<double>(wallClock100ns() - capacityStart) / 10000.0;
+    m_stats.capacityWaitMs += capacityMs;
+    m_stats.maxCapacityWaitMs = std::max(m_stats.maxCapacityWaitMs, capacityMs);
+    if (capacity != WAIT_OBJECT_0) {
         std::cerr << "Presenter: timed out waiting for swap-chain capacity.\n";
         return false;
     }
-    presentFenceValue = 0;
-    if (!job.frame0) return false;
     const UINT idx = static_cast<UINT>(m_frameCount % kBackBuffers);
     CommandSet& set = m_commands[idx];
     // Three lists deep with latency 1: this wait is normally already
     // satisfied. When it is not, the GPU is more than two refreshes behind
     // and there is nothing useful to do but let it catch up.
-    if (set.fence && !waitFence(set.fence)) return false;
+    const int64_t allocatorStart = wallClock100ns();
+    const bool allocatorReady = !set.fence || waitFence(set.fence);
+    const double allocatorMs = static_cast<double>(wallClock100ns() - allocatorStart) / 10000.0;
+    m_stats.allocatorWaitMs += allocatorMs;
+    m_stats.maxAllocatorWaitMs = std::max(m_stats.maxAllocatorWaitMs, allocatorMs);
+    if (!allocatorReady) return false;
     if (FAILED(set.allocator->Reset()) || FAILED(m_list->Reset(set.allocator.Get(), nullptr))) return false;
     m_dispatch.beginRegion(idx);
 
@@ -612,11 +622,30 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     queue->ExecuteCommandLists(1, lists);
     presentFenceValue = ++m_fenceValue;
     if (FAILED(queue->Signal(m_fence.Get(), presentFenceValue))) return false;
-    if (g_replayRequested.exchange(false)) startReplaySave(presentFenceValue);
     set.fence = presentFenceValue;
     ++m_frameCount;
+    ++m_stats.prepared;
+    m_prepared = true;
+    m_preparedFence = presentFenceValue;
+    return true;
+}
 
+bool Presenter::protectQueuedWork(uint64_t& fenceValue) {
+    fenceValue = ++m_fenceValue;
+    return SUCCEEDED(m_device->presentQueue()->Signal(m_fence.Get(), fenceValue));
+}
+
+bool Presenter::present(int64_t deadline) {
+    if (!m_prepared) return false;
+    const int64_t start = wallClock100ns();
+    if (m_fence->GetCompletedValue() < m_preparedFence) ++m_stats.gpuPendingAtPresent;
+    m_stats.maxDeadlineLateMs = std::max(m_stats.maxDeadlineLateMs,
+                                        static_cast<double>(start - deadline) / 10000.0);
     const HRESULT hr = m_swapChain->Present(0, m_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+    const int64_t now = wallClock100ns();
+    const double callMs = static_cast<double>(now - start) / 10000.0;
+    m_stats.presentCallMs += callMs;
+    m_stats.maxPresentCallMs = std::max(m_stats.maxPresentCallMs, callMs);
     if (FAILED(hr)) {
         std::cerr << "Presenter: Present failed (0x" << std::hex << hr << ", device removed reason 0x"
                   << m_device->device()->GetDeviceRemovedReason() << std::dec << ")\n";
@@ -626,8 +655,9 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         m_lastPresentStatus = hr;
         if (hr != S_OK) std::cerr << "Presenter: Present status 0x" << std::hex << hr << std::dec << "\n";
     }
+    m_prepared = false;
+    if (g_replayRequested.exchange(false)) startReplaySave(m_preparedFence);
     ++m_stats.presented;
-    const int64_t now = wallClock100ns();
     if (m_lastPresentTime != 0) {
         const double delta = static_cast<double>(now - m_lastPresentTime);
         m_intervalSum += delta;

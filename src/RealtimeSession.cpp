@@ -6,6 +6,7 @@
 #include "CaptureEngine.h"
 #include "ComputeKernels.h"
 #include "FrameTimeline.h"
+#include "FrameOutputPlan.h"
 #include "FsrFrameGen.h"
 #include "FsrRealtime.h"
 #include "Image.h"
@@ -366,6 +367,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 std::cerr << "FSR frame generation unavailable: " << fsrError << " (continuing without it)\n";
                 fsr.reset();
             } else {
+                fsr->setNonBlocking(true);
                 fsr->setDepthSpan(options.fsrDepthSpan);
                 // Live the camera never waits for the GPU: the exact mode is
                 // for offline tests, the previous pair's motion is used here.
@@ -405,7 +407,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
                   << (fsr ? "  FSR frame gen:  on (experimental), middle frames within +/- " +
                                 std::to_string(static_cast<int>(options.fsrWindow * 100.0f + 0.5f)) + "% of a pair from the middle" +
                                  "; fixed output uses only the exact midpoint\n" +
-                                 "  FSR cadence:    2x alternates real frames and FSR middles on every monitor\n" +
+                                  "  FSR cadence:    2x alternates real frames and FSR middles on every monitor\n" +
+                                 "  FSR ordering:   real Present first, midpoint prepared before its deadline\n" +
                                 "  FSR provider:   " + fsr->frameGen().selected() + " (offered: " + fsr->frameGen().provider() + ")\n" +
                                 "  FSR DLLs:       " + fsr->frameGen().modules() + "\n" +
                                 "  FSR motion:     the flow engine above (not FSR's own optical flow)\n" +
@@ -443,8 +446,43 @@ int runRealtimeSession(const RealtimeOptions& options) {
         auto statusTime = std::chrono::steady_clock::now();
         double renderCpuMs = 0.0;
         uint64_t renderCount = 0;
+        double fsrCpuMs = 0.0, fsrCpuMaxMs = 0.0;
+        uint64_t fsrSubmits = 0;
+        int preparedViewKey = -1;
+        bool preparedUsesFsr = false;
 
-        auto renderTick = [&](const FrameTimeline::Selection& sel) -> bool {
+        auto generateFsr = [&](const FrameTimeline::Selection& sel, float sourceDeltaMs,
+                               ID3D12Resource*& middle) -> bool {
+            middle = nullptr;
+            if (!fsr || sel.f0.index == sel.f1.index || sel.f1.sceneCut || sel.f1.flowEntry < 0) return true;
+            const FlowEngine::Entry entry = flow.entry(sel.f1.flowEntry);
+            if (!entry.valid) return true;
+            const FlowInput in0 = capture.slotInput(sel.f0.slot);
+            const FlowInput in1 = capture.slotInput(sel.f1.slot);
+            const uint64_t before = fsr->submittedFenceValue();
+            const auto cpu0 = std::chrono::steady_clock::now();
+            middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
+                                       sel.f1.flowFence, sourceDeltaMs, flow.depthFor(in0), flow.depthFor(in1));
+            if (fsr->submittedFenceValue() != before) {
+                const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - cpu0).count();
+                fsrCpuMs += ms;
+                fsrCpuMaxMs = std::max(fsrCpuMaxMs, ms);
+                ++fsrSubmits;
+                // Generation after a real Present is NOT covered by that
+                // frame's earlier fence. Pin both capture slots and the flow
+                // entry through this later signal, even if the midpoint is
+                // skipped/hidden or the source pauses before it is shown.
+                uint64_t readFence = 0;
+                if (!presenter.protectQueuedWork(readFence)) return false;
+                capture.noteSlotPresented(sel.f0.slot, readFence);
+                capture.noteSlotPresented(sel.f1.slot, readFence);
+                flow.noteEntryPresented(sel.f1.flowEntry, readFence);
+            }
+            return true;
+        };
+
+        auto prepareTick = [&](const FrameTimeline::Selection& sel, const FrameOutputPlan& plan,
+                               bool& prepared) -> bool {
             const auto cpu0 = std::chrono::steady_clock::now();
 
             // Same frames, same blend as what is on screen: nothing to do.
@@ -475,6 +513,20 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 job.single = true;
                 mode = sel.hold ? "H" : (sel.startup ? "B" : "S");
                 if (sel.hold) ++holdTicks;
+            } else if (sel.alpha <= 0.0f || sel.alpha >= 1.0f) {
+                // A real frame reads only its own capture texture. In
+                // particular it must not wait for the future frame, flow,
+                // or FSR merely to retain them in the replay buffer.
+                const bool second = sel.alpha >= 1.0f;
+                job.frame0 = second ? in1.texture : in0.texture;
+                job.ready0 = second ? in1.readyValue : in0.readyValue;
+                job.depth0 = second ? job.depth1 : job.depth0;
+                job.frame1 = nullptr;
+                job.ready1 = 0;
+                job.depth1 = nullptr;
+                job.alpha = 0.0f;
+                job.single = true;
+                mode = "R";
             } else if (sel.f1.sceneCut || sel.f1.flowEntry < 0) {
                 job.single = true;   // hard switch across a cut
                 mode = "C";
@@ -497,30 +549,19 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.flowFenceValue = sel.f1.flowFence;
                     mode = "I";
                     if (!flow.fenceReached(sel.f1.flowFence)) {
-                        // The GPU waits for the flow; the CPU never stalls.
-                        // Count it, without stretching the FPS clock or
-                        // automatically growing the buffering delay.
+                        // Early preparation can legitimately precede flow
+                        // completion. Count starvation only at the deadline.
                         mode = "W";
-                        ++starvationTicks;
-                        if (starvedPairIndex != sel.f1.index) {
-                            starvedPairIndex = sel.f1.index;
-                            timeline.reportStarvation();
-                        }
                     }
                 }
             }
-            // Experimental FSR, beside the normal path (off unless --fsr-fg):
-            // every interpolated pair is given to FSR so its sequence stays
-            // continuous, and its middle frame is shown instead of the normal
-            // interpolation only where its midpoint matches the output.
-            if (fsr && !job.single && entry.valid) {
-                const float periodMs = sel.f1.arrival > sel.f0.arrival
-                    ? static_cast<float>(sel.f1.arrival - sel.f0.arrival) / 10000.0f : 1000.0f / 60.0f;
-                // The frames' AI depth where complete (job.depth0/1, never
-                // a wait); FSR gets the flat depth for a frame without it.
-                ID3D12Resource* middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
-                                                          sel.f1.flowFence, periodMs, job.depth0, job.depth1);
-                if (middle && sel.canUseMidpoint(options.fsrWindow)) {
+            // Usually cached from AFTER the real frame's Present. If the
+            // scheduler skipped that output, generate now during early
+            // preparation, never for the first time at the midpoint deadline.
+            if (fsr && !job.single && entry.valid && plan.fsrBeforePresent) {
+                ID3D12Resource* middle = nullptr;
+                if (!generateFsr(sel, plan.sourceDeltaMs, middle)) return false;
+                if (middle) {
                     // Shown as a finished frame: FSR's list, submitted on
                     // the same queue just before, already waited for the
                     // capture copies and the flow.
@@ -532,25 +573,16 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.single = true;
                     job.alpha = 0.0f;
                     mode = "F";
-                    ++fsrShown;
                 }
             }
-            // Each k=0 output is the captured frame itself, not a warp.
-            // After the FSR call so FSR still sees every available pair.
-            if (!job.single && (job.alpha <= 0.0f || job.alpha >= 1.0f)) {
-                job.single = true;
-                mode = "R";
-            }
-
             uint64_t presentFence = 0;
-            if (!presenter.render(job, presentFence)) {
-                std::cerr << "Error: presentation failed.\n";
+            if (!presenter.prepare(job, presentFence)) {
+                std::cerr << "Error: output preparation failed.\n";
                 return false;
             }
-            lastKeyF0 = sel.f0.index;
-            lastKeyF1 = sel.f1.index;
-            lastKeyAlpha = alphaKey;
-            lastKeyDebugView = viewKey;
+            prepared = true;
+            preparedViewKey = viewKey;
+            preparedUsesFsr = mode[0] == 'F';
             capture.noteSlotPresented(sel.f0.slot, presentFence);
             capture.noteSlotPresented(sel.f1.slot, presentFence);
             if (entry.valid) flow.noteEntryPresented(sel.f1.flowEntry, presentFence);
@@ -559,9 +591,10 @@ int runRealtimeSession(const RealtimeOptions& options) {
             ++renderCount;
             if (outputLog) {
                 std::ostringstream line;
-                line << "[Output] " << mode << " deadline=" << sel.presentTime / 10 << "us media=" << sel.mediaTime / 10
+                line << "[Prepare] " << mode << " deadline=" << sel.presentTime / 10 << "us media=" << sel.mediaTime / 10
                      << "us pair=" << sel.f0.index << "/" << sel.f1.index
-                     << " alpha=" << std::fixed << std::setprecision(3) << sel.alpha << "\n";
+                     << " alpha=" << std::fixed << std::setprecision(3) << sel.alpha
+                     << " ahead=" << (sel.presentTime - wallClock100ns()) / 10000.0 << "ms\n";
                 log.write(line.str());
             }
             return true;
@@ -573,6 +606,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
                                                     CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
         if (!outputTimer) outputTimer = CreateWaitableTimerExW(nullptr, nullptr, 0, TIMER_ALL_ACCESS);
         FrameTimeline::Selection pending;
+        FrameOutputPlan pendingPlan;
+        bool outputPrepared = false;
         while (true) {
             if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
             if (!overlay.processMessages()) break;
@@ -584,6 +619,16 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 // could stay full forever while we wait for fresh input.
                 if (pending.retireBeforeIndex)
                     capture.releaseSlots(timeline.retireBefore(pending.retireBeforeIndex));
+                pendingPlan = FrameOutputPlan::make(pending, options.outputMultiplier, options.fsrWindow,
+                                                     timeline.sourcePeriod());
+            }
+            // All GPU recording/submission and queue-capacity waits happen
+            // before the timer wait. The timed step below is only Present.
+            if (pending.valid && !outputPrepared && IsWindowVisible(overlay.hwnd)) {
+                if (!prepareTick(pending, pendingPlan, outputPrepared)) {
+                    exitCode = 1;
+                    break;
+                }
             }
             const int64_t remaining = std::min<int64_t>(pending.presentTime - wallClock100ns(), 500000);
             if (remaining > 0) {
@@ -601,14 +646,44 @@ int runRealtimeSession(const RealtimeOptions& options) {
             }
             if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
             if (pending.valid && wallClock100ns() >= pending.presentTime) {
-                if (!IsWindowVisible(overlay.hwnd)) {
+                if (outputPrepared) {
+                    if (pending.alpha > 0.0f && pending.alpha < 1.0f &&
+                        pending.f0.index != pending.f1.index && !pending.f1.sceneCut &&
+                        pending.f1.flowEntry >= 0 && !flow.fenceReached(pending.f1.flowFence)) {
+                        ++starvationTicks;
+                        if (starvedPairIndex != pending.f1.index) {
+                            starvedPairIndex = pending.f1.index;
+                            timeline.reportStarvation();
+                        }
+                    }
+                    // Even if hidden during the timer wait, complete this
+                    // Present: prepare acquired a DXGI capacity token.
+                    if (!presenter.present(pending.presentTime)) {
+                        std::cerr << "Error: presentation failed.\n";
+                        exitCode = 1;
+                        break;
+                    }
+                    lastKeyF0 = pending.f0.index;
+                    lastKeyF1 = pending.f1.index;
+                    lastKeyAlpha = static_cast<int>(pending.alpha * 4096.0f);
+                    lastKeyDebugView = preparedViewKey;
+                    if (preparedUsesFsr) ++fsrShown;
+                    // Queue order is essential: Present(real) must already
+                    // precede generation. Queuing FSR before it would delay
+                    // the flip even if the real frame's GPU copy was ready.
+                    if (pendingPlan.fsrAfterPresent && IsWindowVisible(overlay.hwnd)) {
+                        ID3D12Resource* middle = nullptr;
+                        if (!generateFsr(pending, pendingPlan.sourceDeltaMs, middle)) {
+                            exitCode = 1;
+                            break;
+                        }
+                    }
+                } else if (!IsWindowVisible(overlay.hwnd)) {
                     // Keep consuming and retiring source frames while hidden
                     // so capture cannot fill up and resume with a stale pair.
                     lastKeyAlpha = -1;   // present again as soon as it is shown
-                } else if (!renderTick(pending)) {
-                    exitCode = 1;
-                    break;
                 }
+                outputPrepared = false;
                 pending = {};
             }
 
@@ -623,7 +698,13 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << static_cast<double>(ps.presented) / elapsed << " fps"
                           << " | present " << std::setprecision(2) << ps.meanIntervalMs << " ms avg, "
                           << ps.maxIntervalMs << " ms max"
-                          << " | cpu " << (renderCount ? renderCpuMs / static_cast<double>(renderCount) : 0.0) << " ms"
+                          << " | prep cpu " << (renderCount ? renderCpuMs / static_cast<double>(renderCount) : 0.0) << " ms"
+                          << " | capacity " << (ps.prepared ? ps.capacityWaitMs / ps.prepared : 0.0)
+                          << "/" << ps.maxCapacityWaitMs << " ms avg/max"
+                          << " alloc " << ps.maxAllocatorWaitMs << " ms max"
+                          << " Present call " << (ps.presented ? ps.presentCallMs / ps.presented : 0.0)
+                           << "/" << ps.maxPresentCallMs << " ms avg/max"
+                           << " gpu pending " << ps.gpuPendingAtPresent << " late " << ps.maxDeadlineLateMs << " ms max"
                           << " | source " << std::setprecision(1) << (ts.sourcePeriodMs > 0 ? 1000.0 / ts.sourcePeriodMs : 0.0)
                           << " fps" << (ts.cadenceLocked ? "" : " (unlocked)")
                           << " | budget " << ts.latencyBudgetMs << " ms, offset " << ts.captureOffsetMs << " ms"
@@ -641,8 +722,12 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 if (fsr) {
                     const FsrRealtime::Stats fs = fsr->takeStats();
                     status << " | fsr made " << fs.generated << " depth " << fs.aiDepth << " shown " << fsrShown
-                           << " reset " << fs.resets
-                           << " fail " << fs.failures;
+                            << " reset " << fs.resets
+                            << " fail " << fs.failures << " busy " << fs.busy
+                            << " gpu " << (fs.gpuSamples ? fs.gpuTotalMs / fs.gpuSamples : 0.0)
+                            << "/" << fs.gpuMaxMs << " ms avg/max (" << fs.gpuSamples << " samples)"
+                            << " submit cpu " << (fsrSubmits ? fsrCpuMs / fsrSubmits : 0.0)
+                            << "/" << fsrCpuMaxMs << " ms avg/max";
                     fsrShown = 0;
                 }
                 status << "\n";
@@ -661,6 +746,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 statusTime = now;
                 renderCpuMs = 0.0;
                 renderCount = 0;
+                fsrCpuMs = fsrCpuMaxMs = 0.0;
+                fsrSubmits = 0;
                 starvationTicks = 0;
                 holdTicks = 0;
                 idleTicks = 0;
