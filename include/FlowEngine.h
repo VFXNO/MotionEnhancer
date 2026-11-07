@@ -329,6 +329,12 @@ private:
     // and reopens it on the same allocator: work queued on the flow queue in
     // between - the AI network - runs after the first part, before the rest.
     bool splitList(const FlowInput& previous, const FlowInput& current);
+    // A recorded pyramid is marked as holding its frame when it is recorded,
+    // not when it runs: every list that is discarded instead of submitted
+    // must forget those marks, or later pairs would reuse an unbuilt pyramid.
+    void invalidatePyramids() {
+        for (Pyramid& pyramid : m_pyramids) pyramid.id = UINT64_MAX;
+    }
     void releaseAiBuffers();
     bool recordFlowMedian(Entry& out, bool wide = false);
     void readTimestamps(UINT set);
@@ -365,6 +371,12 @@ private:
     std::unique_ptr<UiDetector> m_uiDetector; // FlowSettings::aiUiRegions
     std::unique_ptr<AiFlowEstimator> m_aiFlow;   // FlowSettings::aiFlow
     bool m_aiIntegrated = false;   // Selected graph; immutable for this initialized session.
+    // A pair the AI engine could not make is made by DIS instead. After
+    // kAiMaxFailures in a row the network is not tried again this session
+    // (as FFX stops after a failed dispatch).
+    static constexpr int kAiMaxFailures = 3;
+    int m_aiFailures = 0;
+    bool m_aiDisabled = false;
     ComPtr<ID3D12Resource> m_aiPlanar;    // network input, planar, W x 6H R32 (AiFlowInputCS)
     ComPtr<ID3D12Resource> m_aiInput;     // ... as the network's input buffer
     ComPtr<ID3D12Resource> m_aiFlowOut;   // network outputs (buffers)

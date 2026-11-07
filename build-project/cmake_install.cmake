@@ -67,7 +67,6 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FsrMotionCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FsrDepthCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FsrCameraCS.cso"
-    "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/FsrScaledMotionCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthInputCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthFinishCS.cso"
     "C:/Users/bsher/Documents/GitHub/MotionEnhancer2/build-project/shaders/DepthViewCS.cso"

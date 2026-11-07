@@ -20,13 +20,12 @@ struct TimelineFrame {
     bool     sceneCut = false; // pair (previous, this) is a hard cut
 };
 
-// Ordered source frames plus the clocks that map them onto display refreshes.
+// Ordered source frames and a simple source-rate output clock.
 //
 // Producer side (capture thread): classifies each new frame against the
 // source cadence, regularizes timestamps, appends frames.
-// Consumer side (render thread): for a predicted display time returns the
-// bracketing pair and blend factor, and adapts the latency budget from the
-// observed starvation/slack.
+// Consumer side: emits positions k/N at source FPS x N, without compositor
+// ticks, refresh holds, phase locking, resampling, or adaptive media clocks.
 class FrameTimeline {
 public:
     // What the producer must do with a newly arrived (non-duplicate) frame.
@@ -46,7 +45,18 @@ public:
         float alpha = 0.0f;
         bool hold = false;       // media time is beyond the newest frame
         bool startup = false;    // media time is before the first frame
+        bool fixedCadence = true;
+        int64_t presentTime = 0;  // output deadline; retry time when !valid
         int64_t mediaTime = 0;
+        uint64_t retireBeforeIndex = 0; // release stale input even when no output is valid
+
+        // FSR makes only t=0.5. Never replace a real frame or a different
+        // fixed k/N position with that cached image, even with a wide window.
+        bool canUseMidpoint(float window) const {
+            const float distance = alpha >= 0.5f ? alpha - 0.5f : 0.5f - alpha;
+            return alpha > 0.0f && alpha < 1.0f && distance <= window &&
+                   (!fixedCadence || alpha == 0.5f);
+        }
     };
 
     struct Stats {
@@ -58,25 +68,21 @@ public:
         uint64_t deferred = 0;
         uint64_t dropped = 0;
         uint64_t replaced = 0;
+        uint64_t missedOutputs = 0; // late CPU/GPU work, never catch-up bursts
         size_t frames = 0;
     };
 
     void configure(uint32_t sourceFpsOverride, double refreshHz, uint32_t outputMultiplier);
-    // The latency budget's limits (call before configure): minExtraMs is the
-    // margin above the least possible budget (one source period + one
-    // refresh; default 4 ms), maxMs caps how far starvation may grow it
-    // (<= 0: three periods + 60 ms, the default).
+    // Fixed buffering limits (call before configure). The default budget is
+    // two source periods + 10 ms, independent of display Hz. minExtraMs is
+    // the minimum margin above one period; maxMs caps it (<= 0: automatic).
     void setLatencyLimits(double minExtraMs, double maxMs);
-    // Vsync off: the timeline decides when frames are shown. With an output
-    // multiplier N, nextPresentTime() returns the wall-clock time of the next
-    // position k/N of a pair (each position once, in order) and select() snaps
-    // to it exactly; without one, one frame per display refresh on its own
-    // clock. Off (the default): select() is driven by the display's vsync.
-    // position (optional) is set false when the returned time is only when
-    // to ask again (the frames for the next position have not arrived): no
-    // frame is to be shown then.
-    void setFreePacing(bool on);
-    int64_t nextPresentTime(int64_t now, bool* position = nullptr);
+    // Reserves the next output, including its exact frames and alpha. Keep
+    // this selection until its presentTime; do not re-select after waiting.
+    // Fixed N always emits k/N at source FPS x N, on every monitor. Only Max
+    // (N=0) chooses its output FPS from refreshHz. Missing input returns an
+    // invalid selection and a retry time, not another copy of the last frame.
+    Selection nextOutput(int64_t now);
 
     // ---- producer -------------------------------------------------------
     IngestPlan onFrameArrived(int64_t tsRaw, int64_t arrival);
@@ -91,14 +97,11 @@ public:
     void push(TimelineFrame& frame);
 
     // ---- consumer -------------------------------------------------------
-    Selection select(int64_t displayWallTime);
     // Frames older than the given index are no longer needed for display.
     // Returns their slots so the capture ring can recycle them.
     std::vector<int> retireBefore(uint64_t frameIndex);
-    // A pair was needed but its flow was not finished: the budget grows.
+    // Diagnostic only: no automatic latency or output-rate adjustment.
     void reportStarvation();
-    // How early a pair became usable relative to its first use.
-    void reportSlack(int64_t slack);
 
     Stats stats() const;
     int64_t sourcePeriod() const;
@@ -113,6 +116,9 @@ private:
     int64_t regularize(int64_t tsRaw);
     void applyBudgetLimits();
     bool onGrid(int64_t delta) const;
+    // How far from the cadence grid a real frame may land: a frame that
+    // reached the screen one refresh late is still a frame, not a repaint.
+    int64_t phaseTolerance() const;
 
     mutable std::mutex m_mutex;
     std::deque<TimelineFrame> m_frames;
@@ -124,6 +130,8 @@ private:
     int64_t m_period = 333333;       // 30 fps until measured
     bool m_periodMeasured = false;   // m_period is a measurement (or the override)
     bool m_locked = false;
+    int m_outliers = 0;              // consecutive timestamps off the regularized clock (same side)
+    int m_outlierSign = 0;
     int64_t m_lastArrivalTsRaw = 0;  // newest non-duplicate arrival (any decision)
     int64_t m_lastAcceptedTsRaw = 0;
     int64_t m_lastAcceptedTs = 0;
@@ -134,7 +142,8 @@ private:
     int64_t m_deferredArrival = 0;
 
     // clocks
-    int64_t m_refreshInterval = 166667;
+    int64_t m_captureTimestampQuantum = 166667; // WGC timestamp noise, not the output clock
+    double m_maxOutputPeriod = 166666.6666667;  // only Max uses display Hz
     uint32_t m_outputMultiplier = 0;
     int64_t m_captureOffset = 0;     // arrival - tsRaw (running minimum, slow rise)
     bool m_captureOffsetValid = false;
@@ -143,13 +152,9 @@ private:
     int64_t m_maxLatencyBudget = 0;
     int64_t m_minLatencyExtra = 40000;   // setLatencyLimits: 4 ms
     int64_t m_maxLatencyOverride = 0;    // setLatencyLimits: 0 = three periods + 60 ms
-    bool m_freePacing = false;           // setFreePacing
-    int64_t m_lastScheduledMedia = INT64_MIN;   // nextPresentTime: the last position given out
-    int64_t m_lastScheduled = 0;                // nextPresentTime without a multiplier
-    int64_t m_minSlack = INT64_MAX;
-    int64_t m_lastBudgetReview = 0;
-    int64_t m_holdSince = 0;         // media time when the current hold began, 0 if not holding
-    bool m_holdPending = false;      // a hold happened and no frame has arrived since
+    double m_nextOutputTime = 0.0;  // steady deadline, not re-anchored to each wake-up
+    uint64_t m_outputFrameIndex = 0;
+    uint32_t m_outputPosition = 0;   // next k/N within that frame's pair
     uint64_t m_currentF1Index = 0;
 
     Stats m_stats;

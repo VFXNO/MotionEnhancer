@@ -73,9 +73,6 @@
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FsrRealtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\FsrUpscaler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\src\UiMatrixDetector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

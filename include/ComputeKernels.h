@@ -42,7 +42,6 @@ enum class Kernel : int {
     FsrMotion,
     FsrDepth,
     FsrCamera,
-    FsrScaledMotion,
     Count
 };
 

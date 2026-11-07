@@ -13,15 +13,16 @@
 // beside the program's own interpolation in the live overlay. Nothing of the
 // normal path is replaced: when this is on, each new pair of game frames is
 // also given to FSR (FsrFrameGen) with that pair's optical flow as motion
-// vectors, and the frame FSR makes halfway between them is shown on refreshes
-// whose blend position is close to the middle. Every other refresh, and every
+// vectors, and the frame FSR makes halfway between them is shown on outputs
+// whose blend position is close to the middle (exactly 0.5 for a fixed
+// multiplier). Every other output, and every
 // pair FSR cannot take (scene cuts, pairs without flow), is drawn by the
 // normal interpolation exactly as without FSR.
 //
 // FSR 4.0.2 makes only the middle frame (it accepts more outputs but leaves
 // them empty), so FSR covers every generated frame only at 2x output
-// (--multiplier 2); at the display rate it covers the refreshes near the
-// middle of each pair.
+// (--multiplier 2), regardless of monitor Hz. Other fixed multipliers use
+// native interpolation wherever the requested time is not exactly 0.5.
 //
 // All work is recorded into this class's own command list and submitted on
 // the present queue before the presenter's list, so the presenter sees the

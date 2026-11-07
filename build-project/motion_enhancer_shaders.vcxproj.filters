@@ -67,9 +67,6 @@
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\FsrMotionCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\FsrScaledMotionCS.cso.rule">
-      <Filter>CMake Rules</Filter>
-    </CustomBuild>
     <CustomBuild Include="C:\Users\bsher\Documents\GitHub\MotionEnhancer2\build-project\CMakeFiles\f8d35534fd89923cd61d6a880789ff95\InterpolateCS.cso.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>

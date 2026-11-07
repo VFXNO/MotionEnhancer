@@ -22,11 +22,10 @@ struct RealtimeOptions {
     std::string stopEventName;          // optional GUI-owned graceful stop event
     FlowSettings flow;
     uint32_t sourceFps = 0;          // 0 = auto-detect cadence
-    uint32_t outputMultiplier = 0;   // 0 = every display refresh
+    uint32_t outputMultiplier = 0;   // exact source-rate multiplier; 0 = Max (display-rate FPS)
     GraphicsAdapterPreference adapter = GraphicsAdapterPreference::Auto;
-    // Queues (defaults = the behaviour before they were adjustable):
-    // latency budget margin above its least possible value (one source
-    // period + one refresh) and its cap (<= 0: three periods + 60 ms)
+    // Fixed buffering: margin above one source period and its cap
+    // (<= 0: three periods + 60 ms). Default budget: two periods + 10 ms.
     // (FrameTimeline::setLatencyLimits); frames the swap chain may hold
     // (Presenter, 1-2); captured frames that may wait for the producer
     // (CaptureEngine::setCaptureQueue, 2-8).
@@ -34,27 +33,14 @@ struct RealtimeOptions {
     double latencyMaxMs = 0.0;
     int frameLatency = 1;
     int captureQueue = 4;
-    // Vsync off (--vsync off): frames are presented at once, tearing allowed
-    // where supported, at the times the frame timeline chooses
-    // (FrameTimeline::setFreePacing): each position k/N of a pair with an
-    // output multiplier, otherwise one per refresh interval. Only an overlay
-    // the system shows by independent flip can tear or follow FreeSync; a
-    // composed one is still shown at the display's refresh (the status line
-    // says which).
+    // Legacy --vsync switch now controls tearing only: false allows it.
+    // Output always uses the FPS clock and Present(0), never vsync waits.
+    // Actual even scanout still needs a compatible display mode or working
+    // VRR / independent flip; composed windows remain subject to DWM.
     bool vsync = true;
-    // Experimental scaling (--upscale fsr4): the overlay covers the monitor
-    // the game window is on and every frame, made at the game window's size
-    // as without it, is upscaled to the monitor's resolution by AMD FSR
-    // upscaling (Presenter). Mouse clicks still reach the game window where
-    // it really is.
-    bool upscale = false;
-    // FSR's sharpening of the upscaled frames (--upscale-sharpness, 0-1;
-    // 0 = off). Offline at 2x, 0.3 raised the sharpness from 0.71 to 0.77 of
-    // native at the same PSNR.
-    float upscaleSharpness = 0.0f;
     // Experimental, beside the normal interpolation (FsrRealtime): AMD FSR
-    // frame generation's middle frame is shown on refreshes whose blend
-    // position is within fsrWindow of 0.5; everything else is unchanged.
+    // frame generation's middle frame is used within fsrWindow of 0.5.
+    // Fixed multipliers require exactly 0.5; real frames are never replaced.
     bool fsrFrameGen = false;
     float fsrWindow = 0.1f;
     // How far the frames' AI depth (FlowSettings::aiDepth) spreads FSR's
@@ -113,12 +99,6 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
                        GraphicsAdapterPreference adapter, float depthSpan = 0.0f,
                        const std::string& saveFolder = std::string(),
                        const FsrCameraSettings& camera = FsrCameraSettings());
-// Experimental: FSR upscaling of low-resolution frames (in order) to
-// displayWidth x displayHeight with this program's flow (FsrUpscaler);
-// writes <outputFolder>/fsr_up_<i>.png.
-int runFsrUpscaleTest(const std::vector<std::string>& framePaths, uint32_t displayWidth, uint32_t displayHeight,
-                      const std::string& outputFolder, const FlowSettings& settings, GraphicsAdapterPreference adapter,
-                      float depthSpan, float sharpness);
 // Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
 // the GPU: input and outputs in D3D12 buffers, one fence wait per run.
 int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);

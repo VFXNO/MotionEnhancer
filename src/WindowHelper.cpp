@@ -215,15 +215,6 @@ bool OverlayWindow::create(HWND target, const std::string& windowTitle) {
 
     POINT pt = { clientRect.left, clientRect.top };
     ClientToScreen(targetHwnd, &pt);
-    if (coverMonitor) {
-        // Scaling: the whole monitor the target is on.
-        MONITORINFO monitor = {sizeof(MONITORINFO)};
-        if (GetMonitorInfoA(MonitorFromWindow(targetHwnd, MONITOR_DEFAULTTONEAREST), &monitor)) {
-            pt = {monitor.rcMonitor.left, monitor.rcMonitor.top};
-            width = monitor.rcMonitor.right - monitor.rcMonitor.left;
-            height = monitor.rcMonitor.bottom - monitor.rcMonitor.top;
-        }
-    }
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
     const char* className = "MotionEnhancerOverlayClass";
@@ -308,16 +299,6 @@ void OverlayWindow::updateTracking() {
 
     int newW = clientRect.right - clientRect.left;
     int newH = clientRect.bottom - clientRect.top;
-    if (coverMonitor) {
-        // Scaling: stays on the whole monitor; the swap chain keeps the size
-        // it was made with, so only the position may follow (a move to
-        // another monitor of a different size is not followed).
-        MONITORINFO monitor = {sizeof(MONITORINFO)};
-        if (!GetMonitorInfoA(MonitorFromWindow(targetHwnd, MONITOR_DEFAULTTONEAREST), &monitor)) return;
-        pt = {monitor.rcMonitor.left, monitor.rcMonitor.top};
-        newW = static_cast<int>(width);
-        newH = static_cast<int>(height);
-    }
 
     if (newW > 0 && newH > 0 && (newW != (int)width || newH != (int)height || pt.x != posX || pt.y != posY)) {
         SetWindowPos(

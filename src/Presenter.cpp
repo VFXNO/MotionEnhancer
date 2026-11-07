@@ -2,6 +2,7 @@
 
 #include "CaptureEngine.h"
 #include "Image.h"
+#include "WallClock.h"
 #include "stb_image_write.h"
 
 #include <algorithm>
@@ -49,12 +50,10 @@ Presenter::~Presenter() {
     }
     if (m_latencyWaitable) CloseHandle(m_latencyWaitable);
     if (m_fenceEvent) CloseHandle(m_fenceEvent);
-    if (m_dcomp) FreeLibrary(m_dcomp);
 }
 
 bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                           uint32_t width, uint32_t height, UINT maxFrameLatency, bool vsyncOff,
-                           uint32_t displayWidth, uint32_t displayHeight) {
+                           uint32_t width, uint32_t height, UINT maxFrameLatency, bool allowTearing) {
     m_device = device;
     m_kernels = kernels;
     m_window = window;
@@ -62,33 +61,12 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     m_height = height;
     ID3D12Device* d3d = device->device();
 
-    // Experimental FSR upscaling to a display size of its own: frames are
-    // still made at width x height, then upscaled (recordUpscale).
-    const bool upscale = displayWidth && displayHeight && (displayWidth != width || displayHeight != height);
-    m_displayWidth = upscale ? displayWidth : width;
-    m_displayHeight = upscale ? displayHeight : height;
-    if (upscale) {
-        m_upscaler = std::make_unique<FsrUpscaler>();
-        const D3D12_RESOURCE_FLAGS uav = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-        if (!m_upscaler->initialize(d3d, width, height, displayWidth, displayHeight, upscaleError) ||
-            FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R16G16_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON,
-                                           m_upscaleMotion, L"UpscaleMotion")) ||
-            FAILED(device->createTexture2D(width, height, DXGI_FORMAT_R32_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON,
-                                           m_upscaleDepth, L"UpscaleDepth")) ||
-            FAILED(device->createTexture2D(displayWidth, displayHeight, DXGI_FORMAT_R8G8B8A8_UNORM, uav,
-                                           D3D12_RESOURCE_STATE_COMMON, m_upscaled, L"UpscaledOutput"))) {
-            if (upscaleError.empty()) upscaleError = "FSR upscaling resources";
-            m_upscaler.reset();
-            return false;
-        }
-    }
-
     ComPtr<IDXGIFactory2> factory;
     if (FAILED(device->adapter()->GetParent(IID_PPV_ARGS(&factory)))) return false;
 
     DXGI_SWAP_CHAIN_DESC1 desc = {};
-    desc.Width = m_displayWidth;
-    desc.Height = m_displayHeight;
+    desc.Width = m_width;
+    desc.Height = m_height;
     // RGBA8 typed UAV support is guaranteed; the compute output is copied
     // into the back buffer.
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -98,9 +76,9 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
     desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
-    // Vsync off: tearing must be allowed on the swap chain itself, and only
+    // Tearing must be allowed on the swap chain itself, and only
     // where the system supports it (Windows 10 1809+, a capable driver).
-    if (vsyncOff) {
+    if (allowTearing) {
         ComPtr<IDXGIFactory5> factory5;
         BOOL allowTearing = FALSE;
         if (SUCCEEDED(factory.As(&factory5)) &&
@@ -113,7 +91,6 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
             std::cerr << "Presenter: tearing not supported here; presenting without waiting for vsync anyway.\n";
         }
     }
-    m_vsyncOff = vsyncOff;
     ComPtr<IDXGISwapChain1> swapChain1;
     HRESULT hr = factory->CreateSwapChainForHwnd(device->presentQueue(), window, &desc, nullptr, nullptr,
                                                  swapChain1.GetAddressOf());
@@ -166,35 +143,7 @@ bool Presenter::initialize(GraphicsDevice* device, const ComputeKernels* kernels
     if (!m_dispatch.initialize(d3d, kBackBuffers, 64, 16)) return false;
 
     m_refreshHz = queryRefreshRate(window);
-    m_refreshInterval = static_cast<int64_t>(10000000.0 / m_refreshHz + 0.5);
-    m_intervalEstimate = static_cast<double>(m_refreshInterval);
-
-    // The compositor clock is the one true vsync for a composed window. The
-    // frame-latency waitable object of a layered overlay was observed to
-    // signal between refreshes, so it is only used as back-pressure.
-    m_dcomp = LoadLibraryW(L"dcomp.dll");
-    if (m_dcomp) {
-        m_compositorWait = reinterpret_cast<CompositorClockWait>(
-            GetProcAddress(m_dcomp, "DCompositionWaitForCompositorClock"));
-    }
-    if (!m_compositorWait) {
-        std::cerr << "Presenter: compositor clock unavailable; pacing on the swap chain only.\n";
-    }
     return true;
-}
-
-DWORD Presenter::waitForVsync(DWORD count, const HANDLE* handles, DWORD timeoutMs) {
-    if (m_compositorWait) {
-        const DWORD r = m_compositorWait(count, handles, timeoutMs);
-        if (r < WAIT_OBJECT_0 + count + 1 || r == WAIT_TIMEOUT) return r;
-        // The compositor clock is unavailable while nothing is being
-        // composed (STATUS_GRAPHICS_PRESENT_OCCLUDED on an idle desktop,
-        // including before our own first present). Pace ourselves until
-        // it comes back: the caller treats WAIT_TIMEOUT as a tick.
-        ++m_clockFallbacks;
-    }
-    const DWORD r = WaitForMultipleObjects(count, handles, FALSE, timeoutMs);
-    return r;
 }
 
 bool Presenter::waitFence(uint64_t value) {
@@ -208,55 +157,6 @@ bool Presenter::waitFence(uint64_t value) {
     return true;
 }
 
-std::string Presenter::upscaler() const {
-    return m_upscaler ? m_upscaler->selected() : std::string();
-}
-
-// FSR upscaling of m_output (width x height) into m_upscaled (the display
-// size): this frame's motion is the pair's backward field scaled by the
-// share of the pair since the previous presented frame (FsrScaledMotionCS),
-// the depth one flat surface (no AI depth: it made no measured difference).
-bool Presenter::recordUpscale(const RenderJob& job) {
-    ShaderConstants c = {};
-    c.width = c.levelWidth = m_width;
-    c.height = c.levelHeight = m_height;
-    c.blockSize = c.parentBlockSize = static_cast<int32_t>(job.flowBlockSize);
-    c.timeT = job.backwardFlow ? job.upscaleMotion : 0.0f;
-    c.flowScale = 0.5f;
-    const std::array<ID3D12Resource*, 6> flow = {job.backwardFlow, nullptr, nullptr, nullptr, nullptr, nullptr};
-    const std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-    const UINT gx = (m_width + 15) / 16, gy = (m_height + 15) / 16;
-    if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FsrScaledMotion, flow, m_upscaleMotion.Get(), c, gx, gy))
-        return false;
-    ShaderConstants dc = c;
-    dc.timeT = 0.0f;   // FsrDepthCS: flat
-    if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FsrDepth, none, m_upscaleDepth.Get(), dc, gx, gy))
-        return false;
-    std::string error;
-    if (!m_upscaler->upscale(m_list.Get(), m_output.Get(), m_upscaleMotion.Get(), m_upscaleDepth.Get(), m_upscaled.Get(),
-                             job.upscaleReset, static_cast<float>(m_refreshInterval) / 10000.0f, m_upscaleSharpness,
-                             error)) {
-        static bool reported = false;
-        if (!reported) {
-            reported = true;
-            std::cerr << "Presenter: " << error << "\n";
-        }
-        return false;
-    }
-    return true;
-}
-
-void Presenter::noteWake(int64_t wake) {
-    if (m_lastWake != 0) {
-        const double delta = static_cast<double>(wake - m_lastWake);
-        m_intervalSum += delta;
-        ++m_intervalCount;
-        m_stats.maxIntervalMs = std::max(m_stats.maxIntervalMs, delta / 10000.0);
-        if (delta > 1.5 * static_cast<double>(m_refreshInterval)) ++m_stats.lateFrames;
-    }
-    m_lastWake = wake;
-}
-
 const char* Presenter::presentationMode() const {
     ComPtr<IDXGISwapChainMedia> media;
     DXGI_FRAME_STATISTICS_MEDIA stats = {};
@@ -268,35 +168,6 @@ const char* Presenter::presentationMode() const {
         case DXGI_FRAME_PRESENTATION_MODE_NONE: return "independent flip";
         default: return "unknown";
     }
-}
-
-int64_t Presenter::beginFrame(int64_t wake) {
-    const double nominal = static_cast<double>(m_refreshInterval);
-    noteWake(wake);
-
-    // The frame rendered after this wake-up is scanned out at the next
-    // vsync; the exact lead only shifts latency, but the *spacing* between
-    // predictions must be one refresh. Lock a clock to the wake cadence and
-    // resync only on a genuine missed refresh.
-    const int64_t measured = wake + m_refreshInterval;
-    if (m_lastPredicted == 0) {
-        m_lastPredicted = measured;
-        return measured;
-    }
-    int64_t predicted = m_lastPredicted + static_cast<int64_t>(m_intervalEstimate + 0.5);
-    const int64_t err = measured - predicted;
-    if (std::llabs(err) > static_cast<int64_t>(m_intervalEstimate * 0.5)) {
-        predicted = measured;
-        ++m_stats.resyncs;
-    } else {
-        predicted += err / 8;
-        // Frequency correction: follows the true refresh (e.g. 143.98 Hz
-        // vs. the reported 144) without ever drifting a whole frame.
-        m_intervalEstimate += static_cast<double>(err) / 64.0;
-        m_intervalEstimate = std::clamp(m_intervalEstimate, nominal * 0.97, nominal * 1.03);
-    }
-    m_lastPredicted = predicted;
-    return predicted;
 }
 
 void Presenter::revealWindow() {
@@ -667,6 +538,13 @@ int debugView() {
 }
 
 bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
+    // Queue capacity is back-pressure only, never a display tick or a reason
+    // to replace this selection with a different blend. A slow display can
+    // still limit delivery; report that honestly via actual Present times.
+    if (m_latencyWaitable && WaitForSingleObject(m_latencyWaitable, 1000) != WAIT_OBJECT_0) {
+        std::cerr << "Presenter: timed out waiting for swap-chain capacity.\n";
+        return false;
+    }
     presentFenceValue = 0;
     if (!job.frame0) return false;
     const UINT idx = static_cast<UINT>(m_frameCount % kBackBuffers);
@@ -713,25 +591,13 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         return false;
     }
 
-    // Experimental FSR upscaling: the display-size frame is shown instead
-    // (the replay buffer keeps the frame as made, at width x height).
-    if (m_upscaler && !recordUpscale(job)) {
-        m_list->Close();
-        return false;
-    }
-    ID3D12Resource* shown = m_upscaler ? m_upscaled.Get() : m_output.Get();
-
     ID3D12Resource* back = m_backBuffers[m_swapChain->GetCurrentBackBufferIndex()].Get();
     DispatchContext::transition(m_list.Get(), m_output.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
     recordReplay(job);
-    if (m_upscaler)
-        DispatchContext::transition(m_list.Get(), shown, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE);
     DispatchContext::transition(m_list.Get(), back, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-    m_list->CopyResource(back, shown);
+    m_list->CopyResource(back, m_output.Get());
     DispatchContext::transition(m_list.Get(), back, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
     DispatchContext::transition(m_list.Get(), m_output.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
-    if (m_upscaler)
-        DispatchContext::transition(m_list.Get(), shown, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON);
     if (FAILED(m_list->Close())) return false;
 
     ID3D12CommandQueue* queue = m_device->presentQueue();
@@ -750,9 +616,7 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
     set.fence = presentFenceValue;
     ++m_frameCount;
 
-    // Vsync on (default): the next vsync. Off: at once, tearing if allowed.
-    const HRESULT hr = m_vsyncOff ? m_swapChain->Present(0, m_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0)
-                                  : m_swapChain->Present(1, 0);
+    const HRESULT hr = m_swapChain->Present(0, m_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
     if (FAILED(hr)) {
         std::cerr << "Presenter: Present failed (0x" << std::hex << hr << ", device removed reason 0x"
                   << m_device->device()->GetDeviceRemovedReason() << std::dec << ")\n";
@@ -763,6 +627,14 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
         if (hr != S_OK) std::cerr << "Presenter: Present status 0x" << std::hex << hr << std::dec << "\n";
     }
     ++m_stats.presented;
+    const int64_t now = wallClock100ns();
+    if (m_lastPresentTime != 0) {
+        const double delta = static_cast<double>(now - m_lastPresentTime);
+        m_intervalSum += delta;
+        ++m_intervalCount;
+        m_stats.maxIntervalMs = std::max(m_stats.maxIntervalMs, delta / 10000.0);
+    }
+    m_lastPresentTime = now;
     revealWindow();
     return true;
 }
@@ -770,8 +642,6 @@ bool Presenter::render(const RenderJob& job, uint64_t& presentFenceValue) {
 PresentStats Presenter::takeStats() {
     PresentStats s = m_stats;
     s.meanIntervalMs = m_intervalCount ? m_intervalSum / static_cast<double>(m_intervalCount) / 10000.0 : 0.0;
-    s.clockFallbacks = m_clockFallbacks;
-    m_clockFallbacks = 0;
     m_stats = {};
     m_intervalSum = 0.0;
     m_intervalCount = 0;

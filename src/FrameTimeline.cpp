@@ -13,30 +13,54 @@ constexpr double kGridTolerance = 0.3;
 // A frame held for deferral is considered real (accepted) unless a newer
 // frame supersedes it within this fraction of a period.
 constexpr double kDeferWindow = 0.7;
+// Steadiness is judged on the newest kCadenceWindow intervals; the rate is
+// the mean over kRateWindow (see updateCadence).
 constexpr size_t kCadenceWindow = 16;
+constexpr size_t kRateWindow = 96;
 constexpr size_t kCadenceMinSamples = 8;
+// A steady cadence's typical interval must agree with the mean rate to
+// within this; otherwise the arrivals are quantized to the refresh grid.
+constexpr double kQuantizedSpread = 0.06;
+// The newest intervals' mean this far from the long mean: the rate changed.
+constexpr double kRateChange = 0.15;
 // Unsteady cadence (see regularize): the smoothed clock resyncs to the raw
 // timestamp when it is this many periods off, or after a gap this long.
 constexpr double kFreeTolerance = 0.75;
 constexpr double kFreeGap = 4.0;
+
+// Mean of the intervals that are neither pauses (over 3x the median) nor
+// fragments of one (repaints, under 0.35x): the source's true rate even when
+// its frames reach the screen on a refresh grid its rate does not divide
+// (1, 1, 1, 1, 2 refreshes for 120 fps on 144 Hz).
+int64_t robustMean(std::vector<int64_t> values) {
+    if (values.empty()) return 0;
+    std::sort(values.begin(), values.end());
+    const int64_t median = values[values.size() / 2];
+    double sum = 0.0;
+    size_t count = 0;
+    for (int64_t v : values) {
+        if (v * 100 < median * 35 || v > 3 * median) continue;
+        sum += static_cast<double>(v);
+        ++count;
+    }
+    return count ? static_cast<int64_t>(sum / static_cast<double>(count) + 0.5) : median;
+}
 }
 
 void FrameTimeline::configure(uint32_t sourceFpsOverride, double refreshHz, uint32_t outputMultiplier) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_sourceFpsOverride = sourceFpsOverride;
     m_outputMultiplier = outputMultiplier;
-    m_refreshInterval = static_cast<int64_t>(static_cast<double>(kSecond) / std::max(1.0, refreshHz) + 0.5);
+    m_maxOutputPeriod = static_cast<double>(kSecond) / std::max(1.0, refreshHz);
+    m_captureTimestampQuantum = static_cast<int64_t>(m_maxOutputPeriod + 0.5);
     if (sourceFpsOverride > 0) {
         m_period = kSecond / static_cast<int64_t>(sourceFpsOverride);
         m_periodMeasured = true;
         m_locked = true;
     }
-    // Latency budget: the next source frame (one period) must have arrived
-    // and had its flow computed (a couple of refreshes) before media time
-    // reaches the previous one. Starvation grows it; sustained slack
-    // shrinks it back toward the minimum.
+    // Buffer source frames and flow, not display refreshes. This budget is
+    // fixed for the source rate; GPU stalls never stretch the output clock.
     applyBudgetLimits();
-    m_latencyBudget = std::clamp(m_period + 2 * m_refreshInterval + 10 * kMs, m_minLatencyBudget, m_maxLatencyBudget);
 }
 
 void FrameTimeline::setLatencyLimits(double minExtraMs, double maxMs) {
@@ -45,62 +69,114 @@ void FrameTimeline::setLatencyLimits(double minExtraMs, double maxMs) {
     m_maxLatencyOverride = maxMs > 0.0 ? static_cast<int64_t>(maxMs * static_cast<double>(kMs)) : 0;
 }
 
-void FrameTimeline::setFreePacing(bool on) {
+FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_freePacing = on;
-}
+    Selection sel;
+    sel.presentTime = now + kMs; // missing source data: sleep, never fabricate a repeat
+    if (m_frames.empty() || !m_captureOffsetValid) return sel;
 
-int64_t FrameTimeline::nextPresentTime(int64_t now, bool* position) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (position) *position = true;
-    const int64_t lead = m_captureOffset + m_latencyBudget;   // wall clock - media time
-    const int64_t refresh = std::max<int64_t>(kMs, m_refreshInterval);
+    const int64_t lead = m_captureOffset + m_latencyBudget;
+    const double period = m_sourceFpsOverride > 0
+        ? static_cast<double>(kSecond) / m_sourceFpsOverride : static_cast<double>(m_period);
+    const double step = m_outputMultiplier > 0 ? period / m_outputMultiplier : m_maxOutputPeriod;
+    size_t outputFrame = 0;
+    if (m_outputMultiplier > 0) {
+        if (m_outputFrameIndex == 0) m_outputFrameIndex = m_frames.front().index;
+        while (outputFrame < m_frames.size() && m_frames[outputFrame].index < m_outputFrameIndex) ++outputFrame;
+        if (outputFrame == m_frames.size()) {
+            m_nextOutputTime = 0.0; // re-arm on fresh input, not on an expired deadline
+            sel.retireBeforeIndex = m_frames.back().index;
+            return sel;
+        }
+    }
+    if (m_nextOutputTime == 0.0) {
+        m_nextOutputTime = static_cast<double>(std::max(now, m_frames[outputFrame].ts + lead));
+    }
+    // Absolute deadlines retain the fractional 100 ns remainder (120 fps
+    // is 83333.333... ticks). Wake-up jitter must not accumulate as drift.
+    const uint64_t missed = now + 0.5 >= m_nextOutputTime + step
+        ? static_cast<uint64_t>(std::floor((now - m_nextOutputTime + 0.5) / step)) : 0;
+    if (missed) {
+        m_nextOutputTime += static_cast<double>(missed) * step;
+        m_stats.missedOutputs += missed;
+    }
+
     if (m_outputMultiplier == 0) {
-        // One frame per refresh interval on a steady clock of our own.
-        int64_t next = m_lastScheduled + refresh;
-        if (m_lastScheduled == 0 || next < now - refresh || next > now + 2 * refresh) next = now;
-        m_lastScheduled = std::max(next, now);
-        return m_lastScheduled;
+        // Max alone requests display-rate FPS, on the same simple timer;
+        // it does not wait for a compositor tick or predict a scanout time.
+        sel.fixedCadence = false;
+        sel.presentTime = static_cast<int64_t>(m_nextOutputTime + 0.5);
+        sel.mediaTime = sel.presentTime - lead;
+        sel.f0 = sel.f1 = m_frames.back();
+        sel.hold = true;
+        if (sel.mediaTime < m_frames.front().ts) {
+            sel.f0 = sel.f1 = m_frames.front();
+            sel.hold = false;
+            sel.startup = true;
+        } else {
+            for (size_t i = 0; i + 1 < m_frames.size(); ++i) {
+                const auto& a = m_frames[i];
+                const auto& b = m_frames[i + 1];
+                if (sel.mediaTime < a.ts || sel.mediaTime >= b.ts) continue;
+                sel.f0 = a;
+                sel.f1 = b;
+                sel.alpha = static_cast<float>(static_cast<double>(sel.mediaTime - a.ts) /
+                                               std::max<int64_t>(1, b.ts - a.ts));
+                sel.hold = false;
+                break;
+            }
+        }
+    } else {
+        size_t i = outputFrame;
+        const uint64_t position = static_cast<uint64_t>(m_outputPosition) + missed;
+        const uint64_t advance = position / m_outputMultiplier;
+        if (advance >= m_frames.size() - i) {
+            // A paused source or blocked Present exhausted the input. Wait
+            // for fresh frames rather than replaying this queue in a burst.
+            m_outputFrameIndex = m_frames.back().index + 1;
+            m_outputPosition = 0;
+            m_nextOutputTime = 0.0;
+            sel.retireBeforeIndex = m_frames.back().index;
+            return sel;
+        }
+        i += static_cast<size_t>(advance);
+        m_outputPosition = static_cast<uint32_t>(position % m_outputMultiplier);
+        m_outputFrameIndex = m_frames[i].index;
+        if (i + 1 < m_frames.size() && m_frames[i + 1].ts - m_frames[i].ts > 2 * m_period) {
+            // Never stretch one frame's motion across a source pause.
+            ++i;
+            m_outputFrameIndex = m_frames[i].index;
+            m_outputPosition = 0;
+            m_nextOutputTime = static_cast<double>(std::max(now, m_frames[i].ts + lead));
+        }
+        if (m_outputPosition > 0 && i + 1 == m_frames.size()) {
+            sel.retireBeforeIndex = m_frames[i].index;
+            return sel;
+        }
+        sel.f0 = m_frames[i];
+        sel.f1 = i + 1 < m_frames.size() ? m_frames[i + 1] : sel.f0;
+        sel.alpha = static_cast<float>(m_outputPosition) / m_outputMultiplier;
+        sel.mediaTime = sel.f0.ts + static_cast<int64_t>(
+            static_cast<double>(sel.f1.ts - sel.f0.ts) * m_outputPosition / m_outputMultiplier);
+        sel.presentTime = static_cast<int64_t>(m_nextOutputTime + 0.5);
+        if (++m_outputPosition == m_outputMultiplier) {
+            m_outputPosition = 0;
+            m_outputFrameIndex = sel.f1.index + (sel.f0.index == sel.f1.index ? 1 : 0);
+        }
     }
-    const int64_t n = static_cast<int64_t>(m_outputMultiplier);
-    // Asked again after a millisecond when the next position's frames have
-    // not arrived: nothing to show until then.
-    const int64_t poll = now + kMs;
-    if (m_frames.size() < 2 || !m_captureOffsetValid) {
-        if (position) *position = false;
-        return poll;
-    }
-    // The next position k/N after both the current media time and the last
-    // one given out, so each position is shown once and in order.
-    const int64_t from = std::max(now - lead, m_lastScheduledMedia);
-    if (from < m_frames.front().ts) {
-        m_lastScheduledMedia = m_frames.front().ts;
-        return m_frames.front().ts + lead;
-    }
-    for (size_t i = 0; i + 1 < m_frames.size(); ++i) {
-        const int64_t a = m_frames[i].ts, b = m_frames[i + 1].ts;
-        if (from >= b) continue;
-        const int64_t duration = std::max<int64_t>(1, b - a);
-        const int64_t k = (from - a) * n / duration + 1;
-        // Rounded up, so that (position - a) * n / duration gives k back
-        // exactly (rounded down it gave k - 1 when the duration is not a
-        // multiple of n, and the same position was handed out again).
-        const int64_t position = k >= n ? b : a + (k * duration + n - 1) / n;
-        m_lastScheduledMedia = position;
-        return position + lead;
-    }
-    // Beyond the newest frame: nothing new to show yet.
-    if (position) *position = false;
-    return poll;
+    sel.valid = true;
+    sel.retireBeforeIndex = sel.f0.index;
+    m_currentF1Index = sel.f1.index; // keep a reserved pair safe from producer replacement
+    m_nextOutputTime += step;
+    return sel;
 }
 
-// The minimum: the next source frame (one period) plus a refresh for its
-// flow, plus the adjustable margin (default 4 ms); the maximum: three
-// periods + 60 ms, or the adjustable cap (never below the minimum).
+// Fixed source buffering; the monitor has no say in this budget or clock.
 void FrameTimeline::applyBudgetLimits() {
-    m_minLatencyBudget = m_period + m_refreshInterval + m_minLatencyExtra;
+    m_minLatencyBudget = m_period + m_minLatencyExtra;
     m_maxLatencyBudget = m_maxLatencyOverride > 0 ? std::max(m_minLatencyBudget, m_maxLatencyOverride)
-                                                  : 3 * m_period + 60 * kMs;
+                                                   : 3 * m_period + 60 * kMs;
+    m_latencyBudget = std::clamp(2 * m_period + 10 * kMs, m_minLatencyBudget, m_maxLatencyBudget);
 }
 
 // ---------------------------------------------------------------- cadence
@@ -108,7 +184,7 @@ void FrameTimeline::applyBudgetLimits() {
 void FrameTimeline::observeInterval(int64_t interval) {
     if (interval <= 0 || interval > kSecond) return;
     m_intervals.push_back(interval);
-    while (m_intervals.size() > kCadenceWindow) m_intervals.pop_front();
+    while (m_intervals.size() > kRateWindow) m_intervals.pop_front();
     updateCadence();
 }
 
@@ -118,37 +194,63 @@ void FrameTimeline::updateCadence() {
         m_locked = false;
         return;
     }
-    std::vector<int64_t> sorted(m_intervals.begin(), m_intervals.end());
+    // Steadiness from the newest intervals: the mean of their middle half,
+    // robust against UI ticks and against the alternating short/long
+    // intervals of a 24 fps video repainted at 60 Hz, and whether 3/4 of
+    // them lie near it.
+    const size_t recentCount = std::min(kCadenceWindow, m_intervals.size());
+    const std::vector<int64_t> recent(m_intervals.end() - static_cast<std::ptrdiff_t>(recentCount), m_intervals.end());
+    std::vector<int64_t> sorted = recent;
     std::sort(sorted.begin(), sorted.end());
-    // Mean of the middle half: robust against UI ticks and against the
-    // alternating short/long intervals of a 24 fps video repainted at 60 Hz.
     const size_t lo = sorted.size() / 4;
     const size_t hi = sorted.size() - lo;
     double sum = 0.0;
     for (size_t i = lo; i < hi; ++i) sum += static_cast<double>(sorted[i]);
-    const int64_t period = static_cast<int64_t>(sum / static_cast<double>(hi - lo) + 0.5);
+    const int64_t typical = static_cast<int64_t>(sum / static_cast<double>(hi - lo) + 0.5);
     size_t near = 0;
     for (int64_t v : sorted) {
-        if (std::llabs(v - period) <= period / 4) ++near;
+        if (std::llabs(v - typical) <= typical / 4) ++near;
+    }
+    // The rate from the whole window. A source whose rate the refresh does
+    // not divide reaches the screen (and WGC) after 1, 1, 1, 1, 2 refreshes
+    // (120 fps on 144 Hz): the typical interval is then one refresh, not the
+    // source's period, and pacing by it ran the content 20% fast between
+    // corrections. The mean over many intervals is the true rate. When the
+    // newest intervals' mean leaves it, the source changed rate: forget the
+    // older ones rather than average across the change.
+    int64_t rate = robustMean(std::vector<int64_t>(m_intervals.begin(), m_intervals.end()));
+    const int64_t recentRate = robustMean(recent);
+    if (m_intervals.size() > recentCount &&
+        std::llabs(recentRate - rate) > static_cast<int64_t>(kRateChange * static_cast<double>(rate))) {
+        m_intervals.erase(m_intervals.begin(), m_intervals.end() - static_cast<std::ptrdiff_t>(recentCount));
+        rate = recentRate;
     }
     const bool wasLocked = m_locked;
     const int64_t oldPeriod = m_period;
-    m_locked = near * 4 >= sorted.size() * 3;
-    // The period is tracked whether or not the cadence is steady: a source
-    // whose frames land on a refresh grid its rate does not divide (2, 4, 3
-    // refreshes...) still has a mean rate, and regularize() paces it by that.
-    m_period = period;
+    // Locked: steady intervals that are the rate itself (not a refresh-grid
+    // quantization of it). Unlocked sources are paced by a smoothed clock at
+    // the mean rate (regularize).
+    m_locked = near * 4 >= sorted.size() * 3 &&
+               std::llabs(typical - rate) <= static_cast<int64_t>(kQuantizedSpread * static_cast<double>(rate));
+    m_period = std::max<int64_t>(rate, kMs);
     m_periodMeasured = true;
     {
         const bool changed = std::llabs(m_period - oldPeriod) > oldPeriod / 5;
         if ((m_locked && !wasLocked) || changed) {
             applyBudgetLimits();
-            if (m_locked && !wasLocked) {
-                m_latencyBudget = m_period + 2 * m_refreshInterval + 10 * kMs;
-            }
-            m_latencyBudget = std::clamp(m_latencyBudget, m_minLatencyBudget, m_maxLatencyBudget);
         }
     }
+}
+
+int64_t FrameTimeline::phaseTolerance() const {
+    // A frame that reached the screen one refresh late (60 fps on 180 Hz:
+    // 5.6 ms, a third of its period) must still count as on the grid, or it
+    // is held back and then dropped as a repaint when the next frame comes
+    // early. Never under the old 0.3 periods, never so wide that two real
+    // frames could be taken for one.
+    const int64_t lo = static_cast<int64_t>(kGridTolerance * static_cast<double>(m_period));
+    const int64_t hi = static_cast<int64_t>(0.45 * static_cast<double>(m_period));
+    return std::clamp<int64_t>(m_captureTimestampQuantum + kMs / 2, lo, hi);
 }
 
 bool FrameTimeline::onGrid(int64_t delta) const {
@@ -156,34 +258,67 @@ bool FrameTimeline::onGrid(int64_t delta) const {
     const double k = std::round(static_cast<double>(delta) / static_cast<double>(m_period));
     if (k < 1.0) return false;
     const int64_t predicted = static_cast<int64_t>(k * static_cast<double>(m_period));
-    return std::llabs(delta - predicted) <= static_cast<int64_t>(kGridTolerance * m_period);
+    return std::llabs(delta - predicted) <= phaseTolerance();
 }
 
 int64_t FrameTimeline::regularize(int64_t tsRaw) {
-    if (m_frames.empty() || !m_periodMeasured) return tsRaw;
-    const int64_t delta = tsRaw - m_lastAcceptedTsRaw;
-    const double periods = static_cast<double>(delta) / static_cast<double>(m_period);
-    const double k = std::max(1.0, std::round(periods));
-    const int64_t predicted = m_lastAcceptedTs + static_cast<int64_t>(k * static_cast<double>(m_period));
+    if (m_frames.empty() || !m_periodMeasured) {
+        m_outliers = 0;
+        return tsRaw;
+    }
+    const double period = static_cast<double>(m_period);
+    // Gap in the raw timestamps: pauses and repaints are judged on those.
+    const double gap = static_cast<double>(tsRaw - m_lastAcceptedTsRaw) / period;
+    // The position along the regularized clock: the frame count k is taken
+    // from it, not from the raw gap, so one late timestamp cannot make the
+    // next frame look one period early.
+    const double periods = static_cast<double>(tsRaw - m_lastAcceptedTs) / period;
+    // A source slower than the refresh rarely skips a frame, but its
+    // timestamps carry up to a refresh of quantization plus its own present
+    // jitter - more than half a period at 120 fps on 144 Hz. Rounding at 0.5
+    // then counted two frames where one had passed now and then, putting the
+    // frame a whole period late (offline: 3-8 ms steps until the clock had
+    // pulled back). Count a skip only from 1.75 periods on; a real one is
+    // caught by the outlier rule below (two frames off the clock: resync).
+    const double skipBias = (!m_locked && m_period * 10 > m_captureTimestampQuantum * 11) ? 0.25 : 0.0;
+    const double k = std::max(1.0, std::floor(periods + 0.5 - skipBias));
+    const int64_t predicted = m_lastAcceptedTs + static_cast<int64_t>(k * period);
     const int64_t err = tsRaw - predicted;
     int64_t ts;
-    if (m_locked) {
-        if (std::llabs(err) > static_cast<int64_t>(kGridTolerance * m_period)) {
-            ts = tsRaw;                 // phase shift: resync
-        } else {
-            ts = predicted + err / 10;  // slow phase correction
-        }
-    } else if (periods < 0.5 || periods > kFreeGap ||
-               std::llabs(err) > static_cast<int64_t>(kFreeTolerance * m_period)) {
-        ts = tsRaw;                     // repaint between frames, pause, or drift: resync
+    if (gap < 0.5 || gap > kFreeGap) {
+        ts = tsRaw;                     // repaint between frames, or a pause: resync
+        m_outliers = 0;
     } else {
-        // Unsteady cadence: a game rendering at a rate the refresh does not
-        // divide reaches the screen (and WGC's timestamps) after 2, 4, 3...
-        // refreshes while its content advances evenly. Its raw timestamps
-        // would pace the in-between frames unevenly - pairs of 2 refreshes
-        // rushed, pairs of 4 dragged - so they follow a smoothed clock at
-        // the mean period instead, pulled slowly toward the raw phase.
-        ts = predicted + err / 8;
+        // Within the tolerance the clock follows the raw phase slowly.
+        // Locked: a steady source. Unlocked: a game rendering at a rate the
+        // refresh does not divide reaches the screen (and WGC's timestamps)
+        // after 2, 4, 3... refreshes while its content advances evenly; its
+        // raw timestamps would pace the in-between frames unevenly, so they
+        // follow a smoothed clock at the mean rate. The tolerance covers at
+        // least one refresh of quantization.
+        // A locked source near the refresh rate (165 fps on 165 Hz) still has
+        // up to half a refresh of quantization in every timestamp.
+        const int64_t tolerance = m_locked
+            ? std::max<int64_t>(phaseTolerance(), m_captureTimestampQuantum / 2 + kMs)
+            : std::max<int64_t>(static_cast<int64_t>(kFreeTolerance * period), m_captureTimestampQuantum + kMs / 2);
+        if (std::llabs(err) <= tolerance) {
+            ts = predicted + err / (m_locked ? 10 : 16);
+            m_outliers = 0;
+        } else {
+            // One timestamp off the clock is a frame that reached the screen
+            // late (or a capture-thread stall), not a new phase: resyncing on
+            // it moved that frame, and the next one back, by a refresh each.
+            // Two in a row on the same side are a real phase change.
+            const int sign = err > 0 ? 1 : -1;
+            m_outliers = (m_outliers > 0 && sign == m_outlierSign) ? m_outliers + 1 : 1;
+            m_outlierSign = sign;
+            if (m_outliers >= 2) {
+                ts = tsRaw;
+                m_outliers = 0;
+            } else {
+                ts = predicted + std::clamp(err, -tolerance, tolerance) / 4;
+            }
+        }
     }
     return std::max(ts, m_frames.back().ts + m_period / 10);
 }
@@ -288,17 +423,6 @@ void FrameTimeline::push(TimelineFrame& frame) {
     frame.index = m_nextIndex++;
     frame.ts = regularize(frame.tsRaw);
 
-    // A hold that ends with a frame arriving at normal cadence means the
-    // frame was late for our budget, not that the source stopped.
-    if (m_holdPending) {
-        if (!m_frames.empty() && frame.tsRaw - m_frames.back().tsRaw < 2 * m_period) {
-            m_latencyBudget = std::min(m_maxLatencyBudget,
-                                       m_latencyBudget + std::max(4 * kMs, m_period / 4));
-            ++m_stats.starvations;
-        }
-        m_holdPending = false;
-    }
-
     // Capture offset: arrival - source timestamp. Track the minimum so
     // scheduling jitter on the capture thread never delays the media clock,
     // with a slow rise so a genuine latency increase is followed.
@@ -315,79 +439,6 @@ void FrameTimeline::push(TimelineFrame& frame) {
     m_frames.push_back(frame);
 }
 
-// --------------------------------------------------------------- consumer
-
-FrameTimeline::Selection FrameTimeline::select(int64_t displayWallTime) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    Selection sel;
-    if (m_frames.empty()) return sel;
-
-    // Periodic budget review: shrink while pairs have been ready with
-    // comfortable margin.
-    if (m_lastBudgetReview == 0) {
-        m_lastBudgetReview = displayWallTime;
-    } else if (displayWallTime - m_lastBudgetReview > 2 * kSecond) {
-        const int64_t threshold = static_cast<int64_t>(0.35 * m_period) + 8 * kMs;
-        if (m_minSlack != INT64_MAX && m_minSlack > threshold) {
-            // Give back half of the surplus, at most 4 ms per review, so a
-            // transient stall's growth decays within seconds while genuine
-            // jitter keeps the budget it needed.
-            const int64_t give = std::min<int64_t>(4 * kMs, (m_minSlack - threshold) / 2);
-            m_latencyBudget = std::max(m_minLatencyBudget, m_latencyBudget - give);
-        }
-        m_minSlack = INT64_MAX;
-        m_lastBudgetReview = displayWallTime;
-    }
-
-    const int64_t m = displayWallTime - m_captureOffset - m_latencyBudget;
-    sel.valid = true;
-    sel.mediaTime = m;
-
-    if (m < m_frames.front().ts) {
-        sel.f0 = sel.f1 = m_frames.front();
-        sel.startup = true;
-        m_currentF1Index = sel.f1.index;
-        return sel;
-    }
-    for (size_t i = 0; i + 1 < m_frames.size(); ++i) {
-        const TimelineFrame& a = m_frames[i];
-        const TimelineFrame& b = m_frames[i + 1];
-        if (m >= a.ts && m < b.ts) {
-            sel.f0 = a;
-            sel.f1 = b;
-            const int64_t duration = std::max<int64_t>(1, b.ts - a.ts);
-            int64_t offset = m - a.ts;
-            if (m_outputMultiplier > 0) {
-                // Quantize to the requested output cadence so 2x/3x/4x show
-                // each intermediate position for a whole output interval.
-                // Only when that interval is at least a refresh: a finer
-                // grid than the display shows (40 fps x4 on 120 Hz) would
-                // just snap every refresh to a grid point behind it, steps
-                // of 1/4, 1/4, 1/2 instead of an even 1/3.
-                const int64_t step = std::max<int64_t>(1, m_period / static_cast<int64_t>(m_outputMultiplier));
-                if (step >= m_refreshInterval) offset = (offset / step) * step;
-            }
-            sel.alpha = std::clamp(static_cast<float>(static_cast<double>(offset) / static_cast<double>(duration)), 0.0f, 1.0f);
-            if (m_freePacing && m_outputMultiplier > 0) {
-                // Vsync off: displayWallTime is a position nextPresentTime()
-                // chose, k/N of this pair; snap to it exactly so a small
-                // change of the capture offset in between cannot move it.
-                const float n = static_cast<float>(m_outputMultiplier);
-                sel.alpha = std::round(static_cast<float>(static_cast<double>(m - a.ts) / static_cast<double>(duration)) * n) / n;
-            }
-            m_currentF1Index = b.index;
-            m_holdPending = false;
-            return sel;
-        }
-    }
-    // Beyond the newest frame: hold it.
-    sel.f0 = sel.f1 = m_frames.back();
-    sel.hold = true;
-    if (!m_holdPending) m_holdPending = true;
-    m_currentF1Index = sel.f1.index;
-    return sel;
-}
-
 std::vector<int> FrameTimeline::retireBefore(uint64_t frameIndex) {
     std::lock_guard<std::mutex> lock(m_mutex);
     std::vector<int> slots;
@@ -400,14 +451,7 @@ std::vector<int> FrameTimeline::retireBefore(uint64_t frameIndex) {
 
 void FrameTimeline::reportStarvation() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_latencyBudget = std::min(m_maxLatencyBudget,
-                               m_latencyBudget + std::max(4 * kMs, m_period / 4));
     ++m_stats.starvations;
-}
-
-void FrameTimeline::reportSlack(int64_t slack) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_minSlack = std::min(m_minSlack, slack);
 }
 
 FrameTimeline::Stats FrameTimeline::stats() const {

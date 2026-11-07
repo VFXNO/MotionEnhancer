@@ -56,7 +56,6 @@ set(SOURCES
     src/UiDetector.cpp
     src/FsrFrameGen.cpp
     src/FsrRealtime.cpp
-    src/FsrUpscaler.cpp
     app.rc
 )
 
@@ -141,23 +140,22 @@ if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)
     target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_FFX_OPTICAL_FLOW=1)
 endif()
 
-# Optional, experimental AMD FSR frame generation (FsrFrameGen, used only by
-# --fsr-fg-offline): the FSR SDK 2.4 headers from third_party (downloaded from
-# github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK, tag v2.4.0; not in git).
-# Its signed DLLs are loaded at run time, so the program builds and runs
-# without the SDK and only that test mode reports it missing.
+# Optional, experimental AMD FSR frame generation (FsrFrameGen, FsrRealtime:
+# live --fsr-fg and the offline FSR tests): the FSR SDK 2.4 headers from
+# third_party/FidelityFX-SDK-v2.4.0 (github.com/GPUOpen-LibrariesAndSDKs/
+# FidelityFX-SDK, tag v2.4.0). Its signed loader and frame generation DLLs
+# are loaded at run time, so the program builds and runs without the SDK and
+# only the FSR modes report it missing.
 set(MOTION_ENHANCER_FSR_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/FidelityFX-SDK-v2.4.0/Kits/FidelityFX")
 if(WIN32 AND EXISTS "${MOTION_ENHANCER_FSR_SDK_DIR}/api/include/ffx_api.h")
     target_include_directories(motion_enhancer PRIVATE
         "${MOTION_ENHANCER_FSR_SDK_DIR}/api/include"
-        "${MOTION_ENHANCER_FSR_SDK_DIR}/framegeneration/include"
-        "${MOTION_ENHANCER_FSR_SDK_DIR}/upscalers/include")
+        "${MOTION_ENHANCER_FSR_SDK_DIR}/framegeneration/include")
     target_compile_definitions(motion_enhancer PRIVATE MOTION_ENHANCER_FSR_FG=1)
     add_custom_command(TARGET motion_enhancer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_loader_dx12.dll"
             "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_framegeneration_dx12.dll"
-            "${MOTION_ENHANCER_FSR_SDK_DIR}/signedbin/amd_fidelityfx_upscaler_dx12.dll"
             "$<TARGET_FILE_DIR:motion_enhancer>")
 endif()
 
@@ -232,7 +230,7 @@ if(WIN32)
                                       InterpolateCS.hlsl PresentFrameCS.hlsl PackLumaCS.hlsl LearnedFeaturesCS.hlsl
                                       FillFlowCS.hlsl UiMaskCS.hlsl FrameStatsCS.hlsl
                                       DisPatchCS.hlsl DisDensifyCS.hlsl DisToRingCS.hlsl OcclusionFillCS.hlsl
-                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl FsrCameraCS.hlsl FsrScaledMotionCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
+                                      ProjectClearCS.hlsl ProjectSplatCS.hlsl FlowMedianCS.hlsl FlowMedian5CS.hlsl FsrMotionCS.hlsl FsrDepthCS.hlsl FsrCameraCS.hlsl DepthInputCS.hlsl DepthFinishCS.hlsl DepthViewCS.hlsl
                                       DepthDilateCS.hlsl AiFlowInputCS.hlsl AiFlowToRingCS.hlsl UiDetectInputCS.hlsl UiDebugViewCS.hlsl
                                       UiPersistCS.hlsl)
         if(MOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW)

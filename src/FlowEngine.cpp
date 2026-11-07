@@ -632,8 +632,15 @@ bool FlowEngine::splitList(const FlowInput& previous, const FlowInput& current) 
     if (current.readyValue && FAILED(queue->Wait(ready, current.readyValue))) return false;
     ID3D12CommandList* lists[] = {m_list.Get()};
     queue->ExecuteCommandLists(1, lists);
-    // An allocator may record a new list while its earlier ones execute.
+    // Fence the part just submitted. If the pair fails after this point,
+    // endList never runs: without this value the next beginList would find
+    // this set's fence from an older submission, reset the allocator and
+    // rewrite the dispatch region while the GPU may still be executing it.
     const UINT idx = static_cast<UINT>(m_submitCount % kListsInFlight);
+    const uint64_t submitted = ++m_fenceValue;
+    if (FAILED(queue->Signal(m_fence.Get(), submitted))) return false;
+    m_commands[idx].fence = submitted;
+    // An allocator may record a new list while its earlier ones execute.
     return SUCCEEDED(m_list->Reset(m_commands[idx].allocator.Get(), nullptr));
 }
 
@@ -1162,7 +1169,10 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
     c.width = c.levelWidth = m_width;
     c.height = c.levelHeight = m_height;
     setInterpolationConstants(c, out, 0.5f);
-    if (m_settings.aiTemporalUi) {
+    // The trained UI candidates belong to the pair the network made; a pair
+    // DIS made in its place (AI fallback) has none.
+    const bool temporalUi = m_settings.aiTemporalUi && m_usingAi;
+    if (temporalUi) {
         c.neuralControl[1] = 1.0f;
         c.neuralControl[3] = out.aiUiHistoryValid ? 1.0f : 0.0f;
     }
@@ -1206,7 +1216,7 @@ bool FlowEngine::recordUiMask(const FlowInput& previous, const FlowInput& curren
         c.neuralWeights[kHudFlagIndex] = 1.0f;
     }
     std::array<ID3D12Resource*, 6> in = {previous.texture, current.texture, out.forward.Get(),
-                                         out.backward.Get(), prior, m_settings.aiTemporalUi ? m_aiUiAllowTex.Get() : nullptr};
+                                         out.backward.Get(), prior, temporalUi ? m_aiUiAllowTex.Get() : nullptr};
     // Inputs 0-1 are the shared capture textures; input 4, the chain entry,
     // may be read by the present queue at this moment, so it is promoted
     // implicitly too instead of being transitioned from two queues at once.
@@ -1293,15 +1303,33 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
 
     bool ok = false;
     m_usingAi = false;
-    if (aiFlowActive()) {
+    if (aiFlowActive() && !m_aiDisabled) {
         ok = recordAiFlow(previous, current, scratch);
-        if (!ok) {
+        if (ok) {
+            m_usingAi = true;
+            m_aiFailures = 0;
+        } else {
+            // Discard what the list holds (the part before a split already
+            // ran, under its own fence) and make this pair with DIS below,
+            // on the same dense ring grid, rather than show a hard cut.
             m_aiUiFrameId = UINT64_MAX;
             m_list->Close();
-            return result;
+            invalidatePyramids();
+            scratch.hasAiBlendMask = false;
+            scratch.aiRefined = false;
+            scratch.aiUiHistoryValid = false;
+            scratch.aiDisPatchPasses = 0;
+            if (++m_aiFailures >= kAiMaxFailures) {
+                m_aiDisabled = true;
+                std::cerr << "FlowEngine: AI flow failed " << m_aiFailures
+                          << " pairs in a row; using DIS for the rest of this capture.\n";
+            }
+            if (!beginList()) return result;
         }
-        m_usingAi = true;
     }
+    // The AI engine selected but not making this pair (failed or disabled):
+    // DIS, whose resources and 2 px ring the AI engine allocates as well.
+    const bool aiFallback = aiFlowActive() && !m_usingAi;
 #ifdef MOTION_ENHANCER_FFX_OPTICAL_FLOW
     if (!m_usingAi && m_settings.preferFfxOpticalFlow && m_ffxReady) {
         ok = recordFfx(previous, current, scratch);
@@ -1314,13 +1342,13 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
             m_ffxReady = false;
             // The discarded list may have built luma pyramids (the
             // refinement does) and marked them current; they never ran.
-            for (Pyramid& pyramid : m_pyramids) pyramid.id = UINT64_MAX;
+            invalidatePyramids();
             if (!beginList()) return result;
         }
     }
 #endif
     m_usingFfx = ok && !m_usingAi;
-    m_usingDis = !ok && disActive();
+    m_usingDis = !ok && (disActive() || aiFallback);
     if (!ok) ok = m_usingDis ? recordDis(previous, current, scratch) : recordSad(previous, current, scratch);
     if (ok && m_usingDis) ok = recordOcclusionFill(previous, current, scratch);
     // The AI engine's field after DIS refinement: a 5x5 median takes out the
@@ -1350,6 +1378,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     }
     if (!ok) {
         m_list->Close();
+        invalidatePyramids();
         if (m_depth) m_depth->discarded();
         if (m_uiDetector) m_uiDetector->discarded();
         m_aiUiFrameId = UINT64_MAX;
@@ -1357,6 +1386,7 @@ FlowEngine::Result FlowEngine::submitPair(const FlowInput& previous, const FlowI
     }
     uint64_t fenceValue = 0;
     if (!endList(previous, current, fenceValue)) {
+        invalidatePyramids();
         m_aiUiFrameId = UINT64_MAX;
         if (m_depth) m_depth->discarded();
         if (m_uiDetector) m_uiDetector->discarded();

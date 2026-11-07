@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ComputeKernels.h"
-#include "FsrUpscaler.h"
 #include "GraphicsDevice.h"
 #include "UiRegions.h"
 
@@ -96,25 +95,16 @@ struct RenderJob {
     ID3D12Resource* depth1 = nullptr;
     float alpha = 0.0f;
     bool single = false;               // show frame0 (alpha < 0.5) or frame1 as-is
-    // FSR upscaling (Presenter::initialize with a display size): the share
-    // of backwardFlow's pair between the previous presented frame and this
-    // one (the motion FSR is given), and whether its history starts over.
-    float upscaleMotion = 0.0f;
-    bool upscaleReset = false;
 };
 
 struct PresentStats {
     uint64_t presented = 0;
-    uint64_t clockFallbacks = 0;  // waits the compositor clock refused
-    uint64_t lateFrames = 0;      // wake-ups more than 1.5 refresh intervals apart
-    uint64_t resyncs = 0;         // display-clock resyncs (missed vsync)
     double maxIntervalMs = 0.0;
     double meanIntervalMs = 0.0;
 };
 
-// Native D3D12 flip-model presentation. One command list per refresh; the
-// loop is paced solely by the swap chain's frame-latency waitable object
-// (Present(1), latency 1), so every output frame is phase-locked to vsync.
+// Native D3D12 flip-model presentation. The caller supplies FPS-clocked
+// output; this class submits it with Present(0), without a display clock.
 class Presenter {
 public:
     static constexpr UINT kBackBuffers = 3;
@@ -123,50 +113,19 @@ public:
 
     // maxFrameLatency: frames the swap chain may hold before the compositor
     // takes them (1, the default, or 2; kBackBuffers allows at most 2).
-    // vsyncOff: present at once (sync interval 0) with tearing allowed when
-    // the system supports it, instead of on the next vsync (the default);
-    // the caller then paces the frames itself (FrameTimeline::nextPresentTime).
-    // displayWidth/displayHeight (experimental, --upscale fsr4): when given
-    // and different from width x height, every frame is drawn at width x
-    // height as before and then upscaled to the display size by AMD FSR
-    // upscaling (FsrUpscaler) before it is shown; the swap chain is the
-    // display size. initialize fails with upscaleError set if FSR cannot.
+    // allowTearing only controls the tearing flag. The sync interval is
+    // always zero: display Hz must not replace the requested output FPS.
     bool initialize(GraphicsDevice* device, const ComputeKernels* kernels, HWND window,
-                    uint32_t width, uint32_t height, UINT maxFrameLatency = 1, bool vsyncOff = false,
-                    uint32_t displayWidth = 0, uint32_t displayHeight = 0);
-    // FSR upscaling in use: its provider, or empty when not upscaling.
-    std::string upscaler() const;
-    // FSR's own sharpening of the upscaled frames (RCAS), 0 = off.
-    void setUpscaleSharpness(float sharpness) { m_upscaleSharpness = sharpness; }
-    std::string upscaleError;
-    // vsyncOff was asked for and the system allows tearing.
+                     uint32_t width, uint32_t height, UINT maxFrameLatency = 1, bool allowTearing = false);
+    // Tearing was allowed and the system supports it.
     bool tearing() const { return m_tearing; }
     // How the last frames reached the screen (DXGI frame statistics):
     // "composed" (DWM draws the window at the display's refresh, tearing has
     // no effect), "independent flip" (the window has the display or a plane
     // to itself: tearing and FreeSync apply), or "unknown".
     const char* presentationMode() const;
-    // The wake-up statistics of beginFrame() for a caller that paces itself.
-    void noteWake(int64_t wake);
-
-    // Blocks until the next compositor tick (vsync) or one of the handles
-    // is signaled. Returns WAIT_OBJECT_0 + count on a tick, WAIT_OBJECT_0 +
-    // index for a handle, WAIT_TIMEOUT otherwise.
-    DWORD waitForVsync(DWORD count, const HANDLE* handles, DWORD timeoutMs);
-    // True when the swap chain can accept a frame without queuing behind
-    // one the compositor has not consumed yet.
-    bool canPresent() const {
-        return !m_latencyWaitable || WaitForSingleObject(m_latencyWaitable, 0) == WAIT_OBJECT_0;
-    }
     ID3D12Fence* fence() const { return m_fence.Get(); }
     double refreshRate() const { return m_refreshHz; }
-    int64_t refreshInterval() const { return m_refreshInterval; }
-
-    // Called once per latency-object wake-up. Returns the predicted display
-    // time (wall clock, 100 ns) of the frame that will be rendered now: a
-    // phase-locked loop on the wake cadence, so consecutive frames are
-    // exactly one refresh apart even when the wake-up itself jitters.
-    int64_t beginFrame(int64_t wakeWallTime);
 
     // Records, submits and presents. presentFenceValue completes the GPU
     // reads of every resource in the job.
@@ -222,29 +181,11 @@ private:
     DispatchContext m_dispatch;
     uint64_t m_frameCount = 0;
     bool m_revealed = false;
-    // FSR upscaling (initialize with a display size): the upscaler, its
-    // render-size motion vectors and depth, and the display-size frame
-    // that is copied to the back buffer instead of m_output.
-    std::unique_ptr<FsrUpscaler> m_upscaler;
-    uint32_t m_displayWidth = 0, m_displayHeight = 0;
-    float m_upscaleSharpness = 0.0f;
-    ComPtr<ID3D12Resource> m_upscaleMotion, m_upscaleDepth, m_upscaled;
-    bool recordUpscale(const RenderJob& job);
-    bool m_tearing = false;     // initialize(vsyncOff) and supported
-    bool m_vsyncOff = false;    // initialize(vsyncOff): sync interval 0
+    bool m_tearing = false;
     HRESULT m_lastPresentStatus = S_OK;
-    // DCompositionWaitForCompositorClock (dcomp.dll, Windows 10 2004+).
-    using CompositorClockWait = DWORD(WINAPI*)(UINT, const HANDLE*, DWORD);
-    CompositorClockWait m_compositorWait = nullptr;
-    HMODULE m_dcomp = nullptr;
-    uint64_t m_clockFallbacks = 0;
 
-    // display clock
-    double m_refreshHz = 60.0;
-    int64_t m_refreshInterval = 166667;
-    double m_intervalEstimate = 166667.0;
-    int64_t m_lastPredicted = 0;
-    int64_t m_lastWake = 0;
+    double m_refreshHz = 60.0;  // diagnostics and explicit Max mode only
+    int64_t m_lastPresentTime = 0;
 
     PresentStats m_stats;
     double m_intervalSum = 0.0;

@@ -8,7 +8,6 @@
 #include "FrameTimeline.h"
 #include "FsrFrameGen.h"
 #include "FsrRealtime.h"
-#include "FsrUpscaler.h"
 #include "Image.h"
 #include "MotionVector.h"
 #include "NeuralFlow.h"
@@ -324,7 +323,6 @@ int runRealtimeSession(const RealtimeOptions& options) {
 
         std::cout << "[2/5] Creating click-through overlay window...\n" << std::flush;
         OverlayWindow overlay;
-        overlay.coverMonitor = options.upscale;   // scaling: the whole monitor
         if (!overlay.create(target, "Motion Enhancer GPU Overlay")) { exitCode = 1; return; }
 
         std::cout << "[3/5] Preparing Windows Graphics Capture...\n" << std::flush;
@@ -339,18 +337,11 @@ int runRealtimeSession(const RealtimeOptions& options) {
         const uint32_t height = capture.height();
 
         std::cout << "[4/5] Creating presentation surface (" << width << "x" << height << ")...\n" << std::flush;
-        // Scaling (--upscale fsr4): frames are made at the game window's
-        // size and upscaled by FSR to the overlay's, the monitor's.
         if (!presenter.initialize(&device, &kernels, overlay.hwnd, width, height,
-                                  static_cast<UINT>(options.frameLatency), !options.vsync,
-                                  options.upscale ? overlay.width : 0, options.upscale ? overlay.height : 0)) {
-            if (!presenter.upscaleError.empty())
-                std::cerr << "Error: FSR upscaling unavailable: " << presenter.upscaleError
-                          << " (start without --upscale)\n";
+                                  static_cast<UINT>(options.frameLatency), !options.vsync)) {
             exitCode = 1;
             return;
         }
-        presenter.setUpscaleSharpness(options.upscaleSharpness);
         // The present fence gates slot and flow-ring recycling.
         capture.setPresentFence(presenter.fence());
 
@@ -361,28 +352,14 @@ int runRealtimeSession(const RealtimeOptions& options) {
             return;
         }
         timeline.setLatencyLimits(options.latencyMinExtraMs, options.latencyMaxMs);
-        timeline.setFreePacing(!options.vsync);
         timeline.configure(options.sourceFps, presenter.refreshRate(), options.outputMultiplier);
 
         // Experimental FSR frame generation beside the normal interpolation:
         // when it cannot start, the session runs exactly as without it.
         std::unique_ptr<FsrRealtime> fsr;
-        // With a fixed multiplier the blend positions are k/N: when none is
-        // within the window of the middle (3x: 1/3, 2/3), FSR's frame would
-        // never be shown, so it is not run at all.
-        bool fsrReachable = true;
-        if (options.fsrFrameGen && options.outputMultiplier > 1) {
-            fsrReachable = false;
-            for (uint32_t k = 1; k < options.outputMultiplier; ++k)
-                if (std::abs(static_cast<float>(k) / static_cast<float>(options.outputMultiplier) - 0.5f) <=
-                    options.fsrWindow + 1e-4f)
-                    fsrReachable = true;
-            if (!fsrReachable)
-                std::cerr << "FSR frame generation not started: at " << options.outputMultiplier
-                          << "x no frame is within " << options.fsrWindow
-                          << " of the middle of a pair (use 2x or a wider --fsr-window).\n";
-        }
-        if (options.fsrFrameGen && fsrReachable) {
+        // Keep feeding FSR's history; fixed output uses its exact midpoint
+        // only, so the 2x sequence is always real, middle, real, middle.
+        if (options.fsrFrameGen) {
             fsr = std::make_unique<FsrRealtime>();
             std::string fsrError;
             if (!fsr->initialize(&device, &kernels, width, height, fsrError)) {
@@ -411,31 +388,24 @@ int runRealtimeSession(const RealtimeOptions& options) {
                   << "  Adapter:        " << device.adapterName() << "\n"
                   << "  Flow Engine:    " << engine << ", " << flow.searchedLevels() << " pyramid levels\n"
                   << "  Source Cadence: " << (options.sourceFps ? std::to_string(options.sourceFps) + " fps" : "auto") << "\n"
-                  << "  Upscaling:      "
-                  << (presenter.upscaler().empty()
-                          ? std::string(options.upscale ? "none (the game window is already the monitor's size)" : "off")
-                          : "FSR " + presenter.upscaler() + ", " + std::to_string(width) + "x" + std::to_string(height) +
-                                " -> " + std::to_string(overlay.width) + "x" + std::to_string(overlay.height) +
-                                ", sharpening " + std::to_string(static_cast<int>(options.upscaleSharpness * 100.0f + 0.5f)) +
-                                "% (mouse clicks reach the game window where it really is, not where it is shown)")
-                  << "\n"
-                  << "  Queues:         latency margin " << options.latencyMinExtraMs << " ms, cap "
+                  << "  Queues:        latency margin " << options.latencyMinExtraMs << " ms, cap "
                   << (options.latencyMaxMs > 0.0 ? std::to_string(static_cast<int>(options.latencyMaxMs)) + " ms"
                                                   : std::string("auto (3 frames + 60 ms)"))
                   << ", frame latency " << options.frameLatency << ", capture queue " << options.captureQueue << "\n"
-                  << "  Vsync:          "
-                  << (options.vsync ? "on (each frame on the next refresh)"
-                                    : std::string("off, paced by the frame queue") +
-                                          (options.outputMultiplier ? " (each k/" + std::to_string(options.outputMultiplier) +
-                                                                          " position at its own time)"
-                                                                    : " (one frame per refresh interval)") +
-                                          (presenter.tearing() ? ", tearing allowed" : ", tearing unsupported"))
-                  << "\n"
+                  << "  Presentation:   FPS clock, Present(0), "
+                  << (presenter.tearing() ? "tearing allowed" : "tearing disabled or unsupported") << "\n"
                   << "  Output:         " << std::fixed << std::setprecision(2) << presenter.refreshRate() << " Hz display"
-                  << (options.outputMultiplier ? ", quantized to " + std::to_string(options.outputMultiplier) + "x source" : ", every refresh") << "\n"
+                  << (options.outputMultiplier
+                          ? ", exactly " + std::to_string(options.outputMultiplier) +
+                                "x source, positions k/N on a monitor-independent clock"
+                          : ", Max: display-rate FPS on the output clock")
+                  << "\n"
+                  << "  Display limit:  a composed/fixed-Hz display may repeat or drop scanouts;\n"
+                  << "                  even 120 FPS scanout needs working VRR or a compatible display mode.\n"
                   << (fsr ? "  FSR frame gen:  on (experimental), middle frames within +/- " +
                                 std::to_string(static_cast<int>(options.fsrWindow * 100.0f + 0.5f)) + "% of a pair from the middle" +
-                                "; " + (options.outputMultiplier == 2 ? "all generated frames\n" : "use --multiplier 2 for all generated frames\n") +
+                                 "; fixed output uses only the exact midpoint\n" +
+                                 "  FSR cadence:    2x alternates real frames and FSR middles on every monitor\n" +
                                 "  FSR provider:   " + fsr->frameGen().selected() + " (offered: " + fsr->frameGen().provider() + ")\n" +
                                 "  FSR DLLs:       " + fsr->frameGen().modules() + "\n" +
                                 "  FSR motion:     the flow engine above (not FSR's own optical flow)\n" +
@@ -457,22 +427,15 @@ int runRealtimeSession(const RealtimeOptions& options) {
         if (!capture.start()) { exitCode = 1; return; }
         HANDLE mmcss = enterMmcss(L"Games");
 
-        const bool pacingLog = envFlag("MOTION_ENHANCER_PACING");
+        const bool outputLog = envFlag("MOTION_ENHANCER_PACING"); // retain the diagnostic env name
         AsyncLog log;
-        HANDLE handles[1] = {capture.acceptedEvent()};
-        bool presenting = false;
-        uint64_t skippedTicks = 0;
-        uint64_t forcedTicks = 0;
         uint64_t idleTicks = 0;
-        uint64_t consecutiveSkips = 0;
-        uint64_t forcedPresents = 0;
         uint64_t lastSizeMismatch = 0;
         // Last presented content; an unchanged static frame is not presented
         // again (it would only keep the compositor awake for nothing).
         uint64_t lastKeyF0 = 0, lastKeyF1 = 0;
         int lastKeyAlpha = -1;
         int lastKeyDebugView = -1;
-        uint64_t lastPairIndex = 0;
         uint64_t starvedPairIndex = 0;
         uint64_t starvationTicks = 0;
         uint64_t holdTicks = 0;
@@ -481,25 +444,8 @@ int runRealtimeSession(const RealtimeOptions& options) {
         double renderCpuMs = 0.0;
         uint64_t renderCount = 0;
 
-        // Vsync off: the time the frame queue chose for this frame
-        // (FrameTimeline::nextPresentTime); 0 with vsync on.
-        int64_t scheduledDisplay = 0;
-        // Experimental FSR upscaling: the previous presented frame's content
-        // time in game frames (-1: none yet), for the motion FSR is given.
-        const bool upscaling = !presenter.upscaler().empty();
-        double upscaleLastContent = -1.0;
-        auto renderTick = [&]() -> bool {
+        auto renderTick = [&](const FrameTimeline::Selection& sel) -> bool {
             const auto cpu0 = std::chrono::steady_clock::now();
-            const int64_t wake = wallClock100ns();
-            int64_t display = 0;
-            if (scheduledDisplay != 0) {
-                presenter.noteWake(wake);
-                display = scheduledDisplay;
-            } else {
-                display = presenter.beginFrame(wake);
-            }
-            const FrameTimeline::Selection sel = timeline.select(display);
-            if (!sel.valid) return true;
 
             // Same frames, same blend as what is on screen: nothing to do.
             const int alphaKey = static_cast<int>(sel.alpha * 4096.0f);
@@ -509,21 +455,6 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 ++idleTicks;
                 return true;
             }
-            // The frame-latency object is a semaphore: taking it commits us
-            // to a Present, because DXGI only signals it again when a frame
-            // we presented has been consumed. It is therefore taken here,
-            // after every reason not to present has been ruled out.
-            if (!presenter.canPresent()) {
-                ++skippedTicks;
-                // A visible window whose frames are never consumed for a
-                // whole second means the token was lost, not that the
-                // compositor is busy: present regardless rather than
-                // freeze on the last frame.
-                if (++consecutiveSkips < static_cast<uint64_t>(presenter.refreshRate())) return true;
-                ++forcedPresents;
-            }
-            consecutiveSkips = 0;
-
             RenderJob job;
             job.uiRegionDebug.maskEnabled = options.flow.uiMask;
             job.uiRegionDebug.detectorEnabled = options.flow.aiUiRegions;
@@ -538,7 +469,6 @@ int runRealtimeSession(const RealtimeOptions& options) {
             job.depth1 = flow.depthFor(in1);
             job.alpha = sel.alpha;
             const bool pair = sel.f0.index != sel.f1.index;
-            bool shownFsrMiddle = false;   // FSR frame generation's middle frame is shown
             FlowEngine::Entry entry;
             const char* mode = "S";
             if (!pair) {
@@ -568,23 +498,21 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     mode = "I";
                     if (!flow.fenceReached(sel.f1.flowFence)) {
                         // The GPU waits for the flow; the CPU never stalls.
-                        // Grow the budget so the next pairs are early.
+                        // Count it, without stretching the FPS clock or
+                        // automatically growing the buffering delay.
                         mode = "W";
                         ++starvationTicks;
                         if (starvedPairIndex != sel.f1.index) {
                             starvedPairIndex = sel.f1.index;
                             timeline.reportStarvation();
                         }
-                    } else if (lastPairIndex != sel.f1.index) {
-                        const int64_t flowTime = static_cast<int64_t>(flow.lastGpuTimeMs() * 10000.0);
-                        timeline.reportSlack(wake - sel.f1.arrival - flowTime);
                     }
                 }
             }
             // Experimental FSR, beside the normal path (off unless --fsr-fg):
             // every interpolated pair is given to FSR so its sequence stays
             // continuous, and its middle frame is shown instead of the normal
-            // interpolation only on refreshes near the middle of the pair.
+            // interpolation only where its midpoint matches the output.
             if (fsr && !job.single && entry.valid) {
                 const float periodMs = sel.f1.arrival > sel.f0.arrival
                     ? static_cast<float>(sel.f1.arrival - sel.f0.arrival) / 10000.0f : 1000.0f / 60.0f;
@@ -592,7 +520,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 // a wait); FSR gets the flat depth for a frame without it.
                 ID3D12Resource* middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
                                                           sel.f1.flowFence, periodMs, job.depth0, job.depth1);
-                if (middle && std::abs(job.alpha - 0.5f) <= options.fsrWindow) {
+                if (middle && sel.canUseMidpoint(options.fsrWindow)) {
                     // Shown as a finished frame: FSR's list, submitted on
                     // the same queue just before, already waited for the
                     // capture copies and the flow.
@@ -605,29 +533,13 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     job.alpha = 0.0f;
                     mode = "F";
                     ++fsrShown;
-                    shownFsrMiddle = true;
                 }
             }
-            lastPairIndex = sel.f1.index;
-
-            // Experimental FSR upscaling (--upscale fsr4): the motion since
-            // the previous presented frame, as a share of this pair (the
-            // presenter scales the pair's backward field by it). Where the
-            // shown content sits in the pair: the blend position, 0.5 for
-            // FSR's middle frame, the shown frame itself for a single one.
-            if (upscaling) {
-                const double position = shownFsrMiddle ? 0.5
-                                      : !pair ? 0.0
-                                      : job.single ? (job.alpha < 0.5f ? 0.0 : 1.0)
-                                                   : static_cast<double>(job.alpha);
-                // Content time in game frames (consecutive accepted frames
-                // are one apart); the motion is its step since the last one.
-                const double content = static_cast<double>(sel.f0.index) + position;
-                const double motion = content - upscaleLastContent;
-                const bool reset = upscaleLastContent < 0.0 || sel.f1.sceneCut || motion < 0.0 || motion > 2.0;
-                job.upscaleMotion = reset ? 0.0f : static_cast<float>(motion);
-                job.upscaleReset = reset;
-                upscaleLastContent = content;
+            // Each k=0 output is the captured frame itself, not a warp.
+            // After the FSR call so FSR still sees every available pair.
+            if (!job.single && (job.alpha <= 0.0f || job.alpha >= 1.0f)) {
+                job.single = true;
+                mode = "R";
             }
 
             uint64_t presentFence = 0;
@@ -642,13 +554,12 @@ int runRealtimeSession(const RealtimeOptions& options) {
             capture.noteSlotPresented(sel.f0.slot, presentFence);
             capture.noteSlotPresented(sel.f1.slot, presentFence);
             if (entry.valid) flow.noteEntryPresented(sel.f1.flowEntry, presentFence);
-            capture.releaseSlots(timeline.retireBefore(sel.f0.index));
 
             renderCpuMs += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - cpu0).count();
             ++renderCount;
-            if (pacingLog) {
+            if (outputLog) {
                 std::ostringstream line;
-                line << "[Pacing] " << mode << " display=" << display / 10 << "us media=" << sel.mediaTime / 10
+                line << "[Output] " << mode << " deadline=" << sel.presentTime / 10 << "us media=" << sel.mediaTime / 10
                      << "us pair=" << sel.f0.index << "/" << sel.f1.index
                      << " alpha=" << std::fixed << std::setprecision(3) << sel.alpha << "\n";
                 log.write(line.str());
@@ -656,83 +567,49 @@ int runRealtimeSession(const RealtimeOptions& options) {
             return true;
         };
 
-        // The compositor clock is unavailable while the desktop is idle
-        // (nothing being composed, including before our first present). A
-        // timeout of 1.5 refreshes then stands in for the tick: our own
-        // present wakes the compositor and real ticks resume.
-        const DWORD tickTimeoutMs = static_cast<DWORD>(std::max<int64_t>(4, presenter.refreshInterval() * 3 / 20000));
-        // Vsync off: a high-resolution timer (about 0.5 ms) wakes the loop at
-        // the frame queue's chosen times; a plain Sleep if unavailable.
-        HANDLE pacingTimer = options.vsync ? nullptr
-                                           : CreateWaitableTimerExW(nullptr, nullptr,
-                                                                    CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
-                                                                    TIMER_ALL_ACCESS);
-        int64_t pendingTarget = 0;
+        // A single FPS timer replaces the compositor/refresh pacing pipeline.
+        // Keep the exact selection across waits, even if new capture arrives.
+        HANDLE outputTimer = CreateWaitableTimerExW(nullptr, nullptr,
+                                                    CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+        if (!outputTimer) outputTimer = CreateWaitableTimerExW(nullptr, nullptr, 0, TIMER_ALL_ACCESS);
+        FrameTimeline::Selection pending;
         while (true) {
             if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
-            // One iteration per compositor tick (or per accepted frame while
-            // nothing is on screen yet). Messages are only hotkeys and
-            // window tracking, pumped once per tick.
-            DWORD wait = WAIT_TIMEOUT;
-            scheduledDisplay = 0;
-            if (!options.vsync && presenting) {
-                // Vsync off: sleep until the time the frame queue chose for
-                // the next frame (at most 50 ms, so messages keep flowing),
-                // then present it at once.
-                const int64_t now = wallClock100ns();
-                // A target not yet reached is kept: nextPresentTime() gives
-                // each position out once.
-                bool position = true;
-                const int64_t target = pendingTarget ? pendingTarget : timeline.nextPresentTime(now, &position);
-                pendingTarget = 0;
-                const int64_t wait100ns = std::min<int64_t>(target - now, 500000);
-                if (wait100ns > 0 && pacingTimer) {
-                    LARGE_INTEGER due = {};
-                    due.QuadPart = -wait100ns;
-                    if (SetWaitableTimer(pacingTimer, &due, 0, nullptr, nullptr, FALSE))
-                        WaitForSingleObject(pacingTimer, 100);
-                } else if (wait100ns > 0) {
-                    Sleep(static_cast<DWORD>(wait100ns / 10000));
-                }
-                if (!position) {
-                    wait = WAIT_OBJECT_0;   // the next frames have not arrived: ask again
-                } else if (target - now <= 500000) {
-                    scheduledDisplay = target;
-                    wait = WAIT_OBJECT_0 + 1;
-                } else {
-                    pendingTarget = target;
-                    wait = WAIT_OBJECT_0;   // nothing due yet: messages only
-                }
-            } else {
-                wait = presenter.waitForVsync(1, handles, presenting ? tickTimeoutMs : 250);
-            }
             if (!overlay.processMessages()) break;
             overlay.updateTracking();
-
-            if (!presenting) {
-                TimelineFrame first;
-                if (!timeline.lastFrame(first)) continue;
-                presenting = true;
-            } else if (wait == WAIT_TIMEOUT) {
-                ++forcedTicks;
-                wait = WAIT_OBJECT_0 + 1;
-            } else if (wait != WAIT_OBJECT_0 && wait != WAIT_OBJECT_0 + 1) {
-                static bool reported = false;
-                if (!reported) {
-                    reported = true;
-                    std::cerr << "Presenter: unexpected vsync wait result " << wait
-                              << " (error " << GetLastError() << ")\n";
-                }
+            if (!pending.valid) {
+                pending = timeline.nextOutput(wallClock100ns());
+                // A late output can discard the whole queued interval. Even
+                // an invalid selection must retire it, or the capture ring
+                // could stay full forever while we wait for fresh input.
+                if (pending.retireBeforeIndex)
+                    capture.releaseSlots(timeline.retireBefore(pending.retireBeforeIndex));
             }
-            if (wait == WAIT_OBJECT_0 + 1) {
+            const int64_t remaining = std::min<int64_t>(pending.presentTime - wallClock100ns(), 500000);
+            if (remaining > 0) {
+                HANDLE waits[3] = {};
+                DWORD count = 0;
+                if (stopEvent) waits[count++] = stopEvent;
+                if (!pending.valid) waits[count++] = capture.acceptedEvent();
+                LARGE_INTEGER due = {};
+                due.QuadPart = -remaining;
+                if (outputTimer && SetWaitableTimer(outputTimer, &due, 0, nullptr, nullptr, FALSE))
+                    waits[count++] = outputTimer;
+                const DWORD timeout = static_cast<DWORD>((remaining + 9999) / 10000);
+                if (count) WaitForMultipleObjects(count, waits, FALSE, timeout);
+                else Sleep(timeout);
+            }
+            if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
+            if (pending.valid && wallClock100ns() >= pending.presentTime) {
                 if (!IsWindowVisible(overlay.hwnd)) {
-                    // Hidden with Ctrl+Alt+F1: keep the clocks running, skip
-                    // the GPU work.
-                    presenter.beginFrame(wallClock100ns());
-                } else if (!renderTick()) {
+                    // Keep consuming and retiring source frames while hidden
+                    // so capture cannot fill up and resume with a stale pair.
+                    lastKeyAlpha = -1;   // present again as soon as it is shown
+                } else if (!renderTick(pending)) {
                     exitCode = 1;
                     break;
                 }
+                pending = {};
             }
 
             const auto now = std::chrono::steady_clock::now();
@@ -745,23 +622,22 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 status << "[Overlay] " << std::fixed << std::setprecision(1)
                           << static_cast<double>(ps.presented) / elapsed << " fps"
                           << " | present " << std::setprecision(2) << ps.meanIntervalMs << " ms avg, "
-                          << ps.maxIntervalMs << " ms max, late " << ps.lateFrames << ", resync " << ps.resyncs
+                          << ps.maxIntervalMs << " ms max"
                           << " | cpu " << (renderCount ? renderCpuMs / static_cast<double>(renderCount) : 0.0) << " ms"
                           << " | source " << std::setprecision(1) << (ts.sourcePeriodMs > 0 ? 1000.0 / ts.sourcePeriodMs : 0.0)
                           << " fps" << (ts.cadenceLocked ? "" : " (unlocked)")
                           << " | budget " << ts.latencyBudgetMs << " ms, offset " << ts.captureOffsetMs << " ms"
                           << " | starve " << ts.starvations << "/" << starvationTicks << " hold " << holdTicks
-                          << " skip " << skippedTicks << " forced " << forcedTicks << " idle " << idleTicks << " fp " << forcedPresents
-                          << " noclock " << ps.clockFallbacks
+                          << " missed outputs " << ts.missedOutputs << " idle " << idleTicks
                           << " | wgc " << cs.arrivals << " dup " << cs.duplicates << " acc " << cs.accepted
                           << " def " << ts.deferred << " drop " << ts.dropped + cs.queueDrops << " rep " << ts.replaced
                           << " cut " << cs.sceneCuts << " resized " << cs.sizeMismatch
                            << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames;
-                // Vsync off: whether the overlay can tear / follow FreeSync
-                // (independent flip) or is drawn by DWM at the refresh.
-                if (!options.vsync) status << " | flip " << presenter.presentationMode();
+                const double sourceFps = ts.sourcePeriodMs > 0.0 ? 1000.0 / ts.sourcePeriodMs : 0.0;
+                status << " | target " << (options.outputMultiplier ? sourceFps * options.outputMultiplier : presenter.refreshRate())
+                       << " fps, FPS clock | flip " << presenter.presentationMode();
                 if (fsr) {
                     const FsrRealtime::Stats fs = fsr->takeStats();
                     status << " | fsr made " << fs.generated << " depth " << fs.aiDepth << " shown " << fsrShown
@@ -787,14 +663,11 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 renderCount = 0;
                 starvationTicks = 0;
                 holdTicks = 0;
-                skippedTicks = 0;
-                forcedTicks = 0;
                 idleTicks = 0;
-                forcedPresents = 0;
             }
         }
 
-        if (pacingTimer) CloseHandle(pacingTimer);
+        if (outputTimer) CloseHandle(outputTimer);
         if (mmcss) AvRevertMmThreadCharacteristics(mmcss);
         capture.stop();
         std::cout << "Real-time GPU frame interpolation terminated.\n";
@@ -3252,158 +3125,4 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
     // with three frames), every pair made, nothing failed.
     const uint64_t sequences = frames.size() >= 4 ? 2 : 1;
     return s.failures == 0 && s.resets == sequences && s.generated == starts.size() ? 0 : 1;
-}
-
-// ======================================================================
-// Experimental: AMD FSR upscaling, offline
-// ======================================================================
-
-// FSR upscaling (FsrUpscaler) of a sequence of low-resolution frames to
-// displayWidth x displayHeight, in order (FSR builds up history), with this
-// program's optical flow of each pair as the motion vectors and the AI depth
-// (--ai-depth, spread by depthSpan) or a constant depth. Writes
-// <outputFolder>/fsr_up_<i>.png for every frame, for comparing with the
-// full-resolution originals and plain resizes outside the program.
-int runFsrUpscaleTest(const std::vector<std::string>& framePaths, uint32_t displayWidth, uint32_t displayHeight,
-                      const std::string& outputFolder, const FlowSettings& settings, GraphicsAdapterPreference adapter,
-                      float depthSpan, float sharpness) {
-    if (framePaths.size() < 2 || displayWidth == 0 || displayHeight == 0 || outputFolder.empty()) {
-        std::cerr << "--fsr-upscale-test needs --upscale-size WxH, --fsr-save <dir> and two or more frames in order\n";
-        return 1;
-    }
-    std::vector<Image> frames;
-    for (const std::string& path : framePaths) {
-        frames.push_back(Image::load(path));
-        if (frames.back().empty() || frames.back().width != frames.front().width ||
-            frames.back().height != frames.front().height) {
-            std::cerr << "Error: cannot use " << path << "\n";
-            return 1;
-        }
-    }
-    const uint32_t width = static_cast<uint32_t>(frames.front().width);
-    const uint32_t height = static_cast<uint32_t>(frames.front().height);
-    GraphicsDevice device;
-    if (!device.initialize(adapter)) return 1;
-    ComputeKernels kernels;
-    if (!kernels.load(device.device())) return 1;
-    OfflineContext offline;
-    if (!offline.initialize(&device, &kernels)) return 1;
-    FlowEngine flow;
-    const int slots = std::min<int>(FlowEngine::kMaxSlots, static_cast<int>(frames.size()));
-    if (!flow.initialize(&device, &kernels, nullptr, settings) || !flow.resize(width, height, slots)) return 1;
-    FsrUpscaler fsr;
-    std::string error;
-    if (!fsr.initialize(device.device(), width, height, displayWidth, displayHeight, error)) {
-        std::cerr << "FSR upscaling: " << error << "\n";
-        return 1;
-    }
-    std::cout << "FSR upscaling in use: " << fsr.selected() << ", " << width << "x" << height << " -> " << displayWidth
-              << "x" << displayHeight << ", depth " << (settings.aiDepth && depthSpan > 0.0f ? "AI" : "flat")
-              << ", sharpening " << sharpness << "\n";
-
-    std::vector<SharedTexture> textures(frames.size());
-    std::vector<FlowInput> inputs(frames.size());
-    for (size_t i = 0; i < frames.size(); ++i) {
-        uint64_t ready = 0;
-        if (!uploadFrame(device, frames[i], textures[i], ready)) return 1;
-        inputs[i] = {textures[i].texture12.Get(), ready, static_cast<uint64_t>(i + 1),
-                     static_cast<int>(i % static_cast<size_t>(slots))};
-    }
-    ComPtr<ID3D12Resource> motion, depth, output;
-    const D3D12_RESOURCE_FLAGS uav = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    if (FAILED(device.createTexture2D(width, height, DXGI_FORMAT_R16G16_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON, motion,
-                                      L"FsrUpscaleMotion")) ||
-        FAILED(device.createTexture2D(width, height, DXGI_FORMAT_R32_FLOAT, uav, D3D12_RESOURCE_STATE_COMMON, depth,
-                                      L"FsrUpscaleDepth")) ||
-        FAILED(device.createTexture2D(displayWidth, displayHeight, DXGI_FORMAT_R8G8B8A8_UNORM, uav,
-                                      D3D12_RESOURCE_STATE_COMMON, output, L"FsrUpscaleOutput"))) return 1;
-
-    // GPU time of FSR's own work on the last frame.
-    ComPtr<ID3D12QueryHeap> queries;
-    ComPtr<ID3D12Resource> times;
-    D3D12_QUERY_HEAP_DESC queryDesc = {};
-    queryDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
-    queryDesc.Count = 2;
-    if (FAILED(device.device()->CreateQueryHeap(&queryDesc, IID_PPV_ARGS(&queries))) ||
-        FAILED(device.createBuffer(2 * sizeof(uint64_t), D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST,
-                                   D3D12_RESOURCE_FLAG_NONE, times))) queries.Reset();
-
-    for (size_t i = 0; i < frames.size(); ++i) {
-        FlowEngine::Entry entry;
-        uint64_t flowFence = 0;
-        if (i > 0) {
-            const FlowEngine::Result r = flow.submitPair(inputs[i - 1], inputs[i]);
-            if (r.entry < 0 || !flow.waitFence(r.fence)) {
-                std::cerr << "Error: flow submission failed\n";
-                return 1;
-            }
-            entry = flow.entry(r.entry);
-            flowFence = r.fence;
-        }
-        ID3D12Resource* nearness = settings.aiDepth && depthSpan > 0.0f ? flow.waitDepth(inputs[i], 5000) : nullptr;
-        if (!offline.begin()) return 1;
-        // Motion vectors at the frames' own size (the flow's size): the
-        // backward field in this frame's pixels. Depth: as for the frame
-        // generation (FsrDepthCS).
-        ShaderConstants c = {};
-        c.width = c.levelWidth = width;
-        c.height = c.levelHeight = height;
-        c.blockSize = c.parentBlockSize = static_cast<int32_t>(i > 0 ? entry.blockSize : 2);
-        c.flowScale = 0.5f;
-        const std::array<ID3D12Resource*, 6> in = {i > 0 ? entry.backward.Get() : nullptr, nullptr, nullptr, nullptr,
-                                                   nullptr, nullptr};
-        ShaderConstants dc = c;
-        dc.timeT = nearness ? depthSpan : 0.0f;
-        const std::array<ID3D12Resource*, 6> depthIn = {nearness, nullptr, nullptr, nullptr, nullptr, nullptr};
-        const UINT gx = (width + 15) / 16, gy = (height + 15) / 16;
-        if (!offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrMotion, in, motion.Get(), c, gx, gy) ||
-            !offline.dispatch().dispatch(offline.list(), kernels, Kernel::FsrDepth, depthIn, depth.Get(), dc, gx, gy))
-            return 1;
-        const bool last = i + 1 == frames.size();
-        if (last && queries) offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
-        if (!fsr.upscale(offline.list(), textures[i].texture12.Get(), motion.Get(), depth.Get(), output.Get(), i == 0,
-                         1000.0f / 60.0f, sharpness, error)) {
-            std::cerr << "FSR upscaling: " << error << "\n";
-            return 1;
-        }
-        if (last && queries) {
-            offline.list()->EndQuery(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
-            offline.list()->ResolveQueryData(queries.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, times.Get(), 0);
-        }
-        if (!offline.execute(flow.fence(), flowFence)) {
-            std::cerr << "Error: FSR upscale of frame " << i << " did not complete\n";
-            return 1;
-        }
-        std::vector<uint8_t> bytes;
-        UINT pitch = 0, w = 0, h = 0;
-        if (!offline.readback(output.Get(), bytes, pitch, w, h)) return 1;
-        Image result(static_cast<int>(w), static_cast<int>(h), 3);
-        for (UINT y = 0; y < h; ++y) {
-            const uint8_t* row = bytes.data() + static_cast<size_t>(y) * pitch;
-            for (UINT x = 0; x < w; ++x)
-                for (int ch = 0; ch < 3; ++ch)
-                    result.set(static_cast<int>(x), static_cast<int>(y), ch, static_cast<float>(row[x * 4 + ch]));
-        }
-        char name[32] = {};
-        snprintf(name, sizeof(name), "/fsr_up_%03zu.png", i);
-        if (!result.savePNG(outputFolder + name)) {
-            std::cerr << "Error: cannot write " << outputFolder << name << "\n";
-            return 1;
-        }
-    }
-    double fsrMs = 0.0;
-    if (queries) {
-        uint64_t* stamps = nullptr;
-        uint64_t frequency = 0;
-        device.presentQueue()->GetTimestampFrequency(&frequency);
-        const D3D12_RANGE range = {0, 2 * sizeof(uint64_t)};
-        if (frequency && SUCCEEDED(times->Map(0, &range, reinterpret_cast<void**>(&stamps)))) {
-            fsrMs = static_cast<double>(stamps[1] - stamps[0]) * 1000.0 / static_cast<double>(frequency);
-            const D3D12_RANGE nothing = {0, 0};
-            times->Unmap(0, &nothing);
-        }
-    }
-    std::cout << "FSR upscaling: " << frames.size() << " frames -> " << outputFolder << ", FSR " << std::fixed
-              << std::setprecision(2) << fsrMs << " ms GPU on the last frame\n";
-    return 0;
 }

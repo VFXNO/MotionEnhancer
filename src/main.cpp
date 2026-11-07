@@ -36,10 +36,9 @@ static void printUsage(const char* progName) {
               << "                                        # Experimental: AMD FSR frame generation fed with this flow\n"
               << "  " << progName << " --fsr-realtime-test <f0.png> <f1.png> <f2.png>... [--ai-depth --fsr-depth-span s] [--fsr-save dir]\n"
               << "                                        # The live --fsr-fg path on frames in order\n"
-              << "  " << progName << " --fsr-upscale-test <low-res frames...> --upscale-size WxH --fsr-save <dir>\n"
-              << "        [--ai-depth] [--fsr-sharpness 0-1]   # Experimental: FSR upscaling of a sequence\n"
               << "  " << progName << " --test [options]                    # Synthetic verification benchmark\n"
               << "  " << progName << " --d3d12-self-test                   # Native dispatch and shared-texture probe\n"
+              << "  " << progName << " --timeline-self-test                # CPU-only output clock and source queue checks\n"
               << "  " << progName << " --projection-self-test              # High-resolution GPU projection regression\n"
               << "  " << progName << " --ai-blend-mask-self-test           # Learned-mask synthesis regression\n\n"
               << "  " << progName << " --ai-refinement-self-test           # Paired AI/DIS refinement regression\n"
@@ -52,7 +51,8 @@ static void printUsage(const char* progName) {
               << "Real-Time GPU Overlay Options:\n"
               << "  --capture-window <title> Target window title substring to capture via WGC\n"
               << "  --source-fps <auto|24|30|60>  Source content rate (default: auto)\n"
-              << "  --multiplier <2|3|4|max>      Output FPS multiplier (default: max = display rate)\n"
+              << "  --multiplier <2|3|4|max>      Exact source FPS multiplier (default: max = display-rate FPS)\n"
+              << "                                60 FPS x2 always schedules 120 FPS, regardless of monitor Hz\n"
               << "  --switch-width <w>            Hand-over from frame0's warp to frame1's: 0 = pure warping\n"
               << "                                (default), up to 0.45 = spread over 0.5 +/- w of the pair,\n"
               << "                                1 = the old full blend (same as --allow-crossfade)\n"
@@ -76,28 +76,24 @@ static void printUsage(const char* progName) {
               << "  --ui-regions-self-test   Verify native ROI gating, decoder and expiry rules\n"
               << "  --fsr-fg                 Experimental: AMD FSR frame generation beside the normal interpolation;\n"
               << "                           its middle frame is shown near the middle of each pair (all\n"
-              << "                           generated frames with --multiplier 2). Off by default.\n"
-              << "  --fsr-window <0-0.5>     How near the middle FSR's frame is used (default: 0.1)\n"
+              << "                           generated frames at 2x on every monitor). Off by default.\n"
+              << "  --fsr-window <0-0.5>     How near the middle FSR's frame is used (default: 0.1);\n"
+              << "                           fixed multipliers use only the exact midpoint, never real frames\n"
               << "  --fsr-depth-span <0-1>   Give FSR the AI depth (needs --ai-depth), spread over this much of\n"
               << "                           its depth range (default: 0.25); 0 = flat depth\n"
               << "  --fsr-camera <off|spin|flow>  Experimental FSR camera (default: off = fixed). spin: a constant\n"
               << "                           turn, which FSR measured better with; flow: turned by the flow's\n"
               << "                           overall motion; exact = flow, offline tests only\n"
               << "  --fsr-camera-fov <deg>   The game's assumed vertical field of view for it (default: 60)\n"
-              << "  --latency-min <0-50>     Latency budget margin in ms above one source frame + one refresh\n"
-              << "                           (default: 4); lower = less delay, more stutter when the GPU is busy\n"
-              << "  --latency-max <ms|auto>  Cap on how far the budget grows after stalls, 20-300 ms\n"
+              << "  --latency-min <0-50>     Minimum buffering margin above one source frame (default: 4 ms)\n"
+              << "                           Default fixed budget: two source periods + 10 ms; no stall adaptation\n"
+              << "  --latency-max <ms|auto>  Cap on the fixed buffering budget, 20-300 ms\n"
               << "                           (default: auto = 3 source frames + 60 ms)\n"
               << "  --frame-latency <1-2>    Frames the swap chain may hold (default: 1); 2 absorbs a slow\n"
               << "                           frame at one refresh more delay\n"
               << "  --capture-queue <2-8>    Captured frames that may wait to be processed (default: 4)\n"
-              << "  --upscale <off|fsr4>     Experimental scaling: the overlay covers the monitor and every frame\n"
-              << "                           is upscaled from the game window's size by AMD FSR 4 (run the game\n"
-              << "                           in a smaller window; clicks still reach the real window)\n"
-              << "  --upscale-sharpness <0-1>  FSR's sharpening of the upscaled frames (default: 0 = off)\n"
-              << "  --vsync <on|off>         off: present each frame at the time the frame queue chooses\n"
-              << "                           (each k/N position with --multiplier N), tearing allowed\n"
-              << "                           (default: on = the next refresh)\n"
+              << "  --vsync <on|off>         Legacy tearing switch: on = disabled (default), off = allowed\n"
+              << "                           Both use the FPS clock and Present(0), with no vsync waits\n"
               << "  --adapter <auto|igpu|dgpu>  Graphics adapter preference (default: auto = dgpu)\n"
               << "  --list-windows           List all active top-level desktop windows\n\n"
               << "Offline / Algorithm Options:\n"
@@ -248,67 +244,199 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
 // content advances evenly. Every displayed frame's position along the
 // source (pair index + alpha) should advance by the same step.
 static int runTimelineSelfTest() {
-    // Intervals in refreshes of a 120 Hz display (40 fps on average), repeated.
-    struct Case { const char* name; std::vector<int> refreshes; uint32_t multiplier; };
-    const Case cases[] = {
-        {"steady 40 fps, max", {3}, 0},
-        {"steady 40 fps, 4x", {3}, 4},
-        {"alternating 2/4 refreshes, max", {2, 4}, 0},
-        {"alternating 2/4 refreshes, 4x", {2, 4}, 4},
-        {"capture pattern 3/3/4/2/4/2, max", {3, 3, 4, 2, 4, 2}, 0},
-    };
-    const double refreshHz = 120.0;
-    const int64_t ms = 10000;
+    constexpr int64_t second = 10000000, ms = 10000, start = 1000000000;
     bool ok = true;
-    for (const Case& c : cases) {
-        FrameTimeline timeline;
-        timeline.configure(0, refreshHz, c.multiplier);
-        const int64_t refresh = static_cast<int64_t>(10000000.0 / refreshHz + 0.5);
-        int64_t ts = 10000 * ms;
-        int frames = 0;
-        std::vector<double> positions;
-        int64_t display = ts;
-        for (int i = 0; i < 120; ++i) {
-            ts += c.refreshes[i % c.refreshes.size()] * refresh;
-            const auto plan = timeline.onFrameArrived(ts, ts + 3 * ms);
-            if (plan.acceptThis) {
-                TimelineFrame frame;
-                frame.slot = i % 8;
-                frame.tsRaw = ts;
-                frame.arrival = ts + 3 * ms;
-                timeline.push(frame);
-                ++frames;
-            }
-            // Display refreshes up to this frame's arrival.
-            while (display + refresh <= ts + 3 * ms) {
-                display += refresh;
-                const auto sel = timeline.select(display);
-                if (i > 40 && sel.valid && !sel.hold && !sel.startup && sel.f0.index != sel.f1.index)
-                    positions.push_back(static_cast<double>(sel.f0.index) + sel.alpha);
-                timeline.retireBefore(sel.f0.index);
+    auto push = [&](FrameTimeline& timeline, int k, int64_t ts, int64_t arrival) {
+        TimelineFrame frame;
+        frame.slot = k;
+        frame.tsRaw = ts;
+        frame.arrival = arrival;
+        frame.flowEntry = 0;
+        timeline.push(frame);
+    };
+
+    // Prebuffered clock tests isolate output from capture and scanout. All
+    // deadlines and k/N positions must be identical on every monitor, even
+    // when requested FPS exceeds display Hz. No GPU or live capture is used.
+    int cases = 0, failures = 0;
+    for (uint32_t source : {24u, 30u, 60u}) {
+        for (uint32_t n : {2u, 3u, 4u}) {
+            for (double hz : {60.0, 75.0, 120.0, 144.0, 165.0, 240.0, 360.0}) {
+                FrameTimeline timeline;
+                timeline.configure(source, hz, n);
+                for (int k = 0; k < static_cast<int>(source * 6 + 2); ++k) {
+                    const int64_t ts = start + static_cast<int64_t>(static_cast<double>(k) * second / source + 0.5);
+                    push(timeline, k, ts, ts + 3 * ms);
+                }
+                const double budget = timeline.stats().latencyBudgetMs;
+                int64_t now = start, epoch = 0;
+                bool pass = true;
+                double worst = 0.0;
+                for (uint32_t k = 0; k < source * n * 5; ++k) {
+                    const auto sel = timeline.nextOutput(now);
+                    if (k == 0) epoch = sel.presentTime;
+                    const double expected = epoch + static_cast<double>(k) * second / (source * n);
+                    worst = std::max(worst, std::fabs(sel.presentTime - expected));
+                    const float alpha = static_cast<float>(k % n) / n;
+                    if (!sel.valid || !sel.fixedCadence || sel.f0.slot != static_cast<int>(k / n) ||
+                        sel.alpha != alpha || worst > 1.0 ||
+                        sel.canUseMidpoint(0.5f) != (alpha == 0.5f)) pass = false;
+                    // Reports and wake-up jitter must not stretch the clock.
+                    if (k % 31 == 0) timeline.reportStarvation();
+                    now = sel.presentTime + (k % 4) * 1000;
+                    timeline.retireBefore(sel.f0.index);
+                }
+                if (timeline.stats().latencyBudgetMs != budget || timeline.stats().missedOutputs != 0) pass = false;
+                ++cases;
+                failures += !pass;
+                if (!pass || (source == 60 && n == 2))
+                    std::cout << "Timeline self-test: " << source << " fps " << n << "x / " << hz << " Hz: "
+                              << source * n << " FPS, max deadline error " << worst * 0.1 << " us: "
+                              << (pass ? "PASS" : "FAIL") << "\n";
             }
         }
-        // Distinct positions in display order, and the steps between them.
-        std::vector<double> steps;
-        for (size_t i = 1; i < positions.size(); ++i)
-            if (positions[i] > positions[i - 1] + 1e-6) steps.push_back(positions[i] - positions[i - 1]);
-        if (steps.size() < 10) {
-            std::cout << "Timeline self-test: " << c.name << ": too few steps\n";
-            ok = false;
-            continue;
-        }
-        double mean = 0.0, smallest = 1e9, largest = 0.0;
-        for (double s : steps) { mean += s; smallest = std::min(smallest, s); largest = std::max(largest, s); }
-        mean /= static_cast<double>(steps.size());
-        double var = 0.0;
-        for (double s : steps) var += (s - mean) * (s - mean);
-        const double spread = std::sqrt(var / static_cast<double>(steps.size())) / mean;
-        std::cout << "Timeline self-test: " << c.name << ": step mean " << std::fixed << std::setprecision(3) << mean
-                  << " of a source frame, min " << smallest << ", max " << largest << ", spread "
-                  << std::setprecision(1) << 100.0 * spread << "%\n";
-        if (largest > 1.6 * smallest) ok = false;
     }
-    std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL (uneven steps)") << "\n";
+    std::cout << "Timeline self-test: " << cases << " monitor-independent clock cases, " << failures << " failures\n";
+    ok = failures == 0;
+
+    // Max explicitly chooses display-rate FPS, but uses the same absolute
+    // timer rather than bringing the deleted compositor pipeline back.
+    for (double hz : {120.0, 144.0, 165.0, 240.0}) {
+        FrameTimeline timeline;
+        timeline.configure(60, hz, 0);
+        for (int k = 0; k < 180; ++k) {
+            const int64_t ts = start + static_cast<int64_t>(static_cast<double>(k) * second / 60);
+            push(timeline, k, ts, ts + 3 * ms);
+        }
+        int64_t now = start, epoch = 0;
+        bool pass = true;
+        for (int k = 0; k < static_cast<int>(hz * 2); ++k) {
+            const auto sel = timeline.nextOutput(now);
+            if (k == 0) epoch = sel.presentTime;
+            const double expected = epoch + static_cast<double>(k) * second / hz;
+            if (!sel.valid || sel.fixedCadence || std::fabs(sel.presentTime - expected) > 1.0) pass = false;
+            now = sel.presentTime + 1000;
+            timeline.retireBefore(sel.f0.index);
+        }
+        std::cout << "Timeline self-test: Max / " << hz << " Hz on FPS timer: " << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    }
+
+    // Streaming auto-cadence test: quantized WGC timestamps and 1.5-3.5 ms
+    // delivery jitter, but output is consumed on its own timer, not vsync.
+    for (double hz : {120.0, 144.0, 165.0, 240.0}) {
+        FrameTimeline timeline;
+        timeline.configure(0, hz, 2);
+        const int64_t refresh = static_cast<int64_t>(second / hz + 0.5);
+        int next = 0, outputs = 0, wrong = 0;
+        int64_t firstOutput = 0, lastOutput = 0;
+        double lastContent = -1.0;
+        FrameTimeline::Selection pending;
+        for (int64_t now = start; now < start + 10 * second; now += 1000) {
+            for (;;) {
+                const int64_t present = start + static_cast<int64_t>(static_cast<double>(next) * second / 60) + 3 * ms;
+                const int64_t ts = ((present + refresh - 1) / refresh) * refresh;
+                const int64_t arrival = ts + 15 * ms / 10 + (next % 5) * ms / 2;
+                if (arrival > now) break;
+                const auto plan = timeline.onFrameArrived(ts, arrival);
+                if (plan.replaceLast) timeline.popLast();
+                if (plan.acceptThis) push(timeline, next, ts, arrival);
+                else ++wrong; // this source has no intermediate repaints
+                ++next;
+            }
+            if (!pending.valid) pending = timeline.nextOutput(now);
+            if (!pending.valid || pending.presentTime > now) continue;
+            if (now >= start + 4 * second) {
+                const double content = pending.f0.slot + pending.alpha;
+                if (lastContent >= 0.0 && std::fabs(content - lastContent - 0.5) > 1e-6) ++wrong;
+                if (pending.alpha != 0.0f && pending.alpha != 0.5f) ++wrong;
+                if (!outputs) firstOutput = pending.presentTime;
+                lastOutput = pending.presentTime;
+                lastContent = content;
+                ++outputs;
+            }
+            timeline.retireBefore(pending.f0.index);
+            pending = {};
+        }
+        const double fps = outputs > 1 ? (outputs - 1) * static_cast<double>(second) / (lastOutput - firstOutput) : 0.0;
+        const bool pass = std::fabs(fps - 120.0) < 1.0 && wrong == 0 && timeline.stats().frames < 12;
+        std::cout << "Timeline self-test: auto 60 fps 2x / " << hz << " Hz: " << std::fixed << std::setprecision(3)
+                  << fps << " FPS, " << wrong << " wrong positions: " << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    }
+
+    // Late work skips expired slots once, without a burst of queued frames.
+    {
+        FrameTimeline timeline;
+        timeline.configure(60, 144, 2);
+        for (int k = 0; k < 120; ++k) {
+            const int64_t ts = start + static_cast<int64_t>(static_cast<double>(k) * second / 60);
+            push(timeline, k, ts, ts + 3 * ms);
+        }
+        const auto first = timeline.nextOutput(start);
+        const int64_t late = first.presentTime + second / 2;
+        const auto recovered = timeline.nextOutput(late);
+        const auto following = timeline.nextOutput(std::max(late, recovered.presentTime));
+        const bool pass = recovered.valid && recovered.f0.index > first.f0.index && following.valid &&
+                          following.presentTime > late && timeline.stats().missedOutputs > 0;
+        std::cout << "Timeline self-test: stalled output skips expired slots without catch-up burst: "
+                  << (pass ? "PASS" : "FAIL") << "\n";
+        if (!pass) std::cout << "  late=" << late << " recovered=" << recovered.presentTime << " valid=" << recovered.valid
+                             << " next=" << following.presentTime << " valid=" << following.valid
+                             << " missed=" << timeline.stats().missedOutputs << "\n";
+        ok = ok && pass;
+    }
+
+    // Discarding every queued output must still free capture slots, or
+    // waiting for fresh input would deadlock a full producer ring.
+    {
+        FrameTimeline timeline;
+        timeline.configure(60, 144, 2);
+        for (int k = 0; k < 12; ++k) {
+            const int64_t ts = start + static_cast<int64_t>(static_cast<double>(k) * second / 60);
+            push(timeline, k, ts, ts + 3 * ms);
+        }
+        const auto first = timeline.nextOutput(start);
+        const int64_t late = first.presentTime + second;
+        const auto empty = timeline.nextOutput(late);
+        const auto released = timeline.retireBefore(empty.retireBeforeIndex);
+        const bool freed = !empty.valid && released.size() == 11 && timeline.stats().frames == 1;
+        push(timeline, 12, late, late + 3 * ms);
+        const auto resumed = timeline.nextOutput(late + 3 * ms);
+        const bool pass = freed && resumed.valid && resumed.f0.slot == 12 && resumed.alpha == 0.0f;
+        std::cout << "Timeline self-test: exhausted capture queue retires stale slots and resumes: "
+                  << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    }
+
+    // A static/paused source shows its last real frame once, then sleeps.
+    {
+        FrameTimeline timeline;
+        timeline.configure(60, 144, 2);
+        push(timeline, 0, start, start + 3 * ms);
+        push(timeline, 1, start + second / 60, start + second / 60 + 3 * ms);
+        int64_t now = start;
+        bool pass = true;
+        for (int k = 0; k < 3; ++k) {
+            const auto sel = timeline.nextOutput(now);
+            pass = pass && sel.valid && sel.f0.slot + sel.alpha == k * 0.5f;
+            now = sel.presentTime;
+            timeline.retireBefore(sel.f0.index);
+        }
+        for (int k = 0; k < 100; ++k) {
+            now += ms;
+            if (timeline.nextOutput(now).valid) pass = false;
+        }
+        push(timeline, 2, now, now + 3 * ms);
+        const auto resumed = timeline.nextOutput(now + 3 * ms);
+        pass = pass && resumed.valid && resumed.f0.slot == 2 && resumed.alpha == 0.0f;
+        std::cout << "Timeline self-test: pause, final real frame, resume without stale interpolation: "
+                  << (pass ? "PASS" : "FAIL") << "\n";
+        if (!pass) std::cout << "  resumed valid=" << resumed.valid << " slot=" << resumed.f0.slot
+                             << " alpha=" << resumed.alpha << "\n";
+        ok = ok && pass;
+    }
+    std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL") << "\n";
     return ok ? 0 : 1;
 }
 
@@ -340,9 +468,6 @@ int main(int argc, char** argv) {
     uint32_t fsrFrames = 1;
     bool fsrFrameGen = false;          // live: FSR frame generation beside the normal interpolation
     bool fsrRealtimeTest = false;      // --fsr-realtime-test <frames...>: the live FSR path offline
-    bool fsrUpscaleTest = false;       // --fsr-upscale-test <low-res frames...> --upscale-size WxH --fsr-save <dir>
-    uint32_t upscaleWidth = 0, upscaleHeight = 0;
-    float fsrSharpness = 0.0f;
     float fsrWindow = 0.1f;
     float fsrDepthSpan = 0.25f;        // RealtimeOptions::fsrDepthSpan
     FsrCameraSettings fsrCamera;       // --fsr-camera, --fsr-camera-fov, --fsr-camera-flip
@@ -456,16 +581,6 @@ int main(int argc, char** argv) {
             fsrFrameGenOffline = true;
         } else if (arg == "--fsr-realtime-test") {
             fsrRealtimeTest = true;
-        } else if (arg == "--fsr-upscale-test") {
-            fsrUpscaleTest = true;
-        } else if (arg == "--upscale-size" && i + 1 < argc) {
-            const std::string size = argv[++i];
-            const size_t x = size.find('x');
-            if (x == std::string::npos) throw std::invalid_argument("upscale size must be WxH");
-            upscaleWidth = static_cast<uint32_t>(std::clamp(std::stoi(size.substr(0, x)), 16, 7680));
-            upscaleHeight = static_cast<uint32_t>(std::clamp(std::stoi(size.substr(x + 1)), 16, 4320));
-        } else if (arg == "--fsr-sharpness" && i + 1 < argc) {
-            fsrSharpness = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--fsr-fg") {
             fsrFrameGen = true;
         } else if (arg == "--fsr-window" && i + 1 < argc) {
@@ -483,12 +598,6 @@ int main(int argc, char** argv) {
             const std::string value = argv[++i];
             if (value != "on" && value != "off") throw std::invalid_argument("vsync must be on or off");
             queues.vsync = value == "on";
-        } else if (arg == "--upscale" && i + 1 < argc) {
-            const std::string value = argv[++i];
-            if (value != "off" && value != "fsr4") throw std::invalid_argument("upscale must be off or fsr4");
-            queues.upscale = value == "fsr4";
-        } else if (arg == "--upscale-sharpness" && i + 1 < argc) {
-            queues.upscaleSharpness = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--capture-queue" && i + 1 < argc) {
             queues.captureQueue = std::clamp(std::stoi(argv[++i]), 2, 8);
         } else if (arg == "--fsr-camera" && i + 1 < argc) {
@@ -717,13 +826,6 @@ int main(int argc, char** argv) {
         return runFlowLevelEval(positionalArgs, gpuSettings, adapterPreference);
     }
 
-    if (fsrUpscaleTest) {
-        gpuSettings.minRefineLevel = std::clamp(
-            gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
-        return runFsrUpscaleTest(positionalArgs, upscaleWidth, upscaleHeight, fsrSaveFolder, gpuSettings,
-                                 adapterPreference, fsrDepthSpan, fsrSharpness);
-    }
-
     if (fsrRealtimeTest) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
@@ -764,8 +866,6 @@ int main(int argc, char** argv) {
         options.frameLatency = queues.frameLatency;
         options.captureQueue = queues.captureQueue;
         options.vsync = queues.vsync;
-        options.upscale = queues.upscale;
-        options.upscaleSharpness = queues.upscaleSharpness;
         return runRealtimeSession(options);
     }
 

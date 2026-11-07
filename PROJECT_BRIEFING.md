@@ -18,7 +18,7 @@ Around that core:
 - a Win32 owner-drawn GUI (pages: **Live Capture**, **Offline Interpolation**, **AI Model**) with an animated brand character and startup splash;
 - offline GPU harnesses and self-tests built into the same executable;
 - optional AI parts on ONNX Runtime + DirectML: a trainable flow network, MiDaS depth, a UI-region detector, a trained temporal-UI model;
-- optional AMD FidelityFX parts: Optical Flow (SDK 1.1.4) and FSR 4 frame generation / upscaling (SDK 2.4.0);
+- optional AMD FidelityFX parts: Optical Flow (SDK 1.1.4) and FSR 4 frame generation (SDK 2.4.0);
 - a Python trainer (`tools/ai-train`) for the AI flow and UI models, and an NSIS installer.
 
 Executable: `motion_enhancer.exe` (CMake target `motion_enhancer`, MSVC x64,
@@ -49,7 +49,7 @@ installer theme, licences), `third_party/` (see section 8), `build-project/`
 | `--gpu-offline f0 f1 out [--ground-truth gt] [--save-flow f] [--gpu-offline-prev p]` | the live GPU graph on two PNGs (`runOfflineGpuInterpolation`) |
 | `--gpu-offline-sequence <prefix>` | temporal chain over `<prefix>_f###.png`, PSNR vs `<prefix>_m###.png` |
 | `--gpu-flow-eval <prefixes…>` | per-pyramid-level flow evaluation |
-| `--fsr-fg-offline`, `--fsr-realtime-test <frames…>`, `--fsr-upscale-test <frames…> --upscale-size WxH --fsr-save <dir>` | FSR 4 offline harnesses |
+| `--fsr-fg-offline`, `--fsr-realtime-test <frames…>` | FSR 4 frame generation offline harnesses |
 | `--ai-flow-test <model>`, `--depth-test in out`, `--ui-detect-test in out` | single-model checks |
 | Self-tests | `--timeline-self-test`, `--projection-self-test`, `--ai-refinement-self-test`, `--ai-temporal-ui-self-test`, `--ai-blend-mask-self-test`, `--ui-regions-self-test`, `--d3d12-self-test`, `--test` (synthetic CPU benchmark) |
 | Neural estimator | `--train-neural <model.bin> <inputs…>`, `--neural-epochs`, `--neural-gradient-check`, `--neural-parity-check f0 f1` |
@@ -61,7 +61,7 @@ Main live options (defaults in brackets):
 - `--vsync on|off` [on]; `--frame-latency 1|2` [1]; `--capture-queue 2..8`; `--latency-min <ms>`, `--latency-max <ms>|auto`
 - quality toggles: `--no-ui-mask`, `--no-ui-persistence`, `--no-occlusion-fill`, `--no-flow-median`, `--no-ffx-refine`, `--no-ffx-repair`, `--ffx-occlusion`, `--allow-crossfade`
 - AI: `--ai-refinement` / `--no-ai-refinement`, `--ai-blend-mask`, `--ai-temporal-ui`, `--ai-ui-regions`, `--ui-detector`, `--ai-depth`, `--ai-depth-every 1..4`
-- FSR: `--fsr-fg`, `--fsr-window` [0.1], `--fsr-depth-span` [0.25], `--fsr-camera off|flow|exact|spin`, `--upscale off|fsr4`, `--upscale-sharpness`
+- FSR: `--fsr-fg`, `--fsr-window` [0.1], `--fsr-depth-span` [0.25], `--fsr-camera off|flow|exact|spin`
 - `--stop-event <name>`: graceful stop, used by the GUI
 
 The GUI runs capture and training as **separate processes** and stops capture
@@ -75,8 +75,8 @@ WGC (D3D11 surface, timestamp)
   -> FrameTimeline: cadence classification, timestamp regularisation
   -> FlowEngine (flow queue): pyramid -> DIS | AI+DIS | FFX | SAD | neural -> post passes -> flow ring + fence
        (optional DepthService on its own queue; UiPersist/UiMask evidence on the flow queue)
-  -> FrameTimeline (media clock, latency budget) picks the pair and t for each output frame
-  -> Presenter (present queue): motion projection -> InterpolateCS -> [FSR FG / FSR upscale] -> flip swap chain -> overlay
+  -> FrameTimeline (source FPS x N clock, fixed buffering) reserves each pair and exact k/N output
+  -> Presenter (present queue): motion projection -> InterpolateCS (or FSR FG middle frame) -> flip swap chain -> overlay
 ```
 
 Capture, flow and presentation run on separate threads and GPU queues and
@@ -88,9 +88,9 @@ Components (`src/` + `include/`):
 - **GraphicsDevice**: D3D12 device with `presentQueue` and `flowQueue`, plus a D3D11 device on the same adapter used only because WGC needs `ID3D11Texture2D`. Shared NT-handle textures and shared fences order D3D11 -> D3D12. Holds `ShaderConstants`, which **must match `shaders/Common.hlsli` byte for byte** (`static_assert`ed).
 - **ComputeKernels / DispatchContext**: one root signature for every shader; `DispatchContext` records barriers, descriptors, constants and the dispatch per call. Shared capture textures are simultaneous-access and read through implicit promotion (deliberately no cross-queue barriers).
 - **CaptureEngine**: the WGC callback only enqueues; a producer thread owns the D3D11 immediate context. Slots go `Free -> Filling -> Live -> Retiring` and recycle only after every queue's fence has passed them.
-- **FrameTimeline** (100 ns units): cadence lock from the mean of the middle half of the last 16 intervals (`kCadenceWindow`), deferral/replace/drop of off-grid frames, timestamp regularisation, media clock `m = T_display - captureOffset - latencyBudget`, latency budget that grows on starvation and decays on slack. With vsync off it also schedules present times itself (`nextPresentTime`).
+- **FrameTimeline** (100 ns units): source cadence estimation, repaint deferral and timestamp regularisation are retained for capture. Rate = robust mean of the last 96 intervals (pauses/fragments excluded); newest 16 detect rate changes. `nextOutput()` replaces all display-driven selection: fixed N reserves each pair's exact k/N positions on a source FPS x N clock (60 FPS 2x = 120 FPS on every monitor). Absolute double-precision deadlines retain fractional ticks; the reserved pair/alpha survives timer waits. Buffering is fixed at two source periods + 10 ms, bounded by the latency options, not adapted after starvation. Late work skips expired slots without a catch-up burst; a paused source shows its last real frame once and waits. Only explicit Max chooses its FPS from the display rate. There are no refresh holds, phase trims, gradual lead adjustment, resampling, or independent-flip clock switching.
 - **FlowEngine**: `submitPair(prev, cur)` runs on the capture thread and records the pair's flow into a ring of entries (forward and backward fields, plus optional UI evidence, AI blend mask and per-pair diagnostics). Per-slot cached pyramids; up to 10 levels (`kMaxLevels`), never below a 4 px short side. `setInterpolationConstants()` (`FlowEngine.h:463`) is the **only** correct way to fill block size, time and field-convention constants.
-- **Presenter**: 3-buffer flip-model swap chain. Paced by `DCompositionWaitForCompositorClock` when available (the overlay is a layered, composed window whose frame-latency waitable was seen to signal between refreshes, so that object is only back-pressure). One command list per refresh, GPU-side fence waits only. Keeps a replay buffer in video memory for `Ctrl+Alt+F2` (last 20 shown frames + the game frames they came from, saved to `captures\<date-time>\` next to the exe). Debug views 0-7 cycle on `Ctrl+Alt+F3`.
+- **Presenter**: 3-buffer flip-model swap chain, always `Present(0)`. The render loop uses a high-resolution FPS timer, not compositor ticks or predicted scanout. Swap-chain capacity is blocking back-pressure only; actual Present times are measured separately from target FPS. The GUI Tearing setting (legacy CLI `--vsync on|off`) controls only the tearing flag. DWM/fixed-Hz scanout can still repeat/drop frames; even 120 FPS scanout needs working VRR or a compatible mode. Keeps the existing GPU replay buffer for `Ctrl+Alt+F2` and debug views 0-7 (`Ctrl+Alt+F3`).
 - **RealtimeSession**: wires everything together; MMCSS thread boosts, async log, overlay window, hotkeys (`Ctrl+Alt+F1` show/hide, `F2` save, `F3` debug view, `Ctrl+Alt+Esc` quit), status line every 2 s. The same file also holds every offline harness and self-test (~18 functions).
 
 ## 5. Flow engines
@@ -127,9 +127,9 @@ and a `--subpixel` training objective did not fix it; the latter was removed.
 
 Always **beside** the native interpolation, never replacing it (owner's rule).
 
-- **Frame generation** (`FsrFrameGen`, `FsrRealtime`, `FsrMotionCS`, `FsrDepthCS`, `FsrCameraCS`): our backward field is FSR's motion-vector input. FSR 4.0.2 makes only the t = 0.5 frame, so live (`--fsr-fg`) its frame is used only on refreshes with |t - 0.5| <= `--fsr-window`; it covers every generated frame only at `--multiplier 2`. Offline: about +1.4 dB over InterpolateCS on 16 triplets, slightly softer. Off by default.
-- **Upscaling** (`FsrUpscaler`, `FsrScaledMotionCS`, `--upscale fsr4`): runs last in Presenter. Offline it only beat bilinear and was below Lanczos (captured frames carry no camera jitter). Experimental.
-- Neither path applies the static-UI mask to FSR's output yet.
+- **Frame generation** (`FsrFrameGen`, `FsrRealtime`, `FsrMotionCS`, `FsrDepthCS`, `FsrCameraCS`): our backward field is FSR's motion-vector input. FSR 4.0.2 makes only t = 0.5; fixed multipliers use it only at that exact position (`Selection::canUseMidpoint`), never instead of a real frame. At 2x, real frames and FSR middles alternate on every monitor; a wide `--fsr-window` cannot replace other fixed positions. Offline: about +1.4 dB over InterpolateCS on 16 triplets, slightly softer. Off by default.
+- **Upscaling was removed** (2026-11-07, at the owner's request): `FsrUpscaler`, `FsrScaledMotionCS`, `--upscale`, `--upscale-sharpness`, `--fsr-upscale-test` and the GUI "Upscale" combo are gone; the swap chain is always the capture size and the upscaler DLL is no longer copied. Offline it had only beaten bilinear and stayed below Lanczos (captured frames carry no camera jitter).
+- Frame generation does not apply the static-UI mask to FSR's output yet.
 
 ## 8. Build, packaging, dependencies
 
@@ -140,7 +140,7 @@ cmake --build build-project --config Release --target motion_enhancer --parallel
 ```
 
 - **FFX Optical Flow is ON by default**; configure fails unless `third_party/FidelityFX-SDK-v1.1.4` has its `CMakeLists.txt` and `tools/binary_store/FidelityFX_SC.exe`. Disable with `-DMOTION_ENHANCER_ENABLE_FFX_OPTICAL_FLOW=OFF`.
-- **FSR 4** builds in automatically when `third_party/FidelityFX-SDK-v2.4.0/Kits/FidelityFX/api/include/ffx_api.h` exists (defines `MOTION_ENHANCER_FSR_FG`, copies the signed loader/framegen/upscaler DLLs).
+- **FSR 4** builds in automatically when `third_party/FidelityFX-SDK-v2.4.0/Kits/FidelityFX/api/include/ffx_api.h` exists (defines `MOTION_ENHANCER_FSR_FG`, copies the signed loader and frame generation DLLs).
 - **ONNX Runtime 1.24.4 + DirectML 1.15.4** (`third_party/ai-depth`): built in when `lib/onnxruntime.lib` exists (defines `MOTION_ENHANCER_AI_DEPTH`); `onnxruntime.dll` is **delay-loaded**, so the program starts without it. The AI flow, depth and UI detector all depend on this build.
 - **UI matrix detector** (`-DMOTION_ENHANCER_ENABLE_UI_MATRIX=ON`, default OFF): pinned ncnn (Vulkan cooperative matrix) from `third_party/ui-matrix`.
 - **DXC** is found with `find_program` (FFX SDK's bundled DXC, then `$VULKAN_SDK/Bin`); set `-DDXC_EXECUTABLE=` otherwise. Shaders compile to `<build>/shaders/*.cso`; a POST_BUILD step on the shader target copies them to `Release\shaders` so an HLSL-only edit is never measured with stale `.cso` files. A scratch build with a different `OutDir` does **not** get the shaders copied: copy them by hand.
@@ -176,12 +176,12 @@ Working rules from the owner:
 ## 10. Gotchas and repo-health issues
 
 1. **Repo size.** The pack is ~2.2 GiB. `build-project/` (1.7 GB) is tracked on purpose as the runnable build, including ~480 `.obj`/`.pdb`/`.tlog`/`.lib` intermediates and large DLLs; every rebuild adds another copy to history. Both FidelityFX SDKs and the ncnn sources (8k files) are vendored, plus a stray 6.7 MB `.mp4` in `third_party/`.
-2. **Docs drift.** The README (~98 KB) mixes user guide and changelog. `CMakeLists.txt:144-146` still says SDK 2.4.0 is "not in git" (it is tracked since `ef06184e`), and the `Presenter.h` class comment still says pacing comes from the frame-latency waitable alone (it is the compositor clock, see `Presenter.cpp:172`).
+2. **Docs drift.** The README (~98 KB) mixes user guide and changelog.
 3. **`RealtimeSession.cpp`** holds the live session (`runRealtimeSession`, ~520 lines in one lambda) *and* every offline harness. Prefer adding new harnesses elsewhere.
 4. **Engine flags, not an enum** (section 5): impossible combinations can be represented; `usingNeural()` already guards against FFX.
 5. **Cross-file invariants that bite:** `ShaderConstants` <-> `Common.hlsli`; `NeuralFlowLayout` <-> `kw*` constants <-> trainer <-> CPU reference; `Entry::singleField` <-> `FlowScale` <-> InterpolateCS convention; `Synthesis.hlsli` is shared by InterpolateCS and UiMaskCS so the mask tests exactly the warp that is shown; AI model `.onnx` <-> its `.json` (network size) <-> optional `.dis.onnx` companion.
 6. **Choose-before-capture settings:** AI refinement, AI UI regions and the temporal-UI model bind tensors at session start; changing them needs a new capture session.
-7. **Lost/unmerged work (as of 2026-11-07):** a later session made pacing fixes in `FrameTimeline` (trimmed-mean cadence over 96 intervals, `phaseTolerance`, slewed latency changes), per-position "own frame times" for fixed multipliers, FSR upscaler jitter, and replaced upscaling with FSR 4 native AA (`--aa fsr4`). **None of it is in this tree or in git** (no matching identifiers; reflog ends at `ef06184e`). It may exist only in the owner's `MotionEnhancer2.rar` backup. Check with the owner before redoing it.
+7. **Pacing work of 2026-11-07 was superseded at the owner's request.** The entire display-driven output pipeline (compositor wait, scanout PLL, phase lock, holds, resampling, adaptive lead/budget, flip-dependent switching) was removed in favor of source FPS x multiplier on a simple timer. Capture-side cadence handling and hidden-frame retirement remain. `--timeline-self-test` now verifies monitor-independent deadlines/positions, streaming capture, late work and pause/resume. See `docs/validation/source-fps-clock-2026-11-07.md`. FSR 4 native AA (`--aa fsr4`) from that day was not redone.
 
 ## 11. Hard-won design decisions (do not undo without measuring)
 
@@ -196,7 +196,7 @@ Working rules from the owner:
 
 ## 12. Good next tasks
 
-1. Recover or redo the 2026-11-07 pacing work (section 10.7) and add its 144/100 fps cases to `--timeline-self-test`.
+1. Owner-run live confirmation of the source FPS clock (status line actual FPS, target FPS, missed outputs, `flip`). Offline checks are in `docs/validation/source-fps-clock-2026-11-07.md`; scanout is still limited by display mode, DWM and working VRR. Do not reinstate refresh resampling to hide these hardware limits.
 2. A single offline regression script (`tools/Run-Checks.ps1`): the self-tests + `--gpu-offline-sequence` on `flow_tests/` with PSNR thresholds.
 3. Split the offline harnesses out of `RealtimeSession.cpp`; replace the engine booleans with an enum.
 4. Decide with the owner how much of `build-project/` to track (e.g. `Release/` only), and whether to shrink the embedded character atlas.
