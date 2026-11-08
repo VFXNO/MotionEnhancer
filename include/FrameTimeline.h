@@ -18,6 +18,11 @@ struct TimelineFrame {
     int      flowEntry = -1;   // flow ring entry for the pair (previous, this)
     uint64_t flowFence = 0;    // flow-queue fence value that completes it
     bool     sceneCut = false; // pair (previous, this) is a hard cut
+    // Source periods the pair (previous, this) spans, from the raw WGC gap,
+    // filled by push(): 1 normally, 2 when one source frame never reached the
+    // timeline (WGC delivers only the newest frame per composition, a game
+    // hitch, a full slot ring), 0 for the first frame and after a pause.
+    uint32_t periods = 0;
 };
 
 // Ordered source frames and a simple source-rate output clock.
@@ -61,6 +66,7 @@ public:
 
     struct Stats {
         double sourcePeriodMs = 0.0;
+        double outputPeriodMs = 0.0;  // source period the fixed-N output clock runs on
         bool cadenceLocked = false;
         double latencyBudgetMs = 0.0;
         double captureOffsetMs = 0.0;
@@ -79,9 +85,11 @@ public:
     void setLatencyLimits(double minExtraMs, double maxMs);
     // Reserves the next output, including its exact frames and alpha. Keep
     // this selection until its presentTime; do not re-select after waiting.
-    // Fixed N always emits k/N at source FPS x N, on every monitor. Only Max
-    // (N=0) chooses its output FPS from refreshHz. Missing input returns an
-    // invalid selection and a retry time, not another copy of the last frame.
+    // Fixed N always emits k/N at source FPS x N, on every monitor (a pair
+    // that spans two source periods because one frame never arrived gets
+    // its 2N positions k/2N on the same clock). Only Max (N=0) chooses its
+    // output FPS from refreshHz. Missing input returns an invalid selection
+    // and a retry time, not another copy of the last frame.
     Selection nextOutput(int64_t now);
 
     // ---- producer -------------------------------------------------------
@@ -95,6 +103,9 @@ public:
     int popLast();
     // Appends an accepted frame; fills index and the regularized ts.
     void push(TimelineFrame& frame);
+    // A captured source frame was lost before classification (no free slot,
+    // callback queue overflow): the next accepted pair spans it for certain.
+    void noteLostFrame();
 
     // ---- consumer -------------------------------------------------------
     // Frames older than the given index are no longer needed for display.
@@ -119,6 +130,13 @@ private:
     // How far from the cadence grid a real frame may land: a frame that
     // reached the screen one refresh late is still a frame, not a repaint.
     int64_t phaseTolerance() const;
+    // Fixed-N output clock: the source period measured over the accepted
+    // frames' pairs, in the same units the clock consumes (source periods).
+    double clockPeriod() const;
+    uint32_t pairPeriods(int64_t rawGap, bool lostFrame = false) const;
+    void resetClockPeriod();
+    bool clockRateChanged() const;
+    void updateRefreshGrid(double period, bool locked);
 
     mutable std::mutex m_mutex;
     std::deque<TimelineFrame> m_frames;
@@ -154,8 +172,20 @@ private:
     int64_t m_maxLatencyOverride = 0;    // setLatencyLimits: 0 = three periods + 60 ms
     double m_nextOutputTime = 0.0;  // steady deadline, not re-anchored to each wake-up
     uint64_t m_outputFrameIndex = 0;
-    uint32_t m_outputPosition = 0;   // next k/N within that frame's pair
+    uint32_t m_outputPosition = 0;   // next k/(N x periods) within that frame's pair
     uint64_t m_currentF1Index = 0;
+
+    // Output clock period (see clockPeriod): accepted pairs' raw WGC gaps
+    // and their source-period counts, newest kRateWindow (+32 queued) pairs.
+    struct ClockGap { uint64_t index; int64_t gap; uint32_t periods; };
+    std::deque<ClockGap> m_clockGaps;
+    int64_t m_clockGapSum = 0;
+    uint64_t m_clockPeriodSum = 0;
+    bool m_clockStarted = false;     // the fixed-N clock has made its first reservation
+    bool m_frameLost = false;        // noteLostFrame() since the last push
+    bool m_refreshGridSource = false; // steady rate at a refresh multiple (updateRefreshGrid)
+    size_t m_offGridRun = 0;         // consecutive locked cadence updates off the refresh grid
+    bool m_refreshGridChecked = false; // judged once on a full rate window
 
     Stats m_stats;
 };

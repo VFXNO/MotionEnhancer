@@ -37,6 +37,9 @@ namespace {
 // Frames at another window size within one 2 s status period (about half a
 // second at 60 fps) that end the live session (kExitWindowResized).
 constexpr uint64_t kResizedFrames = 30;
+// The output thread wakes this long (100 ns units) before a prepared
+// Present's deadline and spins the rest (see the live output loop).
+constexpr int64_t kSpinMargin = 10000;
 
 bool envFlag(const char* name) {
     char buffer[8] = {};
@@ -630,7 +633,19 @@ int runRealtimeSession(const RealtimeOptions& options) {
                     break;
                 }
             }
-            const int64_t remaining = std::min<int64_t>(pending.presentTime - wallClock100ns(), 500000);
+            // A prepared output sleeps on the timer until kSpinMargin before
+            // its deadline and spins the rest, so Present(0) starts on time:
+            // a high-resolution timer typically wakes 0.05-0.5 ms late and
+            // now and then 1-2 ms, and a composed overlay shows whatever was
+            // presented before each refresh's latch, so that wake jitter
+            // alone moved frames between refreshes. Offline model (60 fps 2x,
+            // 3% of wakes 1-2 ms late): Present calls more than 1 ms late
+            // 129 -> 30 per 4200, worst 2.3 -> 1.3 ms. The spin costs about
+            // 1 ms of one core per output; nothing else changes.
+            const bool timedPresent = pending.valid && outputPrepared;
+            const int64_t untilDeadline = pending.presentTime - wallClock100ns();
+            const int64_t remaining = std::min<int64_t>(timedPresent ? untilDeadline - kSpinMargin : untilDeadline,
+                                                        500000);
             if (remaining > 0) {
                 HANDLE waits[3] = {};
                 DWORD count = 0;
@@ -643,6 +658,17 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 const DWORD timeout = static_cast<DWORD>((remaining + 9999) / 10000);
                 if (count) WaitForMultipleObjects(count, waits, FALSE, timeout);
                 else Sleep(timeout);
+            }
+            if (timedPresent) {
+                // Only the last stretch: a wake far ahead (the 50 ms cap, the
+                // stop event) goes around the loop and sleeps again.
+                int64_t left = pending.presentTime - wallClock100ns();
+                if (left <= kSpinMargin + kSpinMargin / 2) {
+                    while (left > 0) {
+                        YieldProcessor();
+                        left = pending.presentTime - wallClock100ns();
+                    }
+                }
             }
             if (stopEvent && WaitForSingleObject(stopEvent, 0) == WAIT_OBJECT_0) break;
             if (pending.valid && wallClock100ns() >= pending.presentTime) {
@@ -716,8 +742,11 @@ int runRealtimeSession(const RealtimeOptions& options) {
                            << " | flow " << (flow.usingFfx() ? "FFX " : flow.usingAi() ? "AI " : flow.usingNeural() ? "neural " : flow.usingDis() ? "DIS " : "SAD ") << std::setprecision(2)
                           << flow.lastGpuTimeMs() << " ms, diff " << cs.lastDiffMs << " ms"
                           << " | q " << ts.frames;
-                const double sourceFps = ts.sourcePeriodMs > 0.0 ? 1000.0 / ts.sourcePeriodMs : 0.0;
-                status << " | target " << (options.outputMultiplier ? sourceFps * options.outputMultiplier : presenter.refreshRate())
+                // The fixed-N clock runs on its own period measurement over
+                // the accepted frames (FrameTimeline::clockPeriod), not on
+                // the capture cadence shown as "source" above.
+                const double clockFps = ts.outputPeriodMs > 0.0 ? 1000.0 / ts.outputPeriodMs : 0.0;
+                status << " | target " << (options.outputMultiplier ? clockFps * options.outputMultiplier : presenter.refreshRate())
                        << " fps, FPS clock | flip " << presenter.presentationMode();
                 if (fsr) {
                     const FsrRealtime::Stats fs = fsr->takeStats();

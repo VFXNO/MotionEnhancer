@@ -78,6 +78,7 @@ private:
     struct QueuedFrame {
         winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame frame{nullptr};
         int64_t arrival = 0;
+        bool afterLoss = false;   // the frame before it was dropped from this queue
     };
     struct PendingFrame {
         int slot = -1;

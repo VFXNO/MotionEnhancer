@@ -19,6 +19,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cctype>
+#include <random>
 
 static void printUsage(const char* progName) {
     std::cout << "========================================================================\n"
@@ -238,6 +239,352 @@ static int runSyntheticTest(const InterpolatorParams& userParams) {
     }
 }
 
+
+// CPU model of the live loop for --timeline-self-test (no GPU, no capture):
+// a game renders frame k with content time k x P and presents it 3 ms later
+// (+-1 ms, sometimes a hitch of 0.3-1.2 periods); the desktop composes at
+// the refresh and WGC delivers only the newest frame of each composition;
+// optional UI repaints are non-duplicate frames showing the current game
+// frame; the capture callback runs 1.5-3.5 ms later (0.5%: +6 ms). The
+// producer follows CaptureEngine (duplicates, 8 slots, defer/replace,
+// noteLostFrame), and the output side follows RealtimeSession (reserve,
+// retire, wake 0.05-0.35 ms after the deadline, Present). Measured per
+// presented output after a 3 s warm-up: content step vs deadline step.
+struct StreamCase {
+    double gameFps = 60.0, hz = 144.0;
+    uint32_t multiplier = 2;
+    double seconds = 30.0;
+    double hitchProb = 0.0;      // per game frame
+    double repaintsPerSec = 0.0;
+    uint32_t seed = 7;
+};
+struct StreamResult {
+    int outputs = 0, stutterEvents = 0, invalidWaits = 0, slotDrops = 0;
+    size_t maxQueue = 0;
+    double latencyMinMs = 1e30, latencyMaxMs = -1e30, budgetMs = 0.0;
+};
+static StreamResult runStreamModel(const StreamCase& c) {
+    constexpr int64_t ms = 10000, second = 10000000, start = 1000000000;
+    std::mt19937 rng(c.seed);
+    std::uniform_real_distribution<double> uni(0.0, 1.0);
+    const double refresh = second / c.hz, period = second / c.gameFps, phase = 1234.0;
+    const int64_t end = start + static_cast<int64_t>(c.seconds * second);
+    struct Delivery { double content; int64_t ts, arrival; bool repaint; };
+    std::vector<Delivery> deliveries;
+    {
+        std::vector<std::pair<double, double>> presents; // present time, content (-1: repaint)
+        double last = 0.0;
+        for (double t = start; t < end + second; t += period) {
+            double present = t + 3.0 * ms + (uni(rng) - 0.5) * 2.0 * ms;
+            if (uni(rng) < c.hitchProb) present += (0.3 + 0.9 * uni(rng)) * period;
+            present = std::max(present, last + 1000.0);
+            last = present;
+            presents.push_back({present, t});
+        }
+        if (c.repaintsPerSec > 0.0)
+            for (double t = start + uni(rng) * second / c.repaintsPerSec; t < end + second;
+                 t += (0.5 + uni(rng)) * second / c.repaintsPerSec)
+                presents.push_back({t, -1.0});
+        std::sort(presents.begin(), presents.end());
+        double content = start;
+        int64_t lastComp = 0;
+        for (const auto& [present, frame] : presents) {
+            if (frame >= 0.0) content = std::max(content, frame);
+            const int64_t comp = static_cast<int64_t>(phase + std::ceil((present - phase) / refresh) * refresh);
+            if (!deliveries.empty() && comp == lastComp) { // superseded within one composition
+                deliveries.back().content = content;
+                deliveries.back().repaint = deliveries.back().repaint && frame < 0.0;
+                continue;
+            }
+            double delay = 1.5 * ms + uni(rng) * 2.0 * ms;
+            if (uni(rng) < 0.005) delay += 6.0 * ms;
+            deliveries.push_back({content, comp, comp + static_cast<int64_t>(delay), frame < 0.0});
+            lastComp = comp;
+        }
+        for (size_t i = 1; i < deliveries.size(); ++i)
+            deliveries[i].arrival = std::max(deliveries[i].arrival, deliveries[i - 1].arrival + 2000);
+    }
+
+    FrameTimeline timeline;
+    timeline.configure(0, c.hz, c.multiplier);
+    StreamResult r;
+    std::vector<double> slotContent(8, 0.0);
+    std::vector<bool> slotUsed(8, false);
+    auto acquire = [&]() {
+        for (int i = 0; i < 8; ++i)
+            if (!slotUsed[i]) { slotUsed[i] = true; return i; }
+        return -1;
+    };
+    auto release = [&](int slot) { if (slot >= 0) slotUsed[static_cast<size_t>(slot)] = false; };
+    size_t next = 0;
+    bool deferred = false;
+    int deferredSlot = -1;
+    int64_t deferredTs = 0, deferredArrival = 0, deferDeadline = 0;
+    double lastContent = -1.0;
+    auto accept = [&](int slot, int64_t ts, int64_t arrival) {
+        TimelineFrame f;
+        f.slot = slot;
+        f.tsRaw = ts;
+        f.arrival = arrival;
+        f.flowEntry = 0;
+        timeline.push(f);
+    };
+    auto produceUntil = [&](int64_t now) {
+        for (;;) {
+            const int64_t tArrival = next < deliveries.size() ? deliveries[next].arrival : INT64_MAX;
+            const int64_t tDefer = deferred ? deferDeadline : INT64_MAX;
+            if (std::min(tArrival, tDefer) > now) return;
+            if (tDefer <= tArrival) {
+                if (timeline.onDeferTimeout().acceptDeferredFirst) accept(deferredSlot, deferredTs, deferredArrival);
+                deferred = false;
+                continue;
+            }
+            const Delivery d = deliveries[next++];
+            if (d.content == lastContent && !d.repaint) continue; // GPU diff: exact duplicate
+            lastContent = d.content;
+            const int slot = acquire();
+            if (slot < 0) {
+                timeline.noteLostFrame();
+                ++r.slotDrops;
+                continue;
+            }
+            slotContent[static_cast<size_t>(slot)] = d.content;
+            const auto plan = timeline.onFrameArrived(d.ts, d.arrival);
+            if (deferred) {
+                if (plan.acceptDeferredFirst) accept(deferredSlot, deferredTs, deferredArrival);
+                else if (plan.dropDeferred) release(deferredSlot);
+                deferred = false;
+            }
+            if (plan.replaceLast) release(timeline.popLast());
+            if (plan.acceptThis) accept(slot, d.ts, d.arrival);
+            else if (plan.deferThis) {
+                deferred = true;
+                deferredSlot = slot;
+                deferredTs = d.ts;
+                deferredArrival = d.arrival;
+                deferDeadline = plan.deferDeadline;
+            }
+        }
+    };
+
+    int64_t now = start;
+    FrameTimeline::Selection pending;
+    double previousContent = -1.0, previousDeadline = 0.0;
+    bool inEvent = false;
+    while (now < end) {
+        produceUntil(now);
+        if (!pending.valid) {
+            pending = timeline.nextOutput(now);
+            if (pending.retireBeforeIndex)
+                for (int slot : timeline.retireBefore(pending.retireBeforeIndex)) release(slot);
+            if (!pending.valid && now >= start + 3 * second) ++r.invalidWaits;
+        }
+        if (pending.presentTime > now) {
+            if (pending.valid) {
+                now = pending.presentTime + static_cast<int64_t>((0.05 + 0.3 * uni(rng)) * ms);
+            } else {
+                int64_t wake = pending.presentTime;
+                if (next < deliveries.size()) wake = std::min(wake, deliveries[next].arrival);
+                if (deferred) wake = std::min(wake, deferDeadline);
+                now = std::max(wake, now + 1);
+            }
+            produceUntil(now);
+        }
+        if (pending.valid && now >= pending.presentTime) {
+            const double c0 = slotContent[static_cast<size_t>(pending.f0.slot)];
+            const double c1 = slotContent[static_cast<size_t>(pending.f1.slot)];
+            const double content = c0 + pending.alpha * (c1 - c0);
+            if (now >= start + 3 * second) {
+                ++r.outputs;
+                if (previousContent >= 0.0) {
+                    const double error = std::fabs((content - previousContent) - (pending.presentTime - previousDeadline));
+                    if (error > 1.0 * ms && !inEvent) ++r.stutterEvents;
+                    inEvent = error > 1.0 * ms;
+                }
+                const double latency = (pending.presentTime - content) / ms;
+                r.latencyMinMs = std::min(r.latencyMinMs, latency);
+                r.latencyMaxMs = std::max(r.latencyMaxMs, latency);
+                r.maxQueue = std::max(r.maxQueue, timeline.stats().frames);
+            }
+            previousContent = content;
+            previousDeadline = static_cast<double>(pending.presentTime);
+            pending = {};
+        }
+    }
+    r.budgetMs = timeline.stats().latencyBudgetMs;
+    return r;
+}
+
+// Live-loop stutter causes found on 2026-11-08, each as a streaming case.
+// The same cases on the previous FrameTimeline (commit 6c36c467): startup
+// held all 8 slots at 122-137 ms latency; 1% hitches gave 13-49 jumps on
+// 60-240 Hz (37 frames lost at 165 Hz, 1147 empty waits at 120 Hz); 30 fps
+// 4x with 2% hitches 14 jumps and 335 empty waits; two UI repaints a
+// second 1751-5054 empty waits at 120/240 Hz; 24 fps ran at 24 ms latency
+// against a 93 ms budget (17649 empty waits); 59.94 fps on 60 Hz reached
+// 152 ms and lost 21 frames; 120 fps on 240 Hz lost 7. Only the 57 fps
+// guard passed.
+static bool runStreamingStutterTests() {
+    bool ok = true;
+    auto report = [&](const char* name, const StreamCase& c, const StreamResult& r, bool pass) {
+        std::cout << "Timeline self-test: stream " << name << " " << c.gameFps << " fps " << c.multiplier << "x / "
+                  << c.hz << " Hz: " << r.outputs << " outputs, " << r.stutterEvents << " jumps, latency "
+                  << std::fixed << std::setprecision(1) << r.latencyMinMs << "-" << r.latencyMaxMs << " ms (budget "
+                  << r.budgetMs << "), queue " << r.maxQueue << ", " << r.invalidWaits << " empty waits, "
+                  << r.slotDrops << " lost: " << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    };
+    // Startup must not anchor on the 30 fps placeholder period: latency is
+    // the fixed budget plus capture and present delays, not 8 held slots.
+    for (double hz : {60.0, 144.0, 240.0}) {
+        StreamCase c;
+        c.hz = hz;
+        const StreamResult r = runStreamModel(c);
+        report("startup", c, r, r.stutterEvents == 0 && r.maxQueue <= 5 && r.latencyMaxMs < r.budgetMs + 20.0 &&
+                                    r.slotDrops == 0 && r.invalidWaits == 0);
+    }
+    // A missing frame (hitch, or two presents in one composition) is a
+    // two-period pair with 2N positions, not double speed or a "pause".
+    for (double hz : {60.0, 120.0, 165.0, 240.0}) {
+        StreamCase c;
+        c.hz = hz;
+        c.hitchProb = 0.01;
+        const StreamResult r = runStreamModel(c);
+        report("hitches", c, r, r.stutterEvents <= 3 && r.slotDrops == 0 && r.maxQueue <= 5);
+    }
+    {
+        StreamCase c;
+        c.gameFps = 30.0;
+        c.hz = 120.0;
+        c.multiplier = 4;
+        c.hitchProb = 0.02;
+        const StreamResult r = runStreamModel(c);
+        report("hitches", c, r, r.stutterEvents == 0 && r.invalidWaits == 0 && r.maxQueue <= 5);
+    }
+    // UI repaints are measured by the capture cadence but never consumed:
+    // the clock period must come from the accepted frames (no drift).
+    // (Where the capture side accepts a repaint as a frame, its zero-motion
+    // pair is a capture classification matter; there only bounded latency
+    // without losses or starvation is required.)
+    for (double hz : {60.0, 120.0, 240.0}) {
+        StreamCase c;
+        c.hz = hz;
+        c.repaintsPerSec = 2.0;
+        const StreamResult r = runStreamModel(c);
+        const bool steady = hz == 240.0 || r.latencyMaxMs - r.latencyMinMs < 25.0;
+        report("repaints", c, r, steady && r.latencyMaxMs < 100.0 && r.slotDrops == 0 && r.invalidWaits == 0);
+    }
+    // 24 fps must not run on the 30 fps placeholder clock.
+    {
+        StreamCase c;
+        c.gameFps = 24.0;
+        const StreamResult r = runStreamModel(c);
+        report("slow source", c, r, r.stutterEvents == 0 && r.invalidWaits == 0 && r.latencyMinMs > r.budgetMs);
+    }
+    // A rate at the refresh (59.94 on 60 Hz) loses frames in bursts while
+    // its phase crosses the vblank; one just below it (57 fps) only has
+    // empty refreshes, which must stay one period. (At 60 Hz such a frame
+    // reaches WGC up to a whole 16.7 ms refresh late, more than the fixed
+    // 10 ms margin: brief starvation there is a budget limit, not checked.)
+    {
+        StreamCase c;
+        c.gameFps = 59.94;
+        c.hz = 60.0;
+        c.seconds = 40.0;
+        const StreamResult r = runStreamModel(c);
+        report("near refresh", c, r, r.latencyMaxMs < 80.0 && r.slotDrops == 0 && r.maxQueue <= 5);
+        c.gameFps = 57.0;
+        const StreamResult slow = runStreamModel(c);
+        report("below refresh", c, slow, slow.stutterEvents <= 20 && slow.slotDrops == 0 && slow.latencyMaxMs < 120.0);
+    }
+    {
+        StreamCase c;
+        c.gameFps = 120.0;
+        c.hz = 240.0;
+        const StreamResult r = runStreamModel(c);
+        report("late frames", c, r, r.stutterEvents == 0 && r.slotDrops == 0 && r.invalidWaits == 0 &&
+                                        r.latencyMaxMs - r.latencyMinMs < 5.0);
+    }
+    return ok;
+}
+
+// Exact pair bookkeeping around missing frames and pauses.
+static bool runPairBookkeepingTests() {
+    constexpr int64_t ms = 10000, second = 10000000, start = 1000000000;
+    bool ok = true;
+    auto push = [&](FrameTimeline& timeline, int slot, int64_t ts) {
+        TimelineFrame frame;
+        frame.slot = slot;
+        frame.tsRaw = ts;
+        frame.arrival = ts + 3 * ms;
+        frame.flowEntry = 0;
+        timeline.push(frame);
+    };
+    // One frame missing from a locked 60 fps stream, its gap a little under
+    // and a little over two periods (timestamp noise): either way the pair
+    // gets 2N positions on the same clock. The old code played it at double
+    // speed below two periods, and above it skipped the real frame before
+    // the gap and re-anchored the clock.
+    for (int64_t noise : {-2000, 2000}) {
+        FrameTimeline timeline;
+        timeline.configure(60, 144, 2);
+        const int64_t p = second / 60;
+        for (int k = 0; k < 6; ++k) push(timeline, k, start + k * p);
+        push(timeline, 7, start + 7 * p + noise); // frame 6 never arrived
+        for (int k = 8; k < 12; ++k) push(timeline, k, start + k * p);
+        int64_t now = start;
+        double previousPosition = -1.0;
+        int64_t previousDeadline = 0;
+        bool pass = true;
+        bool sawSix = false, sawFiveReal = false;
+        for (int k = 0; k < 18; ++k) {
+            const auto sel = timeline.nextOutput(now);
+            if (!sel.valid) { pass = false; break; }
+            // Source position in frames: slot + alpha x (slot gap).
+            const double position = sel.f0.slot + sel.alpha * (sel.f1.slot - sel.f0.slot);
+            if (previousPosition >= 0.0) {
+                pass = pass && std::fabs(position - previousPosition - 0.5) < 1e-6 &&
+                       std::llabs(sel.presentTime - previousDeadline - p / 2) <= 1;
+            }
+            sawSix = sawSix || std::fabs(position - 6.0) < 1e-6;
+            sawFiveReal = sawFiveReal || (sel.f0.slot == 5 && sel.alpha == 0.0f);
+            previousPosition = position;
+            previousDeadline = sel.presentTime;
+            now = sel.presentTime;
+            timeline.retireBefore(sel.f0.index);
+        }
+        pass = pass && sawSix && sawFiveReal && timeline.stats().missedOutputs == 0;
+        std::cout << "Timeline self-test: missing frame (gap 2 periods " << (noise < 0 ? "- " : "+ ") << "0.2 ms) "
+                  << "gets 2N positions on the same clock: " << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    }
+    // A pause whose next frame is already queued: its last real frame is
+    // still shown on time, then the clock restarts at the next frame.
+    {
+        FrameTimeline timeline;
+        timeline.configure(60, 144, 2);
+        const int64_t p = second / 60;
+        push(timeline, 0, start);
+        push(timeline, 1, start + p);
+        push(timeline, 2, start + p + 200 * ms); // resumes 200 ms later
+        int64_t now = start;
+        std::vector<std::pair<int, float>> shown;
+        for (int k = 0; k < 4; ++k) {
+            const auto sel = timeline.nextOutput(now);
+            if (!sel.valid) break;
+            shown.push_back({sel.f0.slot, sel.alpha});
+            now = sel.presentTime;
+            timeline.retireBefore(sel.f0.index);
+        }
+        const bool pass = shown.size() == 4 && shown[0] == std::make_pair(0, 0.0f) &&
+                          shown[1] == std::make_pair(0, 0.5f) && shown[2] == std::make_pair(1, 0.0f) &&
+                          shown[3] == std::make_pair(2, 0.0f);
+        std::cout << "Timeline self-test: pause with the next frame queued shows the last real frame: "
+                  << (pass ? "PASS" : "FAIL") << "\n";
+        ok = ok && pass;
+    }
+    return ok;
+}
 
 // Frame pacing on a source whose timestamps land on the refresh grid (a
 // game rendering at a rate that does not divide the display refresh reaches
@@ -551,6 +898,8 @@ static int runTimelineSelfTest() {
         ok = ok && pass;
     }
     ok = runFsrOutputPlanTests() && ok;
+    ok = runPairBookkeepingTests() && ok;
+    ok = runStreamingStutterTests() && ok;
     std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL") << "\n";
     return ok ? 0 : 1;
 }

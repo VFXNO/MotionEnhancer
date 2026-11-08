@@ -27,6 +27,18 @@ constexpr double kRateChange = 0.15;
 // timestamp when it is this many periods off, or after a gap this long.
 constexpr double kFreeTolerance = 0.75;
 constexpr double kFreeGap = 4.0;
+// A pair longer than this many source periods is a pause, never stretched
+// into interpolated output. Two periods is one missing frame (WGC delivers
+// only the newest frame of a composition: 60 fps on 60 Hz with +-1 ms
+// present jitter loses frames whenever its phase sits near the vblank), not
+// a pause. The old test (gap > 2 periods) sat exactly on that common gap:
+// regularization noise flipped such a pair between double-speed motion and
+// a "pause" that skipped the real frame and re-anchored the clock.
+constexpr uint32_t kMaxPairPeriods = 2;
+// Accepted source periods the fixed-N clock measures before its first
+// output and before it trusts its own window (see nextOutput, clockPeriod).
+// About 0.5 s at 60 fps, 1.3 s at 24 fps.
+constexpr uint64_t kClockMinPeriods = 24;
 
 // Mean of the intervals that are neither pauses (over 3x the median) nor
 // fragments of one (repaints, under 0.35x): the source's true rate even when
@@ -57,6 +69,7 @@ void FrameTimeline::configure(uint32_t sourceFpsOverride, double refreshHz, uint
         m_period = kSecond / static_cast<int64_t>(sourceFpsOverride);
         m_periodMeasured = true;
         m_locked = true;
+        updateRefreshGrid(static_cast<double>(kSecond) / sourceFpsOverride, true);
     }
     // Buffer source frames and flow, not display refreshes. This budget is
     // fixed for the source rate; GPU stalls never stretch the output clock.
@@ -74,10 +87,27 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
     Selection sel;
     sel.presentTime = now + kMs; // missing source data: sleep, never fabricate a repeat
     if (m_frames.empty() || !m_captureOffsetValid) return sel;
+    // The fixed clock's step and the budget come from the source period.
+    // Until it is measured (8 intervals, ~130 ms at 60 fps) m_period is the
+    // 30 fps placeholder: the old code anchored and ran the 60 fps clock at
+    // 30 fps meanwhile, and the frames that piled up were never given back.
+    // Offline (60 fps 2x, every monitor): 128 ms latency instead of 53 ms
+    // and all 8 capture slots held, so any extra delay dropped frames; at
+    // 24 fps the clock ran 25% fast instead and starved for good. The clock
+    // also waits for kClockMinPeriods accepted periods: an estimate over
+    // n pairs weighs one miscounted pair or the first timestamp's error by
+    // 1/n, and the clock integrates that while the window grows to 96 (from
+    // 8 pairs a single late frame drained 1.5 periods, 50 ms at 30 fps).
+    // (+8: the window ends at the consumed pair, a few behind the newest.)
+    // The first output waits ~0.5 s at 60 fps; the desktop shows meanwhile.
+    if (m_outputMultiplier > 0 && !m_clockStarted &&
+        (!m_periodMeasured || (m_sourceFpsOverride == 0 && m_clockPeriodSum < kClockMinPeriods + 8))) {
+        sel.retireBeforeIndex = m_frames.back().index;
+        return sel;
+    }
 
     const int64_t lead = m_captureOffset + m_latencyBudget;
-    const double period = m_sourceFpsOverride > 0
-        ? static_cast<double>(kSecond) / m_sourceFpsOverride : static_cast<double>(m_period);
+    const double period = clockPeriod();
     const double step = m_outputMultiplier > 0 ? period / m_outputMultiplier : m_maxOutputPeriod;
     size_t outputFrame = 0;
     if (m_outputMultiplier > 0) {
@@ -87,6 +117,16 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
             m_nextOutputTime = 0.0; // re-arm on fresh input, not on an expired deadline
             sel.retireBeforeIndex = m_frames.back().index;
             return sel;
+        }
+        if (m_nextOutputTime == 0.0) {
+            // (Re-)arming: start at the first frame whose own deadline is
+            // still ahead. Older queued frames are already expired; starting
+            // from them would keep their extra latency for the whole session
+            // (the clock never runs faster than the source to give it back).
+            while (outputFrame + 1 < m_frames.size() && m_frames[outputFrame].ts + lead < now) ++outputFrame;
+            m_outputFrameIndex = m_frames[outputFrame].index;
+            m_outputPosition = 0;
+            m_clockStarted = true;
         }
     }
     if (m_nextOutputTime == 0.0) {
@@ -127,41 +167,79 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
             }
         }
     } else {
+        // Each pair owns N x periods slots of the clock: N for consecutive
+        // source frames, 2N when one frame in between never arrived. The old
+        // code gave every pair N slots, so a missing frame played its two
+        // periods of motion at double speed and left the queue one period
+        // short (--timeline-self-test model, 60 fps 2x with 1% game
+        // hitches: 13-49 content jumps in 27 s on 60-240 Hz, now none).
+        const uint32_t n = m_outputMultiplier;
         size_t i = outputFrame;
-        const uint64_t position = static_cast<uint64_t>(m_outputPosition) + missed;
-        const uint64_t advance = position / m_outputMultiplier;
-        if (advance >= m_frames.size() - i) {
-            // A paused source or blocked Present exhausted the input. Wait
-            // for fresh frames rather than replaying this queue in a burst.
-            m_outputFrameIndex = m_frames.back().index + 1;
-            m_outputPosition = 0;
-            m_nextOutputTime = 0.0;
-            sel.retireBeforeIndex = m_frames.back().index;
-            return sel;
-        }
-        i += static_cast<size_t>(advance);
-        m_outputPosition = static_cast<uint32_t>(position % m_outputMultiplier);
-        m_outputFrameIndex = m_frames[i].index;
-        if (i + 1 < m_frames.size() && m_frames[i + 1].ts - m_frames[i].ts > 2 * m_period) {
-            // Never stretch one frame's motion across a source pause.
+        uint64_t position = static_cast<uint64_t>(m_outputPosition) + missed;
+        for (;;) {
+            const bool haveNext = i + 1 < m_frames.size();
+            if (haveNext && m_frames[i + 1].periods == 0) {
+                // Never stretch one frame's motion across a source pause.
+                if (position == 0) {
+                    // Show this last real frame on time (the old code skipped
+                    // it whenever the next frame had already arrived), then
+                    // restart the clock at the next frame's own deadline.
+                    sel.f0 = sel.f1 = m_frames[i];
+                    sel.mediaTime = sel.f0.ts;
+                    sel.presentTime = static_cast<int64_t>(m_nextOutputTime + 0.5);
+                    m_outputFrameIndex = m_frames[i + 1].index;
+                    m_outputPosition = 0;
+                    m_nextOutputTime = std::max(m_nextOutputTime + step,
+                                                static_cast<double>(m_frames[i + 1].ts + lead));
+                    sel.valid = true;
+                    sel.retireBeforeIndex = sel.f0.index;
+                    m_currentF1Index = sel.f1.index;
+                    return sel;
+                }
+                ++i;
+                position = 0;
+                m_nextOutputTime = static_cast<double>(std::max(now, m_frames[i].ts + lead));
+                continue;
+            }
+            if (!haveNext) {
+                if (position == 0) break; // the real frame needs nothing newer
+                m_outputFrameIndex = m_frames[i].index;
+                if (position >= n) {
+                    // A paused source or blocked Present exhausted the input
+                    // (a whole period past the last frame: the fixed budget
+                    // covers a missing frame without getting here). Wait for
+                    // fresh frames rather than replaying this queue in a
+                    // burst; they restart the clock at their own deadline.
+                    m_outputFrameIndex = m_frames.back().index + 1;
+                    m_outputPosition = 0;
+                    m_nextOutputTime = 0.0;
+                    sel.retireBeforeIndex = m_frames.back().index;
+                    return sel;
+                }
+                // The next frame is not here yet: keep this deadline and
+                // position.
+                m_outputPosition = static_cast<uint32_t>(position);
+                sel.retireBeforeIndex = m_frames[i].index;
+                return sel;
+            }
+            const uint64_t slots = static_cast<uint64_t>(n) * m_frames[i + 1].periods;
+            if (position < slots) break;
+            position -= slots;
             ++i;
-            m_outputFrameIndex = m_frames[i].index;
-            m_outputPosition = 0;
-            m_nextOutputTime = static_cast<double>(std::max(now, m_frames[i].ts + lead));
         }
-        if (m_outputPosition > 0 && i + 1 == m_frames.size()) {
-            sel.retireBeforeIndex = m_frames[i].index;
-            return sel;
-        }
+        const bool haveNext = i + 1 < m_frames.size();
+        const uint32_t slots = haveNext ? n * m_frames[i + 1].periods : n;
+        m_outputPosition = static_cast<uint32_t>(position);
+        m_outputFrameIndex = m_frames[i].index;
         sel.f0 = m_frames[i];
-        sel.f1 = i + 1 < m_frames.size() ? m_frames[i + 1] : sel.f0;
-        sel.alpha = static_cast<float>(m_outputPosition) / m_outputMultiplier;
+        sel.f1 = haveNext ? m_frames[i + 1] : sel.f0;
+        sel.alpha = static_cast<float>(m_outputPosition) / static_cast<float>(slots);
         sel.mediaTime = sel.f0.ts + static_cast<int64_t>(
-            static_cast<double>(sel.f1.ts - sel.f0.ts) * m_outputPosition / m_outputMultiplier);
+            static_cast<double>(sel.f1.ts - sel.f0.ts) * m_outputPosition / slots);
         sel.presentTime = static_cast<int64_t>(m_nextOutputTime + 0.5);
-        if (++m_outputPosition == m_outputMultiplier) {
+        if (++m_outputPosition == slots && haveNext) {
             m_outputPosition = 0;
-            m_outputFrameIndex = sel.f1.index + (sel.f0.index == sel.f1.index ? 1 : 0);
+            m_outputFrameIndex = sel.f1.index;
         }
     }
     sel.valid = true;
@@ -169,6 +247,156 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
     m_currentF1Index = sel.f1.index; // keep a reserved pair safe from producer replacement
     m_nextOutputTime += step;
     return sel;
+}
+
+// The fixed-N clock consumes source periods, so its period must be measured
+// in the same units: the accepted pairs' raw WGC gaps over the source
+// periods they span, newest kRateWindow pairs. m_period (the capture-side
+// cadence) averages every non-duplicate WGC arrival, including repaints
+// that are then deferred, dropped or replaced: a UI repaint splits one
+// interval in two and pulls that mean low. That cost nothing while output
+// sampled timestamps, but a free-running clock integrates the bias: offline,
+// 60 fps 2x with two UI repaints per second drifted 55-75 ms within a
+// minute (starving, or filling all 8 capture slots and dropping frames).
+// A plain sum over a sliding window keeps the clock locked to the frames it
+// consumes: the summed gaps telescope, so timestamp quantization never
+// accumulates into drift, and a miscounted pair is paid back within the
+// window. Raw timestamps, not regularized ones: regularize() runs on
+// m_period and inherits its errors (59.94 fps on 60 Hz: m_period read 21 ms
+// while frames came every 16.7, and the clock followed).
+// The window ends at the pair the clock is consuming, not at the newest
+// frame: a frame that reached WGC a refresh late is followed half a period
+// later by an on-time one, so as the newest entry its late timestamp
+// counted for half a period, as the oldest for a whole one. That biased
+// the clock fast (offline, 120 fps on 240 Hz: -0.056%, 17 ms of lead lost
+// in 40 s). Ending at the consumed pair weighs every pair by the slots it
+// gets, and a miscounted pair is repaid over exactly the pairs after its
+// own slots. --source-fps keeps its exact period.
+double FrameTimeline::clockPeriod() const {
+    if (m_sourceFpsOverride > 0) return static_cast<double>(kSecond) / m_sourceFpsOverride;
+    const uint64_t limit = m_clockStarted ? m_outputFrameIndex + 1 : UINT64_MAX;
+    int64_t gaps = 0;
+    uint64_t periods = 0;
+    size_t used = 0;
+    for (auto it = m_clockGaps.rbegin(); it != m_clockGaps.rend() && used < kRateWindow; ++it) {
+        if (it->index > limit) continue;
+        gaps += it->gap;
+        periods += it->periods;
+        ++used;
+    }
+    // Not from fewer pairs than the first output waits for: a span over n
+    // pairs carries its first timestamp's quantization (up to a refresh)
+    // divided by n, and the clock integrates that while the window grows.
+    if (periods >= kClockMinPeriods) return static_cast<double>(gaps) / static_cast<double>(periods);
+    return static_cast<double>(m_period);
+}
+
+uint32_t FrameTimeline::pairPeriods(int64_t rawGap, bool lostFrame) const {
+    const double period = clockPeriod();
+    const double x = static_cast<double>(rawGap) / period;
+    const double periods = std::floor(x + 0.5);
+    if (periods > kMaxPairPeriods) return 0; // a pause
+    if (periods <= 1.0) return 1;
+    // A frame the capture side itself lost is certain. Otherwise a frame
+    // that merely reached the screen a refresh late must stay one period, or
+    // its pair plays at half speed: 55-58 fps on 60 Hz arrives after 1 or 2
+    // refreshes (an empty refresh every 10-30 frames; 57 fps even passes as
+    // a locked cadence), offline 9 -> 165 slow pairs a minute when counted.
+    // A second period counts only from 1.75 periods (as regularize() counts
+    // a skip) and beyond one period plus a whole refresh of quantization,
+    // which a late frame cannot reach: 60 fps on 120-240 Hz (locked or not)
+    // and 30 fps on 60 Hz still show their lost frames.
+    if (lostFrame) return static_cast<uint32_t>(periods);
+    // A rate within 2% of a refresh multiple (59-61 fps on 60 Hz) has no
+    // such margin: its present phase creeps across the vblank (for seconds
+    // at 59.94 fps), and with +-1 ms jitter WGC loses about every fifth
+    // frame meanwhile (two presents in one composition), next to empty
+    // refreshes. Counted as one period, a few losses in a row drained the
+    // lead into starvation and the restarted clock then overfilled all 8
+    // slots (offline: 130-230 ms latency for the rest of the run). Every
+    // refresh counts there; the cost is one half-speed pair per genuinely
+    // empty refresh (59 fps: about one a second; 58 fps and below are
+    // counted as above).
+    // Still from 1.75 periods only: 60 fps on 120 Hz reaches WGC one
+    // refresh late as a 1.5-period pair holding one period of content
+    // (rounded up, each such frame added a period of latency for good under
+    // --source-fps 60 until all 8 slots were held).
+    if (x < 1.75) return 1;
+    if (m_refreshGridSource) return static_cast<uint32_t>(periods);
+    const double lateLimit = period + static_cast<double>(m_captureTimestampQuantum + kMs / 2);
+    return static_cast<double>(rawGap) > lateLimit ? static_cast<uint32_t>(periods) : 1u;
+}
+
+// Whether a source runs at a refresh multiple (within 2%), judged on
+// m_period. Entered when m_period says so, locked or not, from the first
+// measurement on (59.5 fps on 60 Hz is often unlocked, and counted the
+// other way its first losses ran the clock 4% slow: 110-150 ms latency for
+// good). Checked once strictly when the rate window first fills: 8
+// intervals of 57 fps are often all one refresh (no empty refresh among
+// them yet) and read as 16.67 ms. After that it is left only beyond 5% and
+// after a whole rate window of such locked updates: a burst of losses
+// unlocks the cadence and throws m_period 25% off exactly when this
+// matters, m_period drifts for a few frames before the burst unlocks it,
+// and m_period of 58.5 fps on 60 Hz wanders across 2-4% (each switch
+// restarts the measurement, which flipping turned into 150-190 ms latency).
+// Not judged on the clock's own period: counting every refresh makes that
+// period the refresh, so 57 fps on 60 Hz could never leave it again once a
+// clean start had measured 16.67 ms.
+void FrameTimeline::updateRefreshGrid(double period, bool locked) {
+    const double quantum = static_cast<double>(m_captureTimestampQuantum);
+    const double multiple = std::max(1.0, std::floor(period / quantum + 0.5));
+    const double offset = std::fabs(period - multiple * quantum) / period;
+    const bool near = offset < 0.02;
+    m_offGridRun = locked && offset > 0.05 ? m_offGridRun + 1 : 0;
+    const bool was = m_refreshGridSource;
+    if (!m_refreshGridChecked && (m_sourceFpsOverride > 0 || m_intervals.size() >= kRateWindow)) {
+        m_refreshGridChecked = true;
+        m_refreshGridSource = near;
+    } else if (near) {
+        m_refreshGridSource = true;
+    } else if (m_offGridRun >= kRateWindow) {
+        m_refreshGridSource = false;
+    }
+    // The window's pairs were counted the other way: keeping them, the
+    // clock repaid a difference that was never consumed (57 fps on 60 Hz
+    // starting clean at 16.67 ms: lead drained into starvation, the
+    // restarted clock then overfilled to 108 ms). Start over on m_period,
+    // the capture cadence measured so far.
+    if (was != m_refreshGridSource) resetClockPeriod();
+}
+
+// The source changed rate (or its period was first measured): pairs counted
+// against the old period would be counted wrong. Recount the queued ones.
+void FrameTimeline::resetClockPeriod() {
+    m_clockGaps.clear();
+    m_clockGapSum = 0;
+    m_clockPeriodSum = 0;
+    for (size_t i = 1; i < m_frames.size(); ++i) {
+        if (m_frames[i].periods == 0) continue; // a pause stays a pause
+        m_frames[i].periods = pairPeriods(m_frames[i].tsRaw - m_frames[i - 1].tsRaw);
+    }
+}
+
+// A real rate change, judged on the accepted pairs themselves rather than
+// on m_period: during a burst of WGC losses (a ~60 fps game whose present
+// phase sits on a 60 Hz vblank) m_period jumped 25% and reset the clock to
+// it, although the source never changed. Halved: 12 of the newest 16 pairs
+// count two periods. Otherwise the newest 16 pairs' period is 20% off.
+bool FrameTimeline::clockRateChanged() const {
+    constexpr size_t kRecent = 16;
+    if (m_sourceFpsOverride > 0 || m_clockGaps.size() < kRecent || m_clockPeriodSum < kCadenceMinSamples)
+        return false;
+    int64_t gaps = 0;
+    uint64_t periods = 0;
+    size_t doubled = 0;
+    for (size_t i = m_clockGaps.size() - kRecent; i < m_clockGaps.size(); ++i) {
+        gaps += m_clockGaps[i].gap;
+        periods += m_clockGaps[i].periods;
+        doubled += m_clockGaps[i].periods == 2;
+    }
+    const double recent = static_cast<double>(gaps) / static_cast<double>(periods);
+    const double period = clockPeriod();
+    return doubled * 4 >= kRecent * 3 || std::fabs(recent - period) > 0.2 * period;
 }
 
 // Fixed source buffering; the monitor has no say in this budget or clock.
@@ -226,6 +454,7 @@ void FrameTimeline::updateCadence() {
         rate = recentRate;
     }
     const bool wasLocked = m_locked;
+    const bool wasMeasured = m_periodMeasured;
     const int64_t oldPeriod = m_period;
     // Locked: steady intervals that are the rate itself (not a refresh-grid
     // quantization of it). Unlocked sources are paced by a smoothed clock at
@@ -234,11 +463,15 @@ void FrameTimeline::updateCadence() {
                std::llabs(typical - rate) <= static_cast<int64_t>(kQuantizedSpread * static_cast<double>(rate));
     m_period = std::max<int64_t>(rate, kMs);
     m_periodMeasured = true;
+    updateRefreshGrid(static_cast<double>(m_period), m_locked);
     {
         const bool changed = std::llabs(m_period - oldPeriod) > oldPeriod / 5;
         if ((m_locked && !wasLocked) || changed) {
             applyBudgetLimits();
         }
+        // Pairs counted against the 30 fps placeholder must not seed the
+        // clock. Later rate changes are judged by clockRateChanged().
+        if (!wasMeasured) resetClockPeriod();
     }
 }
 
@@ -407,6 +640,11 @@ int FrameTimeline::popLast() {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_frames.empty()) return -1;
     const int slot = m_frames.back().slot;
+    if (!m_clockGaps.empty() && m_clockGaps.back().index == m_frames.back().index) {
+        m_clockGapSum -= m_clockGaps.back().gap;
+        m_clockPeriodSum -= m_clockGaps.back().periods;
+        m_clockGaps.pop_back();
+    }
     m_frames.pop_back();
     if (!m_frames.empty()) {
         m_lastAcceptedTsRaw = m_frames.back().tsRaw;
@@ -434,9 +672,54 @@ void FrameTimeline::push(TimelineFrame& frame) {
         m_captureOffset = std::min(m_captureOffset + kMs / 10, sample);
     }
 
+    frame.periods = 0;
+    if (!m_frames.empty()) {
+        TimelineFrame& last = m_frames.back();
+        const int64_t gap = frame.tsRaw - last.tsRaw;
+        frame.periods = pairPeriods(gap, m_frameLost);
+        // A frame that reached the screen late (a game frame-time spike)
+        // looks like a missing frame until the next one follows less than
+        // half a period after it. Together they are two periods of one each,
+        // not two and one: move the period back while the clock has shown at
+        // most the real frame of that pair (offline, 30 fps 4x with 2%
+        // hitches: half-speed pairs and 1.5 periods of drained lead).
+        const bool fragment = static_cast<double>(gap) < 0.5 * clockPeriod();
+        const bool untouched = m_outputFrameIndex + 1 < last.index ||
+                               (m_outputFrameIndex + 1 == last.index && m_outputPosition <= 1);
+        if (fragment && last.periods == 2 && m_frames.size() >= 2 && untouched) {
+            last.periods = 1;
+            if (!m_clockGaps.empty() && m_clockGaps.back().index == last.index) {
+                m_clockGaps.back().periods = 1;
+                --m_clockPeriodSum;
+            }
+        }
+        if (frame.periods > 0) {
+            m_clockGaps.push_back({frame.index, gap, frame.periods});
+            m_clockGapSum += gap;
+            m_clockPeriodSum += frame.periods;
+            // Headroom for the queued pairs the clock has not reached yet.
+            while (m_clockGaps.size() > kRateWindow + 32) {
+                m_clockGapSum -= m_clockGaps.front().gap;
+                m_clockPeriodSum -= m_clockGaps.front().periods;
+                m_clockGaps.pop_front();
+            }
+        }
+    }
+
+    m_frameLost = false;
+
     m_lastAcceptedTsRaw = frame.tsRaw;
     m_lastAcceptedTs = frame.ts;
     m_frames.push_back(frame);
+    if (clockRateChanged()) {
+        resetClockPeriod();
+        frame.periods = m_frames.back().periods;
+    }
+}
+
+void FrameTimeline::noteLostFrame() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_frameLost = true;
 }
 
 std::vector<int> FrameTimeline::retireBefore(uint64_t frameIndex) {
@@ -458,6 +741,7 @@ FrameTimeline::Stats FrameTimeline::stats() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     Stats s = m_stats;
     s.sourcePeriodMs = static_cast<double>(m_period) / kMs;
+    s.outputPeriodMs = clockPeriod() / kMs;
     s.cadenceLocked = m_locked;
     s.latencyBudgetMs = static_cast<double>(m_latencyBudget) / kMs;
     s.captureOffsetMs = static_cast<double>(m_captureOffset) / kMs;

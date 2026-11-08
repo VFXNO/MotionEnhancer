@@ -265,14 +265,19 @@ void CaptureEngine::onFrameArrived(
             std::lock_guard<std::mutex> stats(m_statsMutex);
             ++m_stats.arrivals;
         }
+        bool afterLoss = false;
         if (m_queue.size() >= static_cast<size_t>(m_captureQueue)) {
             // The producer is behind by several frames; the oldest is stale.
             m_queue.front().frame.Close();
             m_queue.pop_front();
+            // The frame now first in line follows the lost one: the producer
+            // tells the timeline in order (FrameTimeline::noteLostFrame).
+            if (m_queue.empty()) afterLoss = true;
+            else m_queue.front().afterLoss = true;
             std::lock_guard<std::mutex> stats(m_statsMutex);
             ++m_stats.queueDrops;
         }
-        m_queue.push_back({frame, arrival});
+        m_queue.push_back({frame, arrival, afterLoss});
     }
     SetEvent(m_frameEvent);
 }
@@ -387,6 +392,7 @@ bool CaptureEngine::runDiff(int slot, int referenceSlot, DiffResult& out) {
 }
 
 void CaptureEngine::processFrame(QueuedFrame& queued) {
+    if (queued.afterLoss) m_timeline->noteLostFrame();
     auto& frame = queued.frame;
     const int64_t tsRaw = frame.SystemRelativeTime().count();
     // The pool, slots and every GPU resource are sized for the window as it
@@ -408,6 +414,9 @@ void CaptureEngine::processFrame(QueuedFrame& queued) {
 
     const int slot = acquireSlot();
     if (slot < 0) {
+        // The output clock must count this source period (FrameTimeline::
+        // noteLostFrame), or it reads the longer pair as a slower source.
+        m_timeline->noteLostFrame();
         std::lock_guard<std::mutex> lock(m_statsMutex);
         ++m_stats.queueDrops;
         return;
