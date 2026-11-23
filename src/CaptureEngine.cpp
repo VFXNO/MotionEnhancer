@@ -335,7 +335,10 @@ int CaptureEngine::acquireSlot() {
     }
     for (int i = 0; i < kSlots; ++i) {
         Slot& slot = m_slots[static_cast<size_t>(i)];
-        if (slot.state == SlotState::Free) {
+        // Keep the diff reference immutable until processFrame replaces it.
+        // Its GPU readers may be done, but copying new pixels into this same
+        // texture would make the diff compare the incoming image with itself.
+        if (slot.state == SlotState::Free && i != m_referenceSlot) {
             slot.state = SlotState::Filling;
             return i;
         }
@@ -353,6 +356,7 @@ void CaptureEngine::releaseSlot(int slot) {
 }
 
 bool CaptureEngine::runDiff(int slot, int referenceSlot, DiffResult& out) {
+    if (slot == referenceSlot) return false; // never classify a self-comparison as a duplicate
     ID3D11DeviceContext* ctx = m_device->captureContext();
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     if (FAILED(ctx->Map(m_diffConstants.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return false;

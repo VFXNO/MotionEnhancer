@@ -508,6 +508,71 @@ static bool runStreamingStutterTests() {
     return ok;
 }
 
+// Interleave the two producer calls around a render reservation. Streaming
+// models execute onFrameArrived/popLast together and cannot expose this race.
+static bool runCaptureReservationTests() {
+    constexpr int64_t second = 10000000, ms = 10000, start = 1000000000;
+    bool ok = true;
+    for (uint32_t multiplier : {0u, 2u, 3u, 4u}) {
+        for (bool reserveFirst : {false, true}) {
+            FrameTimeline timeline;
+            timeline.configure(60, 144, multiplier);
+            double pixels[] = {0.0, 1.0}; // texture contents, not timestamp-derived content
+            for (int k = 0; k < 2; ++k) {
+                TimelineFrame frame;
+                frame.slot = k;
+                frame.tsRaw = start + k * (second / 60);
+                frame.arrival = frame.tsRaw + 3 * ms;
+                if (timeline.onFrameArrived(frame.tsRaw, frame.arrival).acceptThis) timeline.push(frame);
+            }
+            const auto repaint = timeline.onFrameArrived(start + second / 60 + ms,
+                                                          start + second / 60 + 4 * ms);
+            const auto reserve = [&] {
+                auto sel = timeline.nextOutput(start + 20 * ms);
+                // Max starts at the first real frame. Its next slot reserves
+                // the pair, just like the first fixed-N output does.
+                if (multiplier == 0) sel = timeline.nextOutput(sel.presentTime);
+                return sel;
+            };
+            FrameTimeline::Selection pending;
+            if (reserveFirst) pending = reserve();
+            const int removed = timeline.popLast();
+            if (removed >= 0) pixels[removed] = 100.0; // reuse the released texture for a much newer capture
+            TimelineFrame latest;
+            bool pass = repaint.replaceLast && timeline.lastFrame(latest);
+            if (reserveFirst) {
+                pass = pass && pending.valid && pending.f1.index == 2 && removed == -1 && latest.index == 2 &&
+                       pixels[pending.f0.slot] == 0.0 && pixels[pending.f1.slot] == 1.0 &&
+                       timeline.stats().replaced == 0;
+                // Protection survives retire/nextOutput, not just the first
+                // reservation. There is no replacement-induced slot release.
+                timeline.retireBefore(pending.f0.index);
+                pass = timeline.popLast() == -1 && pass;
+                const auto again = timeline.nextOutput(pending.presentTime);
+                pass = again.valid && timeline.popLast() == -1 && pass;
+            } else {
+                // Producer wins: ordinary unreserved repaint replacement
+                // must still work, including the accepted-pair clock history.
+                pass = pass && removed == 1 && latest.index == 1 && timeline.stats().replaced == 1;
+                TimelineFrame replacement;
+                replacement.slot = removed;
+                replacement.tsRaw = start + second / 60 + ms;
+                replacement.arrival = replacement.tsRaw + 3 * ms;
+                timeline.push(replacement);
+                pending = reserve();
+                pass = pass && pending.valid && pending.f1.index == replacement.index &&
+                       timeline.popLast() == -1;
+            }
+            std::cout << "Timeline self-test: repaint/reservation "
+                      << (reserveFirst ? "consumer wins, texture retained, " : "producer wins, replacement kept, ")
+                      << (multiplier ? std::to_string(multiplier) + "x" : "Max") << ": "
+                      << (pass ? "PASS" : "FAIL") << "\n";
+            ok = ok && pass;
+        }
+    }
+    return ok;
+}
+
 // Exact pair bookkeeping around missing frames and pauses.
 static bool runPairBookkeepingTests() {
     constexpr int64_t ms = 10000, second = 10000000, start = 1000000000;
@@ -899,6 +964,7 @@ static int runTimelineSelfTest() {
     }
     ok = runFsrOutputPlanTests() && ok;
     ok = runPairBookkeepingTests() && ok;
+    ok = runCaptureReservationTests() && ok;
     ok = runStreamingStutterTests() && ok;
     std::cout << "Timeline self-test: " << (ok ? "PASS" : "FAIL") << "\n";
     return ok ? 0 : 1;

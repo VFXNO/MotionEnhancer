@@ -193,7 +193,7 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
                                                 static_cast<double>(m_frames[i + 1].ts + lead));
                     sel.valid = true;
                     sel.retireBeforeIndex = sel.f0.index;
-                    m_currentF1Index = sel.f1.index;
+                    m_currentF1Index = std::max(m_currentF1Index, sel.f1.index);
                     return sel;
                 }
                 ++i;
@@ -244,7 +244,7 @@ FrameTimeline::Selection FrameTimeline::nextOutput(int64_t now) {
     }
     sel.valid = true;
     sel.retireBeforeIndex = sel.f0.index;
-    m_currentF1Index = sel.f1.index; // keep a reserved pair safe from producer replacement
+    m_currentF1Index = std::max(m_currentF1Index, sel.f1.index); // never replace a reserved frame
     m_nextOutputTime += step;
     return sel;
 }
@@ -594,7 +594,6 @@ FrameTimeline::IngestPlan FrameTimeline::onFrameArrived(int64_t tsRaw, int64_t a
         // already on screen.
         if (!plan.acceptDeferredFirst && m_frames.back().index > m_currentF1Index) {
             plan.replaceLast = true;
-            ++m_stats.replaced;
         }
         plan.acceptThis = true;
         return plan;
@@ -638,7 +637,11 @@ bool FrameTimeline::lastFrame(TimelineFrame& out) const {
 
 int FrameTimeline::popLast() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_frames.empty()) return -1;
+    // onFrameArrived only proposes a replacement. The render thread may
+    // reserve that frame before this producer call, even before it publishes
+    // a GPU read fence. Recheck under the same mutex used by nextOutput;
+    // keep the old frame and append the repaint when the reservation won.
+    if (m_frames.empty() || m_frames.back().index <= m_currentF1Index) return -1;
     const int slot = m_frames.back().slot;
     if (!m_clockGaps.empty() && m_clockGaps.back().index == m_frames.back().index) {
         m_clockGapSum -= m_clockGaps.back().gap;
@@ -646,6 +649,7 @@ int FrameTimeline::popLast() {
         m_clockGaps.pop_back();
     }
     m_frames.pop_back();
+    ++m_stats.replaced;
     if (!m_frames.empty()) {
         m_lastAcceptedTsRaw = m_frames.back().tsRaw;
         m_lastAcceptedTs = m_frames.back().ts;

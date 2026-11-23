@@ -137,7 +137,7 @@ private:
     mutable std::mutex m_slotMutex;
     std::array<Slot, kSlots> m_slots;
     uint64_t m_captureCounter = 0;
-    int m_referenceSlot = -1;   // newest non-duplicate frame (diff reference)
+    int m_referenceSlot = -1;   // producer-owned diff reference; excluded from slot acquisition
     bool m_haveDeferred = false;
     PendingFrame m_deferred;
     int64_t m_deferDeadline = 0;

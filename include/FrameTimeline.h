@@ -37,7 +37,7 @@ public:
     struct IngestPlan {
         bool acceptDeferredFirst = false; // the held frame was real: accept it before this one
         bool dropDeferred = false;        // release the held frame's slot
-        bool replaceLast = false;         // pop the newest accepted frame (its slot is released)
+        bool replaceLast = false;         // propose popLast; a concurrent reservation can veto it
         bool acceptThis = false;          // ingest and push this frame
         bool deferThis = false;           // hold this frame until deferDeadline or the next frame
         int64_t deferDeadline = 0;        // wall clock
@@ -99,7 +99,8 @@ public:
     // The frame that a new frame would pair with (copy; valid() false when
     // the timeline is empty).
     bool lastFrame(TimelineFrame& out) const;
-    // Pops the newest frame (Replace). Returns its slot or -1.
+    // Pops the newest frame only if still unreserved. Returns its slot or -1;
+    // a reservation after onFrameArrived can veto Replace without releasing it.
     int popLast();
     // Appends an accepted frame; fills index and the regularized ts.
     void push(TimelineFrame& frame);
