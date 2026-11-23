@@ -16,6 +16,7 @@ DepthService::~DepthService() {
         m_stop = true;
     }
     m_wake.notify_all();
+    m_released.notify_all();
     if (m_thread.joinable()) m_thread.join();
     for (Slot& slot : m_slots) {
         m_estimator.releaseBuffer(slot.inputHandle);
@@ -25,8 +26,9 @@ DepthService::~DepthService() {
 }
 
 bool DepthService::initialize(GraphicsDevice* device, const ComputeKernels* kernels, ID3D12Fence* flowFence,
-                              int slots, int stride) {
+                              int slots, int stride, ID3D12Fence* readFence) {
     m_device = device;
+    m_readFence = readFence;
     m_stride = std::clamp(stride, 1, kMaxStride);
     m_kernels = kernels;
     m_flowFence = flowFence;
@@ -130,16 +132,46 @@ void DepthService::discarded() {
     m_recorded.clear();
 }
 
-ID3D12Resource* DepthService::nearestLocked(uint64_t frameId) const {
+int DepthService::nearestSlotLocked(uint64_t frameId) const {
     // Its own, else the frame before, else the one after, and so on.
     for (uint64_t distance = 0; distance < static_cast<uint64_t>(m_stride); ++distance)
         for (int side = 0; side < (distance ? 2 : 1); ++side) {
             if (side == 0 && distance > frameId) continue;
             const uint64_t id = side == 0 ? frameId - distance : frameId + distance;
             for (int s = 0; s < m_slotCount; ++s)
-                if (m_slots[static_cast<size_t>(s)].readyId == id) return m_slots[static_cast<size_t>(s)].depth.Get();
+                if (m_slots[static_cast<size_t>(s)].readyId == id) return s;
         }
-    return nullptr;
+    return -1;
+}
+
+ID3D12Resource* DepthService::nearestLocked(uint64_t frameId) const {
+    const int s = nearestSlotLocked(frameId);
+    return s < 0 ? nullptr : m_slots[static_cast<size_t>(s)].depth.Get();
+}
+
+ID3D12Resource* DepthService::acquire(const FlowInput& frame) {
+    if (frame.slot < 0 || frame.slot >= m_slotCount) return nullptr;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    const int s = nearestSlotLocked(frame.id);
+    if (s < 0) return nullptr;
+    Slot& slot = m_slots[static_cast<size_t>(s)];
+    ++slot.pinned;
+    return slot.depth.Get();
+}
+
+void DepthService::release(ID3D12Resource* depth, uint64_t readFenceValue) {
+    if (!depth) return;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (int s = 0; s < m_slotCount; ++s) {
+            Slot& slot = m_slots[static_cast<size_t>(s)];
+            if (slot.depth.Get() != depth) continue;
+            if (slot.pinned) --slot.pinned;
+            slot.readValue = std::max(slot.readValue, readFenceValue);
+            break;
+        }
+    }
+    m_released.notify_all();
 }
 
 ID3D12Resource* DepthService::depthFor(const FlowInput& frame) const {
@@ -160,6 +192,7 @@ ID3D12Resource* DepthService::waitFor(const FlowInput& frame, unsigned timeoutMs
 void DepthService::run() {
     for (;;) {
         Job job;
+        uint64_t readValue = 0;
         {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_wake.wait(lock, [&] { return m_stop || !m_jobs.empty(); });
@@ -167,10 +200,20 @@ void DepthService::run() {
             job = m_jobs.front();
             m_jobs.pop_front();
             // A newer frame already took this slot: this one is gone.
-            if (m_slots[static_cast<size_t>(job.slot)].pendingId != job.frameId) continue;
+            Slot& slot = m_slots[static_cast<size_t>(job.slot)];
+            if (slot.pendingId != job.frameId) continue;
+            // About to rewrite this slot's texture, which an older frame's
+            // depth (or a neighbour's borrowed one) may still be read from.
+            // Hand it out no more, let readers already holding it report the
+            // fence of their read (bounded: a reader that never submits
+            // releases with 0 at once), then wait for those reads on the GPU.
+            slot.readyId = UINT64_MAX;
+            m_released.wait_for(lock, std::chrono::milliseconds(200), [&] { return m_stop || slot.pinned == 0; });
+            if (m_stop) return;
+            readValue = slot.readValue;
         }
         const auto start = std::chrono::steady_clock::now();
-        const bool ok = produce(job);
+        const bool ok = produce(job, readValue);
         static const bool report = GetEnvironmentVariableA("MOTION_ENHANCER_DEPTH_REPORT", nullptr, 0) > 0;
         if (report) {
             std::cout << "  [depth] frame " << job.frameId << ": "
@@ -190,7 +233,7 @@ void DepthService::run() {
     }
 }
 
-bool DepthService::produce(const Job& job) {
+bool DepthService::produce(const Job& job, uint64_t readValue) {
     Slot& slot = m_slots[static_cast<size_t>(job.slot)];
     // The network: its queue waits on the GPU for the flow list that wrote
     // the input, then signals m_networkFence.
@@ -217,6 +260,9 @@ bool DepthService::produce(const Job& job) {
     if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::DepthFinish, in, slot.depth.Get(), c, 1, 1) ||
         FAILED(m_list->Close())) return false;
     if (FAILED(m_queue->Wait(m_networkFence.Get(), m_networkValue))) return false;
+    // The previous contents of slot.depth may still be read on the present
+    // queue (see run()): this list overwrites it only after those reads.
+    if (m_readFence && readValue && FAILED(m_queue->Wait(m_readFence.Get(), readValue))) return false;
     ID3D12CommandList* lists[] = {m_list.Get()};
     m_queue->ExecuteCommandLists(1, lists);
     if (FAILED(m_queue->Signal(m_finishFence.Get(), ++m_finishValue)) ||

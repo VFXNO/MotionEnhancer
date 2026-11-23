@@ -110,6 +110,8 @@ struct PresentStats {
     double maxPresentCallMs = 0.0;
     uint64_t gpuPendingAtPresent = 0; // prepared list not complete when Present was called
     double maxDeadlineLateMs = 0.0;   // CPU call start vs output deadline, not scanout
+    uint64_t capacitySkips = 0;       // outputs skipped: no swap-chain capacity within kCapacityWaitMs
+    uint64_t capacityForced = 0;      // outputs prepared without capacity after a whole second of skips
 };
 
 // Native D3D12 flip-model presentation. The caller supplies FPS-clocked
@@ -141,6 +143,10 @@ public:
     // runs at the deadline. One prepared output at a time; its fence covers
     // all GPU reads, even if shutdown occurs before it is presented.
     bool prepare(const RenderJob& job, uint64_t& presentFenceValue);
+    // prepare() returned false only because the swap chain had no capacity
+    // (display asleep, locked or secure desktop, a long GPU stall): skip this
+    // output and carry on, it is not an error.
+    bool lastPrepareSkipped() const { return m_lastPrepareSkipped; }
     bool present(int64_t deadline);
     // FSR may submit on this same queue AFTER a real frame was presented.
     // Publish a later fence covering those reads before input is retired.
@@ -199,6 +205,8 @@ private:
     bool m_tearing = false;
     bool m_prepared = false;
     uint64_t m_preparedFence = 0;
+    bool m_lastPrepareSkipped = false;
+    int64_t m_capacityStallSince = 0;   // first capacity timeout of the current stall, 0 = none
     HRESULT m_lastPresentStatus = S_OK;
 
     double m_refreshHz = 60.0;  // diagnostics and explicit Max mode only

@@ -248,6 +248,11 @@ public:
     // (non-blocking); waitDepth blocks up to timeoutMs (offline paths).
     ID3D12Resource* depthFor(const FlowInput& frame) const;
     ID3D12Resource* waitDepth(const FlowInput& frame, unsigned timeoutMs);
+    // Live readers: as depthFor, but the texture stays pinned until
+    // releaseDepth gives the present-queue fence value covering the read
+    // (0: it was not read). See DepthService::acquire.
+    ID3D12Resource* acquireDepth(const FlowInput& frame);
+    void releaseDepth(ID3D12Resource* depth, uint64_t readFenceValue);
     Entry entry(int index) const;
     void noteEntryPresented(int index, uint64_t presentFenceValue);
 

@@ -410,7 +410,8 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
     m_depth.reset();
     if (m_settings.aiDepth) {
         m_depth = std::make_unique<DepthService>();
-        if (!m_depth->initialize(m_device, m_kernels, m_fence.Get(), slotCount, m_settings.aiDepthStride)) {
+        if (!m_depth->initialize(m_device, m_kernels, m_fence.Get(), slotCount, m_settings.aiDepthStride,
+                                 m_presentFence.Get())) {
             std::cerr << "FlowEngine: AI depth unavailable; continuing without it.\n";
             m_depth.reset();
         }
@@ -1478,4 +1479,12 @@ ID3D12Resource* FlowEngine::depthFor(const FlowInput& frame) const {
 
 ID3D12Resource* FlowEngine::waitDepth(const FlowInput& frame, unsigned timeoutMs) {
     return m_depth ? m_depth->waitFor(frame, timeoutMs) : nullptr;
+}
+
+ID3D12Resource* FlowEngine::acquireDepth(const FlowInput& frame) {
+    return m_depth ? m_depth->acquire(frame) : nullptr;
+}
+
+void FlowEngine::releaseDepth(ID3D12Resource* depth, uint64_t readFenceValue) {
+    if (m_depth) m_depth->release(depth, readFenceValue);
 }

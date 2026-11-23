@@ -4,6 +4,7 @@
 #include "Presenter.h"
 #include <iostream>
 #include <algorithm>
+#include <cctype>
 #include <thread>
 #include <dwmapi.h>
 #include <tlhelp32.h>
@@ -41,6 +42,12 @@ bool WindowHelper::attachInteractiveDesktop() {
     return false;
 }
 
+// std::tolower on a plain char is undefined for bytes above 127 (an accented
+// letter in the ANSI code page is negative as char); go through unsigned char.
+static char lowerAscii(char c) {
+    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+}
+
 static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     if (!IsWindowVisible(hwnd)) return TRUE;
 
@@ -72,7 +79,7 @@ static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
 
     // Exclude command prompt, PowerShell, terminal, or overlay windows that mirror our command line
     std::string lowerTitle = title;
-    std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
+    std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), lowerAscii);
     if (lowerTitle.find("motion_enhancer") != std::string::npos ||
         lowerTitle.find("--capture-window") != std::string::npos ||
         lowerTitle.find("motion enhancer gpu overlay") != std::string::npos) {
@@ -103,7 +110,7 @@ std::vector<WindowInfo> WindowHelper::enumerateWindows() {
 HWND WindowHelper::findWindowByTitle(const std::string& query) {
     auto windows = enumerateWindows();
     std::string lowerQuery = query;
-    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
+    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), lowerAscii);
 
     HWND bestHwnd = nullptr;
     size_t shortestLen = (size_t)-1;
@@ -111,7 +118,7 @@ HWND WindowHelper::findWindowByTitle(const std::string& query) {
     // First pass: exact match
     for (const auto& w : windows) {
         std::string lowerTitle = w.title;
-        std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
+        std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), lowerAscii);
         if (lowerTitle == lowerQuery) {
             return w.hwnd;
         }
@@ -120,7 +127,7 @@ HWND WindowHelper::findWindowByTitle(const std::string& query) {
     // Second pass: substring match (choose most specific / shortest title)
     for (const auto& w : windows) {
         std::string lowerTitle = w.title;
-        std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
+        std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), lowerAscii);
         if (lowerTitle.find(lowerQuery) != std::string::npos) {
             if (lowerTitle.length() < shortestLen) {
                 shortestLen = lowerTitle.length();

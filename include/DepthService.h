@@ -42,8 +42,9 @@ public:
 
     ~DepthService();
 
+    // readFence: the present queue's fence, for release() (null offline).
     bool initialize(GraphicsDevice* device, const ComputeKernels* kernels, ID3D12Fence* flowFence, int slots,
-                    int stride = 1);
+                    int stride = 1, ID3D12Fence* readFence = nullptr);
 
     // Records the input of `frame` into the flow list, unless this frame's
     // depth is already done or pending. Returns false only on a recording
@@ -61,6 +62,17 @@ public:
     ID3D12Resource* depthFor(const FlowInput& frame) const;
     // Offline: waits up to timeoutMs for the frame's depth.
     ID3D12Resource* waitFor(const FlowInput& frame, unsigned timeoutMs);
+    // Live: depthFor, pinning the returned texture until release() gives the
+    // readFence value that covers the GPU read (0 when it was not read).
+    // With a stride above 1 a frame borrows its neighbour's texture, and the
+    // neighbour's capture slot - which that texture belongs to - is not one
+    // the reader protects: once it was retired and taken by a new frame, the
+    // worker rewrote the texture while a presented frame could still be
+    // reading it. The worker now stops handing out a texture it is about to
+    // rewrite, waits for pinned readers to report, then makes its queue wait
+    // on GPU for their reads.
+    ID3D12Resource* acquire(const FlowInput& frame);
+    void release(ID3D12Resource* depth, uint64_t readFenceValue);
 
 private:
     struct Slot {
@@ -73,6 +85,8 @@ private:
         void* outputHandle = nullptr;
         uint64_t pendingId = UINT64_MAX;   // frame being produced
         uint64_t readyId = UINT64_MAX;     // frame whose depth `depth` holds
+        uint32_t pinned = 0;               // acquire()d and not yet release()d
+        uint64_t readValue = 0;            // m_readFence value covering every released read
     };
     struct Job {
         int slot = 0;
@@ -80,12 +94,14 @@ private:
         uint64_t flowFence = 0;
     };
     void run();
-    bool produce(const Job& job);
+    bool produce(const Job& job, uint64_t readValue);
+    int nearestSlotLocked(uint64_t frameId) const;           // m_mutex held; -1 if none
     ID3D12Resource* nearestLocked(uint64_t frameId) const;   // m_mutex held
 
     GraphicsDevice* m_device = nullptr;
     const ComputeKernels* m_kernels = nullptr;
     ComPtr<ID3D12Fence> m_flowFence;
+    ComPtr<ID3D12Fence> m_readFence;       // present queue: GPU reads of `depth` textures
     std::array<Slot, kMaxSlots> m_slots;
     int m_slotCount = 0;
     std::vector<Job> m_recorded;           // in the flow list being built
@@ -107,6 +123,7 @@ private:
     mutable std::mutex m_mutex;
     std::condition_variable m_wake;
     std::condition_variable m_done;
+    std::condition_variable m_released;    // release(): a pinned texture was let go
     std::deque<Job> m_jobs;
     bool m_stop = false;
     std::thread m_thread;

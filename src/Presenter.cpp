@@ -539,18 +539,33 @@ int debugView() {
 
 bool Presenter::prepare(const RenderJob& job, uint64_t& presentFenceValue) {
     presentFenceValue = 0;
+    m_lastPrepareSkipped = false;
     if (m_prepared || !job.frame0) return false;
     // Queue capacity is back-pressure only, never a display tick or a reason
     // to replace this selection with a different blend. A slow display can
     // still limit delivery; report that honestly via actual Present times.
+    // No capacity within kCapacityWaitMs (display asleep, a locked or secure
+    // desktop, a long GPU stall) skips this one output instead of failing:
+    // a 1 s timeout used to end the whole capture session. A token that
+    // never comes back for a whole second is lost rather than late, so the
+    // output is then prepared without it, as the old refresh loop did.
+    constexpr DWORD kCapacityWaitMs = 100;
+    constexpr int64_t kCapacityLost = 10000000;   // 1 s, 100 ns units
     const int64_t capacityStart = wallClock100ns();
-    const DWORD capacity = m_latencyWaitable ? WaitForSingleObject(m_latencyWaitable, 1000) : WAIT_OBJECT_0;
+    const DWORD capacity = m_latencyWaitable ? WaitForSingleObject(m_latencyWaitable, kCapacityWaitMs) : WAIT_OBJECT_0;
     const double capacityMs = static_cast<double>(wallClock100ns() - capacityStart) / 10000.0;
     m_stats.capacityWaitMs += capacityMs;
     m_stats.maxCapacityWaitMs = std::max(m_stats.maxCapacityWaitMs, capacityMs);
-    if (capacity != WAIT_OBJECT_0) {
-        std::cerr << "Presenter: timed out waiting for swap-chain capacity.\n";
-        return false;
+    if (capacity == WAIT_OBJECT_0) {
+        m_capacityStallSince = 0;
+    } else {
+        if (m_capacityStallSince == 0) m_capacityStallSince = capacityStart;
+        if (wallClock100ns() - m_capacityStallSince < kCapacityLost) {
+            ++m_stats.capacitySkips;
+            m_lastPrepareSkipped = true;
+            return false;
+        }
+        ++m_stats.capacityForced;
     }
     const UINT idx = static_cast<UINT>(m_frameCount % kBackBuffers);
     CommandSet& set = m_commands[idx];

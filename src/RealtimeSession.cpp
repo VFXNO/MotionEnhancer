@@ -382,10 +382,16 @@ int runRealtimeSession(const RealtimeOptions& options) {
             }
         }
 
+        // --flow-engine ai also sets disFlow (DIS is its fallback and refiner),
+        // so the AI engine is named before DIS; FFX falls back to DIS while its
+        // refinement is on (the default), else to the SAD graph.
         const char* engine = options.flow.neuralFlow ? "neural learned-feature flow"
-            : options.flow.disFlow ? "DIS (Dense Inverse Search) optical flow" : options.flow.preferFfxOpticalFlow
-            ? (flow.ffxAvailable() ? "AMD FidelityFX Optical Flow (SAD fallback on failure)"
-                                   : "native SAD graph (FFX unavailable)")
+            : options.flow.aiFlow ? "AI pyramid (trained model), refined and backed up by DIS"
+            : options.flow.preferFfxOpticalFlow
+            ? (flow.ffxAvailable() ? (options.flow.ffxRefine ? "AMD FidelityFX Optical Flow (DIS fallback on failure)"
+                                                             : "AMD FidelityFX Optical Flow (SAD fallback on failure)")
+                                   : (options.flow.ffxRefine ? "DIS (FFX unavailable)" : "native SAD graph (FFX unavailable)"))
+            : options.flow.disFlow ? "DIS (Dense Inverse Search) optical flow"
             : "native SAD graph (selected)";
         std::cout << "\n============================================================\n"
                   << " >>> Real-Time GPU Frame Interpolation Active\n"
@@ -464,8 +470,20 @@ int runRealtimeSession(const RealtimeOptions& options) {
             const FlowInput in1 = capture.slotInput(sel.f1.slot);
             const uint64_t before = fsr->submittedFenceValue();
             const auto cpu0 = std::chrono::steady_clock::now();
+            // AI depth pinned until the fence that covers FSR's read of it
+            // (FlowEngine::acquireDepth); released with 0 if FSR made nothing.
+            ID3D12Resource* const depth0 = flow.acquireDepth(in0);
+            ID3D12Resource* const depth1 = flow.acquireDepth(in1);
+            uint64_t depthReadFence = 0;
+            struct DepthRelease {
+                FlowEngine& flow;
+                ID3D12Resource* d0;
+                ID3D12Resource* d1;
+                const uint64_t& fence;
+                ~DepthRelease() { flow.releaseDepth(d0, fence); flow.releaseDepth(d1, fence); }
+            } depthRelease{flow, depth0, depth1, depthReadFence};
             middle = fsr->middleFrame(in0, sel.f0.index, in1, sel.f1.index, entry, flow.fence(),
-                                       sel.f1.flowFence, sourceDeltaMs, flow.depthFor(in0), flow.depthFor(in1));
+                                       sel.f1.flowFence, sourceDeltaMs, depth0, depth1);
             if (fsr->submittedFenceValue() != before) {
                 const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - cpu0).count();
                 fsrCpuMs += ms;
@@ -477,6 +495,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                 // skipped/hidden or the source pauses before it is shown.
                 uint64_t readFence = 0;
                 if (!presenter.protectQueuedWork(readFence)) return false;
+                depthReadFence = readFence;
                 capture.noteSlotPresented(sel.f0.slot, readFence);
                 capture.noteSlotPresented(sel.f1.slot, readFence);
                 flow.noteEntryPresented(sel.f1.flowEntry, readFence);
@@ -505,9 +524,21 @@ int runRealtimeSession(const RealtimeOptions& options) {
             job.ready0 = in0.readyValue;
             job.frame1 = in1.texture;
             job.ready1 = in1.readyValue;
-            // AI depth only where it is already complete: never a wait.
-            job.depth0 = flow.depthFor(in0);
-            job.depth1 = flow.depthFor(in1);
+            // AI depth only where it is already complete: never a wait. Pinned
+            // until the fence covering this output's read is known (released
+            // with 0 on every path that submits nothing).
+            ID3D12Resource* const depth0 = flow.acquireDepth(in0);
+            ID3D12Resource* const depth1 = flow.acquireDepth(in1);
+            uint64_t depthReadFence = 0;
+            struct DepthRelease {
+                FlowEngine& flow;
+                ID3D12Resource* d0;
+                ID3D12Resource* d1;
+                const uint64_t& fence;
+                ~DepthRelease() { flow.releaseDepth(d0, fence); flow.releaseDepth(d1, fence); }
+            } depthRelease{flow, depth0, depth1, depthReadFence};
+            job.depth0 = depth0;
+            job.depth1 = depth1;
             job.alpha = sel.alpha;
             const bool pair = sel.f0.index != sel.f1.index;
             FlowEngine::Entry entry;
@@ -580,9 +611,14 @@ int runRealtimeSession(const RealtimeOptions& options) {
             }
             uint64_t presentFence = 0;
             if (!presenter.prepare(job, presentFence)) {
+                // No swap-chain capacity: this output is skipped (counted
+                // in the status line), the session goes on with the next.
+                // Its FSR reads, if any, are already fenced by generateFsr.
+                if (presenter.lastPrepareSkipped()) return true;
                 std::cerr << "Error: output preparation failed.\n";
                 return false;
             }
+            depthReadFence = presentFence;
             prepared = true;
             preparedViewKey = viewKey;
             preparedUsesFsr = mode[0] == 'F';
@@ -727,6 +763,7 @@ int runRealtimeSession(const RealtimeOptions& options) {
                           << " | prep cpu " << (renderCount ? renderCpuMs / static_cast<double>(renderCount) : 0.0) << " ms"
                           << " | capacity " << (ps.prepared ? ps.capacityWaitMs / ps.prepared : 0.0)
                           << "/" << ps.maxCapacityWaitMs << " ms avg/max"
+                          << " skipped " << ps.capacitySkips << " forced " << ps.capacityForced
                           << " alloc " << ps.maxAllocatorWaitMs << " ms max"
                           << " Present call " << (ps.presented ? ps.presentCallMs / ps.presented : 0.0)
                            << "/" << ps.maxPresentCallMs << " ms avg/max"
