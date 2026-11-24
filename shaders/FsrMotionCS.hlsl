@@ -10,6 +10,8 @@
 // grid in full-resolution pixels; FSR reads it at its render size
 // (LevelWidth x LevelHeight), in that size's pixels (motionVectorScale 1).
 // An unbound field reads zero: no motion, for the first frame of a sequence.
+// Test-only gain (--fsr-mv-scale): the vectors are multiplied by
+// 1 - NeuralControl.x, so the default 0 leaves them as they are.
 Texture2D<float4> BackwardFlow : register(t0);
 RWTexture2D<float2> MotionVectors : register(u0);
 
@@ -19,5 +21,5 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     if (id.x >= LevelWidth || id.y >= LevelHeight) return;
     const float2 toFull = float2(Width, Height) / float2(LevelWidth, LevelHeight);
     const float2 full = (float2(id.xy) + 0.5f) * toFull - 0.5f;
-    MotionVectors[id.xy] = SampleFlow(BackwardFlow, full) / toFull;
+    MotionVectors[id.xy] = (1.0f - NeuralControl.x) * SampleFlow(BackwardFlow, full) / toFull;
 }

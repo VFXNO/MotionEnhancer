@@ -92,13 +92,14 @@ int runDepthTest(const std::string& input, const std::string& output, GraphicsAd
 int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& frame1Path,
                           const std::string& outputPath, const std::string& groundTruthPath,
                           const FlowSettings& settings, GraphicsAdapterPreference adapter,
-                          const std::string& previousPath, float depthValue, uint32_t generatedFrames = 1);
+                          const std::string& previousPath, float depthValue, uint32_t generatedFrames = 1,
+                          float motionScale = 1.0f);
 // The live FSR path (FsrRealtime) on saved frames in order: pairs i, i+2 against
 // the true middle i+1, two sequences (from frame 0 and frame 1).
 int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
                        GraphicsAdapterPreference adapter, float depthSpan = 0.0f,
                        const std::string& saveFolder = std::string(),
-                       const FsrCameraSettings& camera = FsrCameraSettings());
+                       const FsrCameraSettings& camera = FsrCameraSettings(), float motionScale = 1.0f);
 // Times the AI pyramid flow network (tools/ai-train's ONNX export) alone on
 // the GPU: input and outputs in D3D12 buffers, one fence wait per run.
 int runAiFlowTest(const std::string& model, GraphicsAdapterPreference adapter);

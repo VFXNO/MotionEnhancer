@@ -96,6 +96,9 @@ public:
     // How far FSR's depth is spread by the AI depth (FsrDepthCS): 0 = always
     // flat, ignoring the AI depth; 1 = from the near to the far plane.
     void setDepthSpan(float span) { m_depthSpan = span; }
+    // Test-only (--fsr-realtime-test --fsr-mv-scale): FSR's motion vectors
+    // multiplied by this. Live never sets it.
+    void setMotionScale(float scale) { m_motionScale = scale; }
 
     // A pair FSR did not see (a scene cut, a pair without flow, a dropped
     // frame) needs nothing from the caller: frame0 is then not the last frame
@@ -151,6 +154,7 @@ private:
     uint32_t m_current = 0;
     uint64_t m_frameId = 0;
     float m_depthSpan = 0.0f;
+    float m_motionScale = 1.0f;
     // Camera (setCamera).
     CameraMode m_cameraMode = CameraMode::Fixed;
     FsrCamera m_camera;

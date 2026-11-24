@@ -83,6 +83,8 @@ static void printUsage(const char* progName) {
               << "                           fixed multipliers use only the exact midpoint, never real frames\n"
               << "  --fsr-depth-span <0-1>   Give FSR the AI depth (needs --ai-depth), spread over this much of\n"
               << "                           its depth range (default: 0.25); 0 = flat depth\n"
+              << "  --fsr-mv-scale <0-2>     Test only (--fsr-fg-offline, --fsr-realtime-test): multiply the motion\n"
+              << "                           vectors given to FSR (default 1; 0 = none, 0.8 = 20% short)\n"
               << "  --fsr-camera <off|spin|flow>  Experimental FSR camera (default: off = fixed). spin: a constant\n"
               << "                           turn, which FSR measured better with; flow: turned by the flow's\n"
               << "                           overall motion; exact = flow, offline tests only\n"
@@ -995,6 +997,7 @@ int main(int argc, char** argv) {
     bool gpuOffline = false;
     bool fsrFrameGenOffline = false;   // experimental: AMD FSR frame generation instead of InterpolateCS
     float fsrDepth = 0.5f;
+    float fsrMotionScale = 1.0f;       // --fsr-mv-scale: test-only gain on FSR's motion vectors
     uint32_t fsrFrames = 1;
     bool fsrFrameGen = false;          // live: FSR frame generation beside the normal interpolation
     bool fsrRealtimeTest = false;      // --fsr-realtime-test <frames...>: the live FSR path offline
@@ -1147,6 +1150,8 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("FSR camera flip must be none, yaw, pitch or both");
         } else if (arg == "--fsr-depth-span" && i + 1 < argc) {
             fsrDepthSpan = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
+        } else if (arg == "--fsr-mv-scale" && i + 1 < argc) {
+            fsrMotionScale = std::clamp(std::stof(argv[++i]), 0.0f, 2.0f);
         } else if (arg == "--fsr-depth" && i + 1 < argc) {
             fsrDepth = std::clamp(std::stof(argv[++i]), 0.0f, 1.0f);
         } else if (arg == "--fsr-frames" && i + 1 < argc) {
@@ -1360,7 +1365,7 @@ int main(int argc, char** argv) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
         return runFsrRealtimeTest(positionalArgs, gpuSettings, adapterPreference, fsrDepthSpan, fsrSaveFolder,
-                                  fsrCamera);
+                                  fsrCamera, fsrMotionScale);
     }
 
     if (!sequencePrefix.empty()) {
@@ -1417,7 +1422,7 @@ int main(int argc, char** argv) {
         gpuSettings.minRefineLevel = std::clamp(
             gpuSettings.minRefineLevel, 0, gpuSettings.pyramidLevels - 1);
         return runFsrFrameGenOffline(input0Path, input1Path, outputPath, groundTruthPath, gpuSettings,
-                                     adapterPreference, previousFramePath, fsrDepth, fsrFrames);
+                                     adapterPreference, previousFramePath, fsrDepth, fsrFrames, fsrMotionScale);
     }
 
     if (gpuOffline) {

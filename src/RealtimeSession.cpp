@@ -2982,7 +2982,8 @@ int runD3D12SelfTest(GraphicsAdapterPreference adapter) {
 int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& frame1Path,
                           const std::string& outputPath, const std::string& groundTruthPath,
                           const FlowSettings& settings, GraphicsAdapterPreference adapter,
-                          const std::string& previousPath, float depthValue, uint32_t generatedFrames) {
+                          const std::string& previousPath, float depthValue, uint32_t generatedFrames,
+                          float motionScale) {
     generatedFrames = std::clamp<uint32_t>(generatedFrames, 1, 4);
     std::vector<Image> frames;
     for (const std::string& path : {previousPath, frame0Path, frame1Path}) {
@@ -3073,6 +3074,7 @@ int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& fram
         c.levelHeight = renderHeight;
         c.blockSize = c.parentBlockSize = static_cast<int32_t>(i > 0 ? entry.blockSize : 2);
         c.flowScale = depthValue;
+        c.neuralControl[0] = 1.0f - motionScale;   // FsrMotionCS's gain (--fsr-mv-scale)
         std::array<ID3D12Resource*, 6> in = {i > 0 ? entry.backward.Get() : nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
         std::array<ID3D12Resource*, 6> none = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
         const UINT gx = (renderWidth + 15) / 16, gy = (renderHeight + 15) / 16;
@@ -3161,7 +3163,7 @@ int runFsrFrameGenOffline(const std::string& frame0Path, const std::string& fram
 // frame's PSNR against the truth and FSR's counters.
 int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSettings& settings,
                        GraphicsAdapterPreference adapter, float depthSpan, const std::string& saveFolder,
-                       const FsrCameraSettings& camera) {
+                       const FsrCameraSettings& camera, float motionScale) {
     if (framePaths.size() < 3) {
         std::cerr << "--fsr-realtime-test needs at least three frames in order\n";
         return 1;
@@ -3194,6 +3196,8 @@ int runFsrRealtimeTest(const std::vector<std::string>& framePaths, const FlowSet
         return 1;
     }
     fsr.setDepthSpan(depthSpan);
+    fsr.setMotionScale(motionScale);
+    if (motionScale != 1.0f) std::cout << "FSR motion vectors scaled by " << motionScale << " (test)" << std::endl;
     fsr.setCamera(camera.mode == 0   ? FsrRealtime::CameraMode::Fixed
                   : camera.mode == 1 ? FsrRealtime::CameraMode::FromFlow
                   : camera.mode == 3 ? FsrRealtime::CameraMode::Spin

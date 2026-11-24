@@ -200,6 +200,7 @@ bool FsrRealtime::feed(const FlowInput& input, ID3D12Resource* backward, uint32_
     c.levelHeight = m_renderHeight;
     c.blockSize = c.parentBlockSize = static_cast<int32_t>(blockSize);
     c.flowScale = 0.5f;
+    c.neuralControl[0] = 1.0f - m_motionScale;   // FsrMotionCS's gain
     in = {backward, nullptr, nullptr, nullptr, nullptr, nullptr};
     const UINT gx = (m_renderWidth + 15) / 16, gy = (m_renderHeight + 15) / 16;
     if (!m_dispatch.dispatch(m_list.Get(), *m_kernels, Kernel::FsrMotion, in, m_motion.Get(), c, gx, gy)) return false;
