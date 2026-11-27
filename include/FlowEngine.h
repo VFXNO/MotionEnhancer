@@ -96,6 +96,16 @@ struct FlowSettings {
     // vector over its neighbours at large motion.
     bool ffxRepair = true;
     bool allowTrainedModel = true; // false while gathering offline training examples
+    // SAD and neural engines: widen the search window to MotionSearchCS's
+    // kWideRadius on the middle pyramid levels, only for blocks whose best
+    // starting vector matches poorly (kPoorMatch). That is fast motion that
+    // differs from its surroundings - ground close to the camera in a turn -
+    // which the coarse levels hand down at the background's speed and the
+    // radius-4 window cannot correct. On text and charts the inherited
+    // vector already matches, so nothing changes there (a wide window
+    // everywhere locked onto their repeats). Off for --neural-parity-check:
+    // the CPU reference does not model it.
+    bool adaptiveReach = true;
     // Keep screen-fixed UI (HUD, subtitles, logos) out of the warp. Per
     // pixel and confirmed over several pairs; see UiMaskCS.hlsl.
     bool uiMask = true;
@@ -310,6 +320,9 @@ private:
     bool recordPack(Pyramid& frame, const Pyramid& partner);
     bool recordDis(const FlowInput& previous, const FlowInput& current, Entry& out);
     int statsLevel() const { return std::max(0, m_levels - 3); }
+    // The SAD matcher's packed luma (and the frame statistics it is packed
+    // with): the SAD engine always, the neural engine for adaptive reach.
+    bool usesPackedLuma() const { return !m_neuralModelLoaded || m_settings.adaptiveReach; }
     // DIS runs unless a learned model is loaded (the neural estimator is
     // built on the SAD graph). With FFX selected it is the fallback only when
     // FFX's field is refined: refined FFX fills DIS's 2x2 ring, plain FFX

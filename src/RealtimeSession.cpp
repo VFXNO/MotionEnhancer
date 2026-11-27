@@ -1605,6 +1605,7 @@ int runNeuralParityCheck(const std::string& frame0Path, const std::string& frame
     FlowSettings settings;
     settings.neuralFlow = true;
     settings.allowTrainedModel = false;   // injected below, not read from disk
+    settings.adaptiveReach = false;       // GPU-only; the CPU reference has no such step
     FlowEngine flow;
     if (!flow.initialize(&device, &kernels, nullptr, settings)) return 1;
     flow.setNeuralModel(model);

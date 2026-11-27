@@ -116,6 +116,28 @@ static const float kGradientFraction = 0.5f;
 // levels. See the confidence computation in CSMain.
 static const float kStructureHalf = 25.0f;
 
+// Adaptive reach (FlowSettings::adaptiveReach; NeuralControl.y = 1 on the
+// levels it applies to). Fast motion that differs from its surroundings -
+// ground close to the camera during a turn - comes down from the coarse
+// levels at the background's speed, and a +-4 window cannot correct that by
+// the tens of pixels it is off, so the area ends up nearly still: "no
+// interpolation there". Such a block's best starting vector matches badly,
+// so there, and only there, the window grows to kWideRadius. A wide window
+// everywhere was measured first and fails on text and charts (txt
+// 44.6 -> 19.3 dB, big24 28.5 -> 18.2 dB): it finds their repeats. Their
+// inherited vectors already match well, so the gate leaves them alone.
+// Mean |difference| of the packed luma per pixel (levels) above which a
+// match is poor. Measured on the synthetic set and four real captures (SAD,
+// consecutive pairs, warp error on motion >= 24 px: 21.13 -> 19.81, DIS
+// 19.38; at 16 big24 lost 0.2 dB, at 24 nothing lost).
+static const float kPoorMatch = 24.0f;
+static const int kWideRadius = 8;
+
+int AdaptiveRadius(int radius, float meanSad)
+{
+    return NeuralControl.y > 0.5f && meanSad > kPoorMatch ? max(radius, kWideRadius) : radius;
+}
+
 groupshared float  RefTile[kTile][kTile];                  // luma with halo (gradients)
 groupshared uint   RefBytes[kBlock][kBlock];
 groupshared uint   EdgeMask[kBlock][kBlock];
@@ -733,8 +755,29 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
         // two windows are two hypotheses, not two samples of one, and a
         // softmax blend of "moved by twelve" and "did not move" returns six,
         // a vector neither window supports.
+        // Adaptive reach: the winning anchor's packed-luma SAD, model
+        // independent (the learned score's scale belongs to one model).
+        int windowRadius = radius;
+        if (NeuralControl.y > 0.5f)
+        {
+            if (li == 0) CentreSad[0] = 0u;
+            GroupMemoryBarrierWithGroupSync();
+            const int2 anchorOffset = NeuralRound(anchor);
+            if (li < (uint)kBlock)
+            {
+                const int2 origin = blockOrigin + anchorOffset + int2(0, (int)li);
+                uint sad = 0u;
+                [unroll]
+                for (int q = 0; q < kQuads; ++q)
+                    sad += SadWord(RefWords[li][q], EdgeWords[li][q],
+                                   LoadCandWord(origin + int2(q * 4, 0), packedMax)).x;
+                InterlockedAdd(CentreSad[0], sad);
+            }
+            GroupMemoryBarrierWithGroupSync();
+            windowRadius = AdaptiveRadius(radius, (float)CentreSad[0] / (float)(kBlock * kBlock));
+        }
         float2 vector;
-        LearnedWindow(anchor, radius, blockOrigin, levelMax, li, wave, waveCount, vector);
+        LearnedWindow(anchor, windowRadius, blockOrigin, levelMax, li, wave, waveCount, vector);
         if (li == 0) OutputFlow[groupId.xy] = float4(vector, confidence);
         return;
     }
@@ -843,8 +886,8 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 tid : SV_GroupThreadID, uint li : 
 
     // --- Stage 3: window around the winning centre ------------------------
     float2 vector;
-    SearchWindow(centre, radius, reference, blockOrigin, packedMax, li, wave, waveCount,
-                 keptScale, vector);
+    SearchWindow(centre, AdaptiveRadius(radius, (float)bestCost / (float)(kBlock * kBlock * 16)), reference,
+                 blockOrigin, packedMax, li, wave, waveCount, keptScale, vector);
 
     // --- Stage 4: subpixel refinement -------------------------------------
     // The window can only return a whole number of pixels, and on text a

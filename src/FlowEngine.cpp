@@ -262,11 +262,13 @@ bool FlowEngine::resize(uint32_t width, uint32_t height, int slotCount) {
                                                      D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                      D3D12_RESOURCE_STATE_COMMON, pyramid.feature[l], L"LearnedFeature")))
                     return false;
-            } else if (FAILED(m_device->createTexture2D((lw + 3) / 4, lh, DXGI_FORMAT_R32_UINT,
-                                                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-                                                        D3D12_RESOURCE_STATE_COMMON, pyramid.packed[l], L"PackedLuma")))
+            }
+            if (usesPackedLuma() &&
+                FAILED(m_device->createTexture2D((lw + 3) / 4, lh, DXGI_FORMAT_R32_UINT,
+                                                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                                                 D3D12_RESOURCE_STATE_COMMON, pyramid.packed[l], L"PackedLuma")))
                 return false;
-            if (l == 0 && !m_neuralModelLoaded &&
+            if (l == 0 && usesPackedLuma() &&
                 FAILED(m_device->createTexture2D(1, 1, DXGI_FORMAT_R32G32_FLOAT,
                                                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                                                  D3D12_RESOURCE_STATE_COMMON, pyramid.stats, L"FrameStats")))
@@ -849,7 +851,7 @@ bool FlowEngine::recordPyramid(const FlowInput& frame, Pyramid& pyramid) {
     }
     // Whole-frame brightness statistics, once per frame, for matching the
     // brightness of each pair it takes part in (PackLumaCS).
-    if (ok && !m_neuralModelLoaded) {
+    if (ok && usesPackedLuma()) {
         const int s = statsLevel();
         c.levelWidth = std::max(1u, m_width >> s);
         c.levelHeight = std::max(1u, m_height >> s);
@@ -908,7 +910,9 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
     if (&prevPyramid == &currPyramid) return false;
     if (prevPyramid.id != previous.id) ok &= recordPyramid(previous, prevPyramid);
     if (ok && currPyramid.id != current.id) ok &= recordPyramid(current, currPyramid);
-    if (ok && !m_neuralModelLoaded) ok = recordPack(prevPyramid, currPyramid) && recordPack(currPyramid, prevPyramid);
+    // Packed luma for the SAD - and for the neural engine too, which uses it
+    // only to judge its winning anchor's match (adaptive reach).
+    if (ok && usesPackedLuma()) ok = recordPack(prevPyramid, currPyramid) && recordPack(currPyramid, prevPyramid);
 
 
     ShaderConstants c = {};
@@ -945,6 +949,12 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
                 : sadRadius(l, levels, m_settings.coarseSearchRadius,
                             m_settings.refineSearchRadius, m_settings.minRefineLevel);
             c.smoothnessWeight = m_settings.smoothnessWeight;
+            // Adaptive reach on the middle levels: not the finest (its window
+            // is the refine radius, and an error there is a few pixels) and
+            // not the two coarsest, whose narrow windows keep alias matches
+            // out of the predictors (see sadRadius()).
+            const bool middleLevel = l >= 1 && (levels - 1) - l >= 2;
+            c.neuralControl[1] = m_settings.adaptiveReach && middleLevel ? 1.0f : 0.0f;
             static const int sadDebug = [] {
                 char buffer[8] = {};
                 return GetEnvironmentVariableA("MOTION_ENHANCER_SAD_DEBUG", buffer, sizeof(buffer)) > 0
@@ -954,9 +964,10 @@ bool FlowEngine::recordSad(const FlowInput& previous, const FlowInput& current, 
             if (sadDebug) c.smoothnessWeight = -static_cast<float>(sadDebug);
             const uint32_t fw = (c.levelWidth + block - 1) / block;
             const uint32_t fh = (c.levelHeight + block - 1) / block;
-            in = {ref.level[l].Get(), m_neuralModelLoaded ? nullptr : cand.packed[l].Get(),
+            const bool packed = usesPackedLuma();
+            in = {ref.level[l].Get(), packed ? cand.packed[l].Get() : nullptr,
                    l < levels - 1 ? estimated[l + 1].Get() : nullptr,
-                   m_neuralModelLoaded ? nullptr : ref.packed[l].Get(),
+                   packed ? ref.packed[l].Get() : nullptr,
                    m_neuralModelLoaded ? ref.feature[l].Get() : nullptr,
                    m_neuralModelLoaded ? cand.feature[l].Get() : nullptr};
             // One 8x8 group per flow block, into the scratch field.
